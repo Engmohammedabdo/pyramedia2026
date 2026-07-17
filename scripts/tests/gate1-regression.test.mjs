@@ -74,5 +74,5 @@ test('BUILD_NOTES labels historical Arabic evidence and current remediation accu
 
   assert.match(notes, /Historical Lighthouse 12[\s\S]*`\/ar` was measured; this did not verify canonical `\/ar\/`/);
   assert.match(notes, /GATE 1 remediation verification \(2026-07-17\)/);
-  assert.doesNotMatch(notes, /verified in built HTML on 8 sampled pages â€” always/);
+  assert.doesNotMatch(notes, /verified in built HTML on 8 sampled pages \u2014 always/);
 });
