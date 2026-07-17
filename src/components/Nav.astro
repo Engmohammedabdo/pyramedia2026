@@ -66,17 +66,19 @@ function isActive(href: string): boolean {
         {t.nav.langLabel}
       </a>
 
-      <a
-        href={waLink(lang)}
-        target="_blank"
-        rel="noopener"
-        class="btn-primary hidden !px-5 !py-2.5 text-sm sm:inline-flex"
-        data-event="whatsapp_click"
-        data-placement="nav"
-      >
-        <Icon name="whatsapp" size={17} />
-        {t.cta.whatsapp}
-      </a>
+      <div class="hidden sm:block">
+        <a
+          href={waLink(lang)}
+          target="_blank"
+          rel="noopener"
+          class="btn-primary !px-5 !py-2.5 text-sm"
+          data-event="whatsapp_click"
+          data-placement="nav"
+        >
+          <Icon name="whatsapp" size={17} />
+          {t.cta.whatsapp}
+        </a>
+      </div>
 
       <button
         type="button"

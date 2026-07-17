@@ -14,3 +14,13 @@ test('Astro preview accepts the canonical Arabic homepage trailing slash', async
   assert.match(config, /build:\s*\{\s*format:\s*'file'\s*\}/);
   assert.match(config, /trailingSlash:\s*'ignore'/);
 });
+
+test('desktop nav CTA is hidden by a responsive wrapper on mobile', async () => {
+  const nav = await source('src/components/Nav.astro');
+
+  assert.match(
+    nav,
+    /<div class="hidden sm:block">\s*<a[\s\S]*?data-placement="nav"[\s\S]*?<\/a>\s*<\/div>/
+  );
+  assert.doesNotMatch(nav, /class="btn-primary hidden/);
+});
