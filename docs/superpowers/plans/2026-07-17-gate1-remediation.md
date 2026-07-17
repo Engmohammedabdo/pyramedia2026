@@ -619,19 +619,20 @@ PWCLI="/c/Users/engmo/.codex/skills/playwright/scripts/playwright_cli.sh"
 "$PWCLI" -s=gate1fix open http://127.0.0.1:4321/ --headed
 "$PWCLI" -s=gate1fix localstorage-set pyx-consent declined
 "$PWCLI" -s=gate1fix resize 390 844
+"$PWCLI" -s=gate1fix eval "() => { const e=document.querySelector('[data-menu-toggle]'); const r=e.getBoundingClientRect(); const c=document.querySelector('[data-placement=nav]'); const w=c.parentElement; return {dir:document.documentElement.dir,menu:{left:r.left,right:r.right,width:r.width},desktopCtaVisible:c.getClientRects().length>0,desktopCtaWrapperDisplay:w?getComputedStyle(w).display:null,viewport:innerWidth}; }"
 "$PWCLI" -s=gate1fix eval "() => { const a=document.querySelector('[data-lang-switch]'); const href=a?.getAttribute('href'); a?.click(); return href; }"
 "$PWCLI" -s=gate1fix snapshot
 ```
 
-Required: evaluated href is `/ar/`; the next snapshot shows Arabic homepage title/content at `/ar/`, not a 404.
+Required on English: `dir` is `ltr`; menu `left >= 0`; menu `right <= viewport`; `desktopCtaVisible` is `false`; and `desktopCtaWrapperDisplay` is `none`. The evaluated switch href is `/ar/`; the next snapshot shows Arabic homepage title/content at `/ar/`, not a 404.
 
 Measure mobile bounds on `/ar/`:
 
 ```bash
-"$PWCLI" -s=gate1fix eval "() => { const e=document.querySelector('[data-menu-toggle]'); const r=e.getBoundingClientRect(); const c=document.querySelector('[data-placement=nav]'); return {dir:document.documentElement.dir, menu:{left:r.left,right:r.right,width:r.width}, desktopCtaDisplay:getComputedStyle(c).display, viewport:innerWidth}; }"
+"$PWCLI" -s=gate1fix eval "() => { const e=document.querySelector('[data-menu-toggle]'); const r=e.getBoundingClientRect(); const c=document.querySelector('[data-placement=nav]'); const w=c.parentElement; return {dir:document.documentElement.dir,menu:{left:r.left,right:r.right,width:r.width},desktopCtaVisible:c.getClientRects().length>0,desktopCtaWrapperDisplay:w?getComputedStyle(w).display:null,viewport:innerWidth}; }"
 ```
 
-Required: `dir` is `rtl`; menu `left >= 0`; menu `right <= viewport`; desktop CTA display is `none`.
+Required: `dir` is `rtl`; menu `left >= 0`; menu `right <= viewport`; `desktopCtaVisible` is `false`; and `desktopCtaWrapperDisplay` is `none`.
 
 Return to English and verify focus:
 
@@ -661,12 +662,13 @@ Required: `dir="rtl"`; float is positioned from the left; marquee direction is `
 - [ ] **Step 5: Verify repository scope and formatting**
 
 ```powershell
-git diff --check HEAD~7..HEAD
+$base = git merge-base main HEAD
+git diff --check "$base..HEAD"
 git status --short
-git log -8 --oneline
+git log --oneline "$base..HEAD"
 ```
 
-Required: no whitespace errors; only the pre-existing untracked `.claude/settings.local.json` and independent `REVIEW_GATE1.md` remain; the seven remediation commits are present after the design/plan commits.
+Required: no whitespace errors; the implementation worktree is clean after generated Playwright artifacts are removed; the seven remediation commits plus the owner-approved QA-criterion correction are present. Confirm separately that the original checkout still contains only its pre-existing untracked `.claude/settings.local.json` and independent `REVIEW_GATE1.md`.
 
 - [ ] **Step 6: Request independent GATE 1 re-review**
 
