@@ -58,7 +58,13 @@ html[lang='ar'] .font-display {
   font-family: var(--font-arabic);
   font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.35;
+  line-height: 1.4;
+}
+
+/* Brand marks (wordmark, tagline, hero H1) keep Space Grotesk on BOTH
+   language versions — the tagline is a brand mark, not body copy (SPEC §2.4) */
+.font-brand {
+  font-family: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,
@@ -207,6 +213,27 @@ html[lang='ar'] .eyebrow {
 }
 [dir='rtl'] .group:hover .card-arrow {
   transform: scaleX(-1) translateX(4px);
+}
+
+/* Custom cursor dot — desktop pointer devices only (SPEC §8).
+   Physical top/left is intentional: it tracks physical mouse coordinates,
+   which do not mirror in RTL. */
+.cursor-dot {
+  position: fixed;
+  top: -5px;
+  left: -5px;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 999px;
+  background: var(--color-orange);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 95;
+}
+@media (pointer: coarse) {
+  .cursor-dot {
+    display: none;
+  }
 }
 
 /* Skip link (SPEC §12) */

@@ -191,9 +191,14 @@ function isActive(href: string): boolean {
       setOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
     menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
-    document.addEventListener('keydown', (e) => {
+    // Keydown handler lives on document, which survives View Transition
+    // swaps — replace instead of stacking one per navigation.
+    const w = window as typeof window & { __pyxNavEsc?: (e: KeyboardEvent) => void };
+    if (w.__pyxNavEsc) document.removeEventListener('keydown', w.__pyxNavEsc);
+    w.__pyxNavEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setOpen(false);
-    });
+    };
+    document.addEventListener('keydown', w.__pyxNavEsc);
   }
   document.addEventListener('astro:page-load', initNav);
 </script>
