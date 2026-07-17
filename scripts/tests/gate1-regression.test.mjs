@@ -30,3 +30,10 @@ test('skip-link target is programmatically focusable', async () => {
 
   assert.match(layout, /<main\s+id="main"\s+tabindex="-1"/);
 });
+
+test('Arabic pages preload the brand H1 and Arabic body fonts', async () => {
+  const layout = await source('src/layouts/BaseLayout.astro');
+
+  assert.match(layout, /\?\s*\[spaceGrotesk700Url,\s*cairo400Url\]/);
+  assert.match(layout, /:\s*\[spaceGrotesk700Url,\s*inter400Url\]/);
+});

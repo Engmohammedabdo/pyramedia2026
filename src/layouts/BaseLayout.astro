@@ -40,9 +40,12 @@ const { lang, title, description, jsonLd = [] } = Astro.props;
 const t = useTranslations(lang);
 const dir = dirFor(lang);
 
-// Preload only the font the LCP text renders in — extra preloads compete
-// for bandwidth on the critical path (SPEC §12).
-const preloads = lang === 'ar' ? [cairo400Url] : [spaceGrotesk700Url, inter400Url];
+// Preload the fonts used above the fold. The Arabic homepage keeps the
+// English Space Grotesk brand H1 and uses Cairo for its Arabic body copy.
+const preloads =
+  lang === 'ar'
+    ? [spaceGrotesk700Url, cairo400Url]
+    : [spaceGrotesk700Url, inter400Url];
 ---
 
 <!doctype html>
