@@ -14,9 +14,9 @@ or a documented assumption. Nothing here changes site copy — it is a log.
 | `TODO_N8N_WEBHOOK` | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | Form renders disabled state + WhatsApp fallback; console warning in dev | Set the env var and rebuild |
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 not injected | Set the env var and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel not injected | Set the env var and rebuild |
-
 | `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | On-brand dark panel with pyramid line-art + name/title (never a stock face) | Drop photo into `src/assets/founder/`, replace the panel body with an astro:assets `<Image>` |
 | `TODO_CLIENT_LOGO_1..5` | `src/components/pages/HomePage.astro` (trusted-by marquee) | Styled text of client names in muted color — never fake logos | Drop SVG/PNG files into `src/assets/clients/`, replace the marquee `<li>` text with `<Image>` tags |
+| FTP secrets | GitHub repo secrets `FTP_SERVER`/`FTP_USERNAME`/`FTP_PASSWORD` (+ `BLUEHOST_SITE_ROOT` variable) | CI builds and keeps the artifact; the FTPS deploy step is skipped with a clear log notice | Add the three secrets (and site-root variable if not `public_html/`) in GitHub Actions settings |
 
 ## Decisions log
 
@@ -77,8 +77,9 @@ or a documented assumption. Nothing here changes site copy — it is a log.
   phrases ("AI-powered" etc.) → 0. Contact data outside `site.ts` → 0.
   Physical-direction Tailwind utilities → 0.
 
-**JS weight:** 89 KB gzip total across `dist/` (budget ≤ 180 KB), of which
-~34 KB is Partytown workers that load only after analytics consent.
+**JS weight:** ~91 KB gzip total across `dist/` (92,873 bytes measured
+2026-07-17 after the GATE 2 motion pass; budget ≤ 180 KB), of which ~34 KB is
+Partytown workers that load only after analytics consent.
 
 **Historical Lighthouse 12, mobile emulation, local `npm run preview`
 (reports committed under `reports/`; `/ar` was measured; this did not verify canonical `/ar/`):**
@@ -120,6 +121,50 @@ direction (+x translation), form alignment) — all mirrored correctly.
 - At 390 CSS px in both languages, the desktop WhatsApp CTA was hidden and the mobile-menu button remained inside the viewport.
 - Activating the skip link moved keyboard focus to `main#main`.
 - The Arabic homepage preloaded Space Grotesk 700 for the brand H1 and Cairo Arabic 400 for Arabic body copy.
+
+**GATE 2 self-verification (2026-07-17, local production preview — not an
+independent review and not live-host evidence):**
+
+- **Motion elevation shipped:** hero line reveal with rotation settle, mark
+  outline shimmer loop + breathe (deferred past idle), pointer-tilt cards
+  with tracking glow (lazy-built on first hover, fine pointers only),
+  methodology progress rail (traveling dot + fill + active-stage pop +
+  stage-number depth, fully RTL-mirrored), button shine sweep (RTL-mirrored),
+  trailing cursor ring, footer wordmark rise, contact success check-draw.
+- **§8 law compliance audited and repaired:** the floating WhatsApp ripple
+  was rewritten from an animated `box-shadow` to a transform/opacity ring —
+  the one confirmed law violation. All other per-frame animation is
+  transform/opacity/SVG-stroke.
+- **Multi-agent self-audit:** 6 audit dimensions (motion laws, EN pages vs
+  §7, AR pages vs §7 + Arabic quality, truth/contact/design, forms,
+  housekeeping) with adversarial verification; 15 reported → 8 confirmed →
+  all fixed except one accepted note (below); 7 refuted as false positives.
+  Fixed: WhatsApp ripple law violation; Arabic typo on AR About stage 5
+  («ما ننخفيه» → «ما نخفيه»); contact-form in-flight guard (double-click
+  sent duplicate webhook POSTs + duplicate `form_submit` events); dead
+  exports removed from `src/i18n/index.ts`; this file's registry table and
+  stale JS figure corrected, FTP row added.
+- **Accepted note (documented, not fixed):** the deferred boot switches
+  `.method-viewport` from `overflow-x:auto` (no-JS/reduced-motion fallback)
+  to `hidden` when the pin takes over; on classic-scrollbar platforms this
+  removes a scrollbar ~1 s after load, a one-time below-the-fold reflow.
+  Measured CLS stayed 0.000–0.001. The scrollable fallback is required for
+  no-JS/reduced-motion users, so this trade-off stands.
+- **Rapid-navigation leak check:** four fast View-Transition swaps →
+  exactly 1 pin-spacer, 1 cursor dot, 1 ring, 1 glow per card. Mobile
+  375 px EN+AR: no horizontal overflow, rail visible and scrub-synced,
+  menu control in-viewport.
+- **Lighthouse (mobile emulation) on this loaded dev machine:** A11y/BP/SEO
+  100/100/100 both languages. Performance fluctuated 79–93 across runs; a
+  same-conditions A/B against the pre-GATE-2 baseline measured baseline
+  87–95 vs GATE 2 90–93 — i.e. the motion pass shows **no measurable
+  regression**; the sub-95 numbers are machine load (user Chrome + XAMPP
+  running), not the page. The committed 99/97 reports under `reports/`
+  remain the quiet-machine reference. Re-measure at GATE 3 on the
+  production host before treating §12 as passed — GATE 2 budgets are
+  provisional by design (REVIEWER.md §4-I).
+- `npm run test:gate1` 7/7 and `npm run build` (25 pages, clean) re-run
+  after every fix above.
 
 **Pending post-deploy verification (needs the live Apache host):**
 `.htaccess` §5.1 redirect map via `curl -I`, HTTPS/non-www force, security

@@ -30,27 +30,29 @@ const t = useTranslations(lang);
 </a>
 
 <style>
+  /* Ripple ring — transform/opacity only (SPEC §8 law 1): a bordered ring
+     scales out and fades instead of animating box-shadow spread. */
   .wa-float::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: 999px;
-    box-shadow: 0 0 0 0 var(--color-orange-pulse-50);
+    border: 2px solid var(--color-orange-pulse-50);
     animation: wa-pulse 2.8s ease-out infinite;
     pointer-events: none;
   }
   @keyframes wa-pulse {
     0% {
-      box-shadow: 0 0 0 0 var(--color-orange-pulse-45);
+      transform: scale(1);
       opacity: 1;
     }
     70% {
-      box-shadow: 0 0 0 14px var(--color-orange-clear);
-      opacity: 1;
+      transform: scale(1.45);
+      opacity: 0;
     }
     100% {
-      box-shadow: 0 0 0 0 var(--color-orange-clear);
-      opacity: 1;
+      transform: scale(1.45);
+      opacity: 0;
     }
   }
   @media (prefers-reduced-motion: reduce) {

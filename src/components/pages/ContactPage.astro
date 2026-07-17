@@ -395,6 +395,8 @@ const inputClass =
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!config.webhook) return;
+      // In-flight guard: one webhook POST and one form_submit event per send
+      if (form.dataset.busy === 'true') return;
       if (!validate()) return;
 
       // Spam traps (SPEC §7.4): filled honeypot or a submission faster than a
@@ -420,6 +422,9 @@ const inputClass =
         website: honeypot,
       };
 
+      const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      form.dataset.busy = 'true';
+      if (submitBtn) submitBtn.disabled = true;
       track('form_submit');
       submitLabel.textContent = config.msg.sending;
 
@@ -437,6 +442,8 @@ const inputClass =
         errorBox.classList.remove('hidden');
       } finally {
         submitLabel.textContent = config.msg.send;
+        form.dataset.busy = '';
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
 
