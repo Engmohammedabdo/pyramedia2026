@@ -13,13 +13,16 @@ import PyramidMark from './PyramidMark.astro';
 interface Props {
   lang: Lang;
   class?: string;
+  /** Remaining attributes (data-reveal etc.) are forwarded to the panel. */
+  [key: string]: unknown;
 }
-const { lang, class: className = '' } = Astro.props;
+const { lang, class: className = '', ...rest } = Astro.props;
 const t = useTranslations(lang);
 ---
 
 <div
   class={`relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-2 p-7 ${className}`}
+  {...rest}
 >
   <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
   <PyramidMark

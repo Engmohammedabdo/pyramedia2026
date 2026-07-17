@@ -136,6 +136,20 @@ html[lang='ar'] h4 {
   transform: scaleX(-1);
 }
 
+/* Hero mark: full presence beside LTR text; softer on RTL where the mark
+   mirrors under the line-ends of the Arabic copy. The English brand H1
+   aligns to the page's reading start (its own end edge) on RTL. */
+.hero-pyramid {
+  opacity: 0.7;
+}
+[dir='rtl'] .hero-pyramid {
+  opacity: 0.3;
+}
+[dir='rtl'] .hero-h1 {
+  text-align: end;
+  margin-inline-start: auto;
+}
+
 /* ------------------------------------------------------------------ */
 /* Texture — film grain + orange glow (SPEC §6.3)                      */
 /* ------------------------------------------------------------------ */

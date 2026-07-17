@@ -1,55 +1,55 @@
 ---
 /**
- * The pyramid mark — two orange peaks from the logo (SPEC §6.3).
- * variant "logo"  → small filled mark for the nav lockup.
- * variant "line"  → stroke-only line-art for hero draw-in / backgrounds
- *                   (paths carry .pyramid-path for GSAP stroke animation).
+ * The official PyramediaX mark — twin peaks + diamond apex, taken verbatim
+ * from the brand SVG (logo/svg, variant 06 geometry; colors mapped to the
+ * SPEC §6.1 tokens). Two render variants:
+ *
+ * variant "logo"  → solid mark for lockups (nav, footer, favicon-scale).
+ * variant "line"  → same authentic paths carrying .pyramid-path, used for
+ *                   the hero draw-in (outline draws, fill fades in — see
+ *                   motion.ts) and as faint section-background line-art.
  */
 interface Props {
   variant?: 'logo' | 'line';
   class?: string;
+  /** Remaining attributes (data-parallax etc.) are forwarded to the <svg>. */
+  [key: string]: unknown;
 }
-const { variant = 'logo', class: className = '' } = Astro.props;
+const { variant = 'logo', class: className = '', ...rest } = Astro.props;
+
+// Authentic path data (viewBox space 1920×1080; mark occupies 734–1151 × 217–566)
+const PEAKS_D =
+  'M1146.552,555.151c-5.47,3.502-12.743,1.908-16.246-3.562l-94.681-147.866c-.087-.133-.207-.307-.608-.326-.398.007-.518.213-.599.349l-72.083,122.09c-4.38,7.418-12.137,11.869-20.748,11.911h-.123c-8.563,0-16.307-4.368-20.737-11.706l-73.683-122.025c-.082-.136-.206-.341-.605-.342h0c-.398,0-.522.205-.604.34l-89.391,147.191c-3.371,5.551-10.605,7.319-16.156,3.947h-.001c-5.551-3.372-7.319-10.606-3.947-16.157l89.391-147.191c4.432-7.298,12.172-11.652,20.708-11.652h.032c8.468,0,16.319,4.43,20.696,11.679l73.698,122.052c.087.146.28.384.609.342.402-.002.521-.202.608-.349l72.083-122.09c4.313-7.304,11.95-11.755,20.43-11.907,8.545-.191,16.27,4.019,20.841,11.161l94.68,147.865c3.502,5.47,1.907,12.743-3.562,16.245h0Z';
+const DIAMOND_D =
+  'M1021.903,565.537c-5.607,3.278-12.81,1.389-16.088-4.218l-130.215-222.763c-4.264-7.295-4.447-16.107-.491-23.573l45.4-85.652c4.152-7.834,12.239-12.769,21.104-12.881,8.925-.085,17.074,4.619,21.421,12.346l48.245,85.731c4.269,7.59,4.129,16.936-.368,24.394l-54.762,90.824,69.973,119.705c3.278,5.607,1.389,12.81-4.218,16.088h0ZM941.924,239.969h-.016c-.42.005-.529.211-.617.376l-45.399,85.651c-.115.217-.11.475.015.688l46.721,79.928,48.138-79.84c.131-.217.136-.49.011-.712l-48.244-85.731c-.091-.162-.203-.361-.61-.361Z';
+
+const VIEWBOX = '728 211 430 362';
 ---
 
 {
   variant === 'logo' ? (
-    <svg viewBox="0 0 48 32" class={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 30 L19 5 L30.5 24 L27 30 Z" fill="var(--color-orange)" />
-      <path d="M27 30 L35 16 L44 30 Z" fill="var(--color-orange-hot)" opacity="0.85" />
+    <svg viewBox={VIEWBOX} class={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...rest}>
+      <path d={PEAKS_D} fill="var(--color-orange)" />
+      <path d={DIAMOND_D} fill="var(--color-text)" />
     </svg>
   ) : (
-    <svg
-      viewBox="0 0 480 320"
-      class={className}
-      fill="none"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg viewBox={VIEWBOX} class={className} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" {...rest}>
       <path
         class="pyramid-path"
-        d="M40 300 L190 50 L305 240"
+        d={PEAKS_D}
+        fill="var(--color-orange)"
         stroke="var(--color-orange)"
-        stroke-width="3"
-        stroke-linecap="round"
+        stroke-width="2.5"
         stroke-linejoin="round"
       />
       <path
         class="pyramid-path"
-        d="M270 300 L350 160 L440 300"
-        stroke="var(--color-orange-hot)"
-        stroke-width="3"
-        stroke-linecap="round"
+        d={DIAMOND_D}
+        fill="var(--color-text)"
+        stroke="var(--color-text)"
+        stroke-width="2.5"
         stroke-linejoin="round"
-        opacity="0.85"
-      />
-      <path
-        class="pyramid-path"
-        d="M40 300 L440 300"
-        stroke="var(--color-gold)"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        opacity="0.6"
+        opacity="0.9"
       />
     </svg>
   )

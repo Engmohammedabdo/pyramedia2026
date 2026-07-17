@@ -62,14 +62,18 @@ function heroIntro() {
     });
   }
 
-  // Pyramid stroke line-draw (~1.2s) in the hero only
+  // Pyramid line-draw (~1.2s) in the hero only. The brand mark's paths are
+  // outlines of its thick line-art, so the outline draws in via
+  // stroke-dashoffset while the fill fades up to complete the mark.
   document.querySelectorAll<SVGPathElement>('.hero-pyramid .pyramid-path').forEach((path, i) => {
     const length = path.getTotalLength();
+    const delay = 0.15 + i * 0.18;
     gsap.fromTo(
       path,
-      { strokeDasharray: length, strokeDashoffset: length },
-      { strokeDashoffset: 0, duration: 1.2, delay: 0.15 + i * 0.18, ease: 'power2.inOut' }
+      { strokeDasharray: length, strokeDashoffset: length, fillOpacity: 0 },
+      { strokeDashoffset: 0, duration: 1.2, delay, ease: 'power2.inOut' }
     );
+    gsap.to(path, { fillOpacity: 1, duration: 0.7, delay: delay + 0.75, ease: 'power2.out' });
   });
 
   // Slow orange glow pulse behind the hero
@@ -259,6 +263,17 @@ function initCursor() {
 let ctx: gsap.Context | null = null;
 let deferredCtx: gsap.Context | null = null;
 let booted = false;
+let generation = 0;
+let laterHandle: number | null = null;
+let laterUsedIdle = false;
+
+function cancelDeferredBoot() {
+  if (laterHandle !== null) {
+    if (laterUsedIdle) window.cancelIdleCallback(laterHandle);
+    else clearTimeout(laterHandle);
+    laterHandle = null;
+  }
+}
 
 function boot() {
   if (booted) return;
@@ -271,7 +286,12 @@ function boot() {
     heroIntro();
   });
 
+  const myGeneration = generation;
   const later = () => {
+    laterHandle = null;
+    // A View Transition swap may have happened while this sat in the idle
+    // queue — building triggers against the new page here would leak them.
+    if (myGeneration !== generation) return;
     initLenis();
     initCursor();
     deferredCtx = gsap.context(() => {
@@ -285,14 +305,18 @@ function boot() {
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
   };
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(later, { timeout: 1000 });
+    laterUsedIdle = true;
+    laterHandle = window.requestIdleCallback(later, { timeout: 1000 });
   } else {
-    setTimeout(later, 250);
+    laterUsedIdle = false;
+    laterHandle = window.setTimeout(later, 250);
   }
 }
 
 document.addEventListener('astro:page-load', boot);
 document.addEventListener('astro:before-swap', () => {
+  generation++;
+  cancelDeferredBoot();
   booted = false;
   ctx?.revert();
   ctx = null;
@@ -300,6 +324,8 @@ document.addEventListener('astro:before-swap', () => {
   deferredCtx = null;
 });
 
-// This module is dynamically imported after the window load event — the
-// initial astro:page-load has already fired by then, so boot directly.
+// This bundled module evaluates before the ClientRouter dispatches the
+// initial astro:page-load (which fires on window load) — boot directly so
+// the hero intro starts at module eval; the later astro:page-load call is
+// absorbed by the `booted` guard.
 boot();

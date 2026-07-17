@@ -41,6 +41,31 @@ or a documented assumption. Nothing here changes site copy — it is a log.
   minimum-time-on-page. Bot-like submissions get a silent success state and
   nothing is sent — standard practice so bots don't retry.
 
+## Asset arrivals
+
+- **2026-07-17 — Official logo files received** (`logo/png` + `logo/svg`,
+  10 color variants, committed to the repo as brand source-of-truth).
+  Integrated as follows:
+  - The mark (twin peaks + diamond apex) was extracted verbatim from
+    variant 06 and inlined in `src/components/PyramidMark.astro` — it now
+    drives the nav/footer lockup, hero draw-in, section backgrounds,
+    founder panel and 404. `public/favicon.svg` and the OG image were
+    regenerated from the same authentic paths.
+  - Colors are mapped to the SPEC §6.1 tokens (`--orange: #F26E24`,
+    `--text: #F7F5F2`). The logo source uses `#f16e25` — a 1/255 rounding
+    difference from the spec token; the spec token wins on the site.
+  - The lockup text stays typeset ("PYRAMEDIA X" per SPEC §4) rather than
+    using the outlined text from the logo files — crisper at nav size,
+    accessible, and it avoids baking in the sub-line "FOR MARKETING
+    MANAGMENT" from the asset (not in the §4 whitelist; contains a
+    spelling issue — flag to owner).
+  - Hero motion updated: the mark's outline draws in (~1.2 s) and its fill
+    fades up — same §8 vocabulary, now on the authentic geometry. On RTL
+    the mark mirrors to the start side at reduced opacity and the English
+    brand H1 aligns to the page's reading start.
+  - `TODO_` registry unchanged: founder photo, client logos, exact address,
+    maps URL, analytics IDs, webhook and FTP secrets are still pending.
+
 ## QA evidence (2026-07-17, production build via `npm run preview`)
 
 **Grep gates (SPEC §15 DoD):**
