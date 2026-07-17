@@ -59,7 +59,7 @@ const preloads = lang === 'ar' ? [cairo400Url] : [spaceGrotesk700Url, inter400Ur
   <body class="grain bg-bg">
     <a href="#main" class="skip-link">{t.a11y.skipLink}</a>
     <Nav lang={lang} />
-    <main id="main" class="pt-16 md:pt-[4.5rem]">
+    <main id="main" tabindex="-1" class="pt-16 md:pt-[4.5rem]">
       <slot />
     </main>
     <Footer lang={lang} />

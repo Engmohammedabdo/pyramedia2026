@@ -24,3 +24,9 @@ test('desktop nav CTA is hidden by a responsive wrapper on mobile', async () => 
   );
   assert.doesNotMatch(nav, /class="btn-primary hidden/);
 });
+
+test('skip-link target is programmatically focusable', async () => {
+  const layout = await source('src/layouts/BaseLayout.astro');
+
+  assert.match(layout, /<main\s+id="main"\s+tabindex="-1"/);
+});
