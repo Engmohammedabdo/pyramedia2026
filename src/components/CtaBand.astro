@@ -1,0 +1,48 @@
+---
+/**
+ * Full-width CTA band (SPEC §7.1 s7) — big statement, WhatsApp primary,
+ * secondary link. Reused on About, Services hub and service pages.
+ */
+import type { Lang } from '@/config/site';
+import { waLink } from '@/config/site';
+import { useTranslations, localizePath } from '@/i18n';
+import Button from './Button.astro';
+import Icon from './Icon.astro';
+import PyramidMark from './PyramidMark.astro';
+
+interface Props {
+  lang: Lang;
+  placement?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+}
+const { lang, placement = 'cta-band' } = Astro.props;
+const t = useTranslations(lang);
+const secondaryHref = Astro.props.secondaryHref ?? localizePath('/contact', lang);
+const secondaryLabel = Astro.props.secondaryLabel ?? t.cta.contactUs;
+---
+
+<section class="relative overflow-hidden border-y border-line bg-surface/50" data-reveal-group>
+  <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+  <PyramidMark
+    variant="line"
+    class="pointer-events-none absolute -bottom-10 opacity-[0.07] w-[26rem]"
+    aria-hidden="true"
+  />
+  <div class="relative mx-auto max-w-6xl px-5 py-20 text-center md:py-28">
+    <h2
+      class="font-display mx-auto max-w-3xl font-bold text-text"
+      style="font-family: var(--font-display); font-size: var(--text-h2);"
+      data-reveal
+    >
+      {t.ctaBand.title}
+    </h2>
+    <div class="mt-9 flex flex-wrap items-center justify-center gap-4" data-reveal>
+      <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={placement}>
+        <Icon name="whatsapp" size={18} />
+        {t.cta.whatsapp}
+      </Button>
+      <Button href={secondaryHref} variant="secondary">{secondaryLabel}</Button>
+    </div>
+  </div>
+</section>

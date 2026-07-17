@@ -88,6 +88,11 @@ h4 {
   display: inline-block;
 }
 
+/* Directional icons mirror on RTL pages (SPEC §6.4 RTL discipline) */
+[dir='rtl'] .dir-flip {
+  transform: scaleX(-1);
+}
+
 /* ------------------------------------------------------------------ */
 /* Texture — film grain + orange glow (SPEC §6.3)                      */
 /* ------------------------------------------------------------------ */
@@ -238,9 +243,33 @@ html[lang='ar'] .eyebrow {
 /* LCP-safe: elements are fully visible without JS; the motion script  */
 /* sets its own "from" states at runtime only when allowed to animate. */
 
+/* Page transitions — quick fade + lift (SPEC §8), transform/opacity only */
+@keyframes vt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes vt-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+::view-transition-old(root) {
+  animation: vt-leave 0.18s ease-in both;
+}
+::view-transition-new(root) {
+  animation: vt-enter 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
   .marquee-track {
     animation: none;

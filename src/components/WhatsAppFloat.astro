@@ -1,0 +1,61 @@
+---
+/**
+ * Floating WhatsApp button (SPEC §6.4): fixed bottom corner, mirrors to the
+ * inline-end side automatically (bottom-right LTR / bottom-left RTL),
+ * always visible, fires whatsapp_click.
+ */
+import type { Lang } from '@/config/site';
+import { waLink } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<a
+  href={waLink(lang)}
+  target="_blank"
+  rel="noopener"
+  class="wa-float fixed bottom-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-orange text-btn-ink shadow-lg transition-transform hover:scale-105 hover:bg-orange-hot"
+  style="inset-inline-end: 1.25rem;"
+  aria-label={t.cta.whatsappFloat}
+  data-event="whatsapp_click"
+  data-placement="float"
+>
+  <Icon name="whatsapp" size={26} />
+</a>
+
+<style>
+  .wa-float::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    box-shadow: 0 0 0 0 rgba(242, 110, 36, 0.5);
+    animation: wa-pulse 2.8s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes wa-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(242, 110, 36, 0.45);
+      opacity: 1;
+    }
+    70% {
+      box-shadow: 0 0 0 14px rgba(242, 110, 36, 0);
+      opacity: 1;
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(242, 110, 36, 0);
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wa-float::after {
+      animation: none;
+    }
+  }
+</style>

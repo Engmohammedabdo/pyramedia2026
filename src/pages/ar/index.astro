@@ -1,0 +1,17 @@
+---
+// Temporary smoke page — replaced by the real homepage in build phase 3.
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SITE } from '@/config/site';
+---
+
+<BaseLayout
+  lang="ar"
+  title="بيراميديا إكس — وكالة تسويق رقمي في دبي"
+  description="وكالة تسويق رقمي متكاملة في دبي."
+>
+  <section class="mx-auto max-w-6xl px-5 py-32">
+    <h1 class="font-display font-bold" style="font-size: var(--text-h1);">
+      {SITE.tagline}
+    </h1>
+  </section>
+</BaseLayout>

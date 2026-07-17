@@ -1,0 +1,146 @@
+---
+/**
+ * Oversized footer (SPEC §6.4): big wordmark, nav columns, contact block,
+ * socials, license trust line, auto-year copyright.
+ */
+import { getCollection } from 'astro:content';
+import type { Lang } from '@/config/site';
+import { SITE, TEL_LINK, MAILTO_LINK, licenseLine } from '@/config/site';
+import { useTranslations, localizePath } from '@/i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+
+const navLinks = [
+  { href: localizePath('/', lang), label: t.nav.home },
+  { href: localizePath('/about', lang), label: t.nav.about },
+  { href: localizePath('/services', lang), label: t.nav.services },
+  { href: localizePath('/contact', lang), label: t.nav.contact },
+];
+
+const services = (await getCollection('services', (e) => e.data.lang === lang)).sort(
+  (a, b) => a.data.order - b.data.order
+);
+
+const address = lang === 'ar' ? SITE.addressAr : SITE.addressEn;
+
+const socials = [
+  { href: SITE.socials.instagram, icon: 'instagram', label: 'Instagram' },
+  { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },
+  { href: SITE.socials.linkedin, icon: 'linkedin', label: 'LinkedIn' },
+] as const;
+---
+
+<footer class="relative overflow-hidden border-t border-line bg-surface/40">
+  <div class="mx-auto max-w-6xl px-5 pb-10 pt-16">
+    <!-- Oversized wordmark -->
+    <p
+      class="footer-wordmark select-none text-center font-bold leading-none tracking-tight text-text/8"
+      style="font-family: var(--font-display); font-size: clamp(3.2rem, 12.5vw, 11rem);"
+      dir="ltr"
+      aria-hidden="true"
+    >
+      PYRAMEDIA&nbsp;X
+    </p>
+
+    <div class="mt-14 grid gap-12 md:grid-cols-12">
+      <div class="md:col-span-4">
+        <p class="font-display text-lg font-bold text-text" style="font-family: var(--font-display);" dir="ltr">
+          PYRAMEDIA<span class="text-orange">&nbsp;X</span>
+        </p>
+        <p class="mt-2 text-sm font-semibold tracking-wide text-orange" dir="ltr">
+          {SITE.tagline}
+        </p>
+        <ul class="mt-6 flex gap-3" aria-label={t.footer.follow}>
+          {
+            socials.map((s) => (
+              <li>
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener"
+                  class="grid h-10 w-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-orange hover:text-orange"
+                  aria-label={s.label}
+                >
+                  <Icon name={s.icon} size={18} />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <nav class="md:col-span-2" aria-label={t.footer.navigate}>
+        <h2 class="eyebrow">{t.footer.navigate}</h2>
+        <ul class="mt-4 space-y-3 text-sm">
+          {
+            navLinks.map((link) => (
+              <li>
+                <a href={link.href} class="text-muted transition-colors hover:text-text">
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <nav class="md:col-span-3" aria-label={t.footer.services}>
+        <h2 class="eyebrow">{t.footer.services}</h2>
+        <ul class="mt-4 space-y-3 text-sm">
+          {
+            services.map((s) => (
+              <li>
+                <a
+                  href={localizePath(`/services/${s.data.slug}`, lang)}
+                  class="text-muted transition-colors hover:text-text"
+                >
+                  {s.data.name}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <div class="md:col-span-3">
+        <h2 class="eyebrow">{t.footer.contact}</h2>
+        <ul class="mt-4 space-y-3 text-sm">
+          <li>
+            <a
+              href={TEL_LINK}
+              class="ltr-isolate text-muted transition-colors hover:text-text"
+              data-event="call_click"
+              data-placement="footer"
+            >
+              {SITE.phoneDisplay}
+            </a>
+          </li>
+          <li>
+            <a
+              href={MAILTO_LINK}
+              class="ltr-isolate text-muted transition-colors hover:text-text"
+              data-event="email_click"
+              data-placement="footer"
+            >
+              {SITE.email}
+            </a>
+          </li>
+          <li class="text-muted">{address}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-14 border-t border-line pt-6 text-center">
+      <p class="text-xs text-muted">{licenseLine(lang)}</p>
+      <p class="mt-2 text-xs text-muted/70">
+        © <span class="ltr-isolate">{year}</span> {lang === 'ar' ? 'بيراميديا إكس' : SITE.brand} — {t.footer.rights}
+      </p>
+    </div>
+  </div>
+</footer>

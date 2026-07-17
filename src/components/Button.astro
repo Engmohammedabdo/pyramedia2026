@@ -1,0 +1,41 @@
+---
+/**
+ * Buttons per SPEC §6.4 — primary: orange bg + dark text, magnetic hover +
+ * glow (magnetism added by the motion script via .magnetic). secondary:
+ * 1px line border with an arrow that translates on hover (flips in RTL).
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary';
+  /** analytics event name, e.g. whatsapp_click (SPEC §10) */
+  event?: string;
+  /** analytics placement payload, e.g. hero / nav / cta-band */
+  placement?: string;
+  arrow?: boolean;
+  external?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  event,
+  placement,
+  arrow = variant === 'secondary',
+  external = href.startsWith('http'),
+  class: className = '',
+} = Astro.props;
+---
+
+<a
+  href={href}
+  class={`${variant === 'primary' ? 'btn-primary magnetic' : 'btn-secondary'} ${className}`}
+  data-event={event}
+  data-placement={placement}
+  {...external ? { target: '_blank', rel: 'noopener' } : {}}
+>
+  <slot />
+  {arrow && <Icon name="arrow-right" size={18} class="btn-arrow" />}
+</a>

@@ -1,0 +1,199 @@
+---
+/**
+ * Sticky dark-glass nav (SPEC §6.4): logo, links, language switcher
+ * (EN ⇄ ع — same page in the other language), orange WhatsApp CTA.
+ * Mobile: full-screen overlay with staggered link animation.
+ */
+import type { Lang } from '@/config/site';
+import { SITE, waLink } from '@/config/site';
+import { useTranslations, localizePath, switchLangPath } from '@/i18n';
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const links = [
+  { href: localizePath('/', lang), label: t.nav.home },
+  { href: localizePath('/about', lang), label: t.nav.about },
+  { href: localizePath('/services', lang), label: t.nav.services },
+  { href: localizePath('/contact', lang), label: t.nav.contact },
+];
+
+const currentPath = Astro.url.pathname;
+const switchHref = switchLangPath(currentPath);
+const homeHref = localizePath('/', lang);
+
+function isActive(href: string): boolean {
+  const clean = (p: string) => (p !== '/' && p !== '/ar/' ? p.replace(/\/$/, '') : p);
+  return clean(currentPath) === clean(href);
+}
+---
+
+<header
+  class="fixed inset-inline-0 top-0 z-50 border-b border-line bg-surface/60 backdrop-blur-lg"
+  id="site-nav"
+>
+  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 md:h-[4.5rem]">
+    <a href={homeHref} class="shrink-0" aria-label={SITE.brand}>
+      <Logo />
+    </a>
+
+    <nav class="hidden items-center gap-7 md:flex" aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Primary'}>
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class="nav-link relative py-1 text-sm font-medium text-muted transition-colors hover:text-text"
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <a
+        href={switchHref}
+        class="grid h-9 w-9 place-items-center rounded-full border border-line text-sm font-semibold text-text transition-colors hover:border-orange hover:text-orange"
+        aria-label={t.nav.langSwitch}
+        lang={lang === 'ar' ? 'en' : 'ar'}
+        data-lang-switch
+      >
+        {t.nav.langLabel}
+      </a>
+
+      <a
+        href={waLink(lang)}
+        target="_blank"
+        rel="noopener"
+        class="btn-primary hidden !px-5 !py-2.5 text-sm sm:inline-flex"
+        data-event="whatsapp_click"
+        data-placement="nav"
+      >
+        <Icon name="whatsapp" size={17} />
+        {t.cta.whatsapp}
+      </a>
+
+      <button
+        type="button"
+        class="grid h-10 w-10 place-items-center rounded-full border border-line text-text md:hidden"
+        aria-label={t.nav.menuOpen}
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        data-menu-toggle
+      >
+        <span class="menu-icon-open"><Icon name="menu" size={22} /></span>
+        <span class="menu-icon-close hidden"><Icon name="x" size={22} /></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile full-screen overlay -->
+  <div
+    id="mobile-menu"
+    class="fixed inset-0 top-16 z-40 hidden flex-col justify-between bg-bg/97 px-6 pb-10 pt-10 backdrop-blur-xl md:hidden!"
+  >
+    <nav class="flex flex-col gap-2" aria-label={lang === 'ar' ? 'قائمة الجوال' : 'Mobile'}>
+      {
+        links.map((link, i) => (
+          <a
+            href={link.href}
+            class="menu-item font-display border-b border-line py-4 text-3xl font-bold text-text"
+            style={`transition-delay: ${80 + i * 70}ms`}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="menu-item" style="transition-delay: 400ms">
+      <a
+        href={waLink(lang)}
+        target="_blank"
+        rel="noopener"
+        class="btn-primary w-full justify-center"
+        data-event="whatsapp_click"
+        data-placement="mobile-menu"
+      >
+        <Icon name="whatsapp" size={18} />
+        {t.cta.whatsapp}
+      </a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    inset-block-end: -2px;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    block-size: 2px;
+    background: var(--color-orange);
+    transform: scaleX(0);
+    transform-origin: var(--underline-origin, left);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  :global([dir='rtl']) .nav-link::after {
+    --underline-origin: right;
+  }
+  .nav-link:hover::after,
+  .nav-link[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+
+  /* Staggered overlay links */
+  #mobile-menu .menu-item {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.4s ease,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  #mobile-menu.menu-open .menu-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #mobile-menu .menu-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function initNav() {
+    const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+    const menu = document.getElementById('mobile-menu');
+    if (!toggle || !menu) return;
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('hidden', !open);
+      menu.classList.toggle('flex', open);
+      document.documentElement.style.overflow = open ? 'hidden' : '';
+      toggle.querySelector('.menu-icon-open')?.classList.toggle('hidden', open);
+      toggle.querySelector('.menu-icon-close')?.classList.toggle('hidden', !open);
+      // next frame so the transition runs
+      requestAnimationFrame(() => menu.classList.toggle('menu-open', open));
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+    menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setOpen(false);
+    });
+  }
+  document.addEventListener('astro:page-load', initNav);
+</script>

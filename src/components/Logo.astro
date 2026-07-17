@@ -1,0 +1,18 @@
+---
+/** PYRAMEDIA X lockup — pyramid mark + wordmark (SPEC §4). */
+import PyramidMark from './PyramidMark.astro';
+
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<span class={`inline-flex items-center gap-2.5 ${className}`}>
+  <PyramidMark variant="logo" class="h-6 w-9 shrink-0" />
+  <span
+    class="font-display text-text text-lg font-bold tracking-wide whitespace-nowrap"
+    style="font-family: var(--font-display);"
+    dir="ltr">PYRAMEDIA<span class="text-orange">&nbsp;X</span></span
+  >
+</span>

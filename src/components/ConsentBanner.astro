@@ -1,0 +1,62 @@
+---
+/**
+ * Minimal bilingual consent banner (SPEC §10) — bottom sheet, Accept /
+ * Decline, persisted in localStorage. Decline ⇒ no analytics scripts load.
+ * The analytics loader listens for the pyx:consent event (see Analytics.astro).
+ */
+import type { Lang } from '@/config/site';
+import { useTranslations } from '@/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div
+  id="consent-banner"
+  class="fixed inset-inline-0 bottom-0 z-[70] hidden translate-y-4 border-t border-line bg-surface-2/95 opacity-0 backdrop-blur-lg transition-[transform,opacity] duration-300"
+  role="region"
+  aria-label={lang === 'ar' ? 'إعدادات الخصوصية' : 'Privacy choices'}
+>
+  <div class="mx-auto flex max-w-6xl flex-col items-start gap-4 px-5 py-5 sm:flex-row sm:items-center">
+    <p class="flex-1 text-sm text-muted">{t.consent.text}</p>
+    <div class="flex shrink-0 gap-3">
+      <button type="button" class="btn-secondary !px-5 !py-2 text-sm" data-consent="declined">
+        {t.consent.decline}
+      </button>
+      <button type="button" class="btn-primary !px-5 !py-2 text-sm" data-consent="accepted">
+        {t.consent.accept}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const KEY = 'pyx-consent';
+
+  function initConsent() {
+    const banner = document.getElementById('consent-banner');
+    if (!banner) return;
+    const stored = localStorage.getItem(KEY);
+
+    if (!stored) {
+      banner.classList.remove('hidden');
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => banner.classList.remove('translate-y-4', 'opacity-0'))
+      );
+    }
+
+    banner.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const value = btn.dataset.consent as 'accepted' | 'declined';
+        localStorage.setItem(KEY, value);
+        banner.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => banner.classList.add('hidden'), 300);
+        window.dispatchEvent(new CustomEvent('pyx:consent', { detail: value }));
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initConsent);
+</script>
