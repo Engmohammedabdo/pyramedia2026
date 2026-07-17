@@ -15,7 +15,6 @@ import '@fontsource/space-grotesk/latin-700.css';
 import '@fontsource/inter/latin-400.css';
 import '@fontsource/inter/latin-500.css';
 import cairo400Url from '@fontsource/cairo/files/cairo-arabic-400-normal.woff2?url';
-import cairo800Url from '@fontsource/cairo/files/cairo-arabic-800-normal.woff2?url';
 import spaceGrotesk700Url from '@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2?url';
 import inter400Url from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import '@/styles/global.css';
@@ -41,10 +40,9 @@ const { lang, title, description, jsonLd = [] } = Astro.props;
 const t = useTranslations(lang);
 const dir = dirFor(lang);
 
-const preloads =
-  lang === 'ar'
-    ? [cairo800Url, cairo400Url]
-    : [spaceGrotesk700Url, inter400Url];
+// Preload only the font the LCP text renders in — extra preloads compete
+// for bandwidth on the critical path (SPEC §12).
+const preloads = lang === 'ar' ? [cairo400Url] : [spaceGrotesk700Url, inter400Url];
 ---
 
 <!doctype html>

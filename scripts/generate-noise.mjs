@@ -5,12 +5,13 @@
  */
 import sharp from 'sharp';
 
-const size = 128;
+const size = 64;
 const raw = Buffer.alloc(size * size);
-for (let i = 0; i < raw.length; i++) raw[i] = Math.floor(Math.random() * 256);
+// Quantized to 8 levels — indistinguishable at 3% opacity, far smaller file.
+for (let i = 0; i < raw.length; i++) raw[i] = Math.floor(Math.random() * 8) * 32;
 
 await sharp(raw, { raw: { width: size, height: size, channels: 1 } })
-  .png({ compressionLevel: 9 })
+  .png({ compressionLevel: 9, colours: 8 })
   .toFile('public/noise.png');
 
 console.log('public/noise.png written');

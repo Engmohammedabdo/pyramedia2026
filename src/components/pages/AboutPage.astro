@@ -84,7 +84,7 @@ const c = page.data as any;
         c.methodology.stages.map((stage: { name: string; body: string }, i: number) => (
           <li class="flex gap-5" data-reveal>
             <span
-              class="font-display text-4xl font-bold text-orange/30"
+              class="font-display text-4xl font-bold text-orange/70"
               dir="ltr"
               aria-hidden="true"
             >
@@ -117,7 +117,7 @@ const c = page.data as any;
         </h2>
         <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
         <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.bio}</p>
-        <p class="mt-8 border-t border-line pt-5 text-xs text-muted/80">{licenseLine(lang)}</p>
+        <p class="mt-8 border-t border-line pt-5 text-xs text-muted">{licenseLine(lang)}</p>
       </div>
     </div>
   </section>

@@ -57,7 +57,8 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
           ><span class="hero-line-inner block text-orange">{c.hero.h1Line2}</span></span
         >
       </h1>
-      <p class="mt-7 max-w-2xl text-lg text-muted md:text-xl" data-hero-fade>
+      <!-- Paints untouched; entrance motion is on the CTA row -->
+      <p class="mt-7 max-w-2xl text-base text-muted md:text-xl">
         {c.hero.sub}
       </p>
       <div class="mt-10 flex flex-wrap items-center gap-4" data-hero-fade>
@@ -85,7 +86,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
           [false, true].map((dup) => (
             <ul class="flex shrink-0 items-center" aria-hidden={dup ? 'true' : undefined} data-dup={dup ? 'true' : undefined}>
               {c.trustedBy.clients.map((client: string) => (
-                <li class="mx-8 whitespace-nowrap text-lg font-medium text-muted/80 md:mx-12 md:text-xl">
+                <li class="mx-8 whitespace-nowrap text-lg font-medium text-muted md:mx-12 md:text-xl">
                   {client}
                 </li>
               ))}
@@ -97,7 +98,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
   </section>
 
   <!-- ──────────────────── 3 · Services grid ───────────────────── -->
-  <section class="mx-auto max-w-6xl px-5 py-24 md:py-32" data-reveal-group>
+  <section class="cv-auto mx-auto max-w-6xl px-5 py-24 md:py-32" data-reveal-group>
     <p class="eyebrow" data-reveal>{c.services.eyebrow}</p>
     <h2
       class="font-display mt-3 max-w-2xl font-bold text-text"
@@ -150,7 +151,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
         {
           c.methodology.stages.map((stage: { name: string; blurb: string }, i: number) => (
             <li class="method-stage card flex w-[19rem] shrink-0 flex-col p-7 md:w-[23rem]">
-              <span class="font-display text-5xl font-bold text-orange/25" aria-hidden="true" dir="ltr">
+              <span class="font-display text-5xl font-bold text-orange/70" aria-hidden="true" dir="ltr">
                 {String(i + 1).padStart(2, '0')}
               </span>
               <h3 class="font-display mt-5 text-2xl font-bold text-text">{stage.name}</h3>
@@ -164,7 +165,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
   </section>
 
   <!-- ──────────────────── 5 · Why PyramediaX ──────────────────── -->
-  <section class="mx-auto max-w-6xl px-5 py-24 md:py-32" data-reveal-group>
+  <section class="cv-auto mx-auto max-w-6xl px-5 py-24 md:py-32" data-reveal-group>
     <p class="eyebrow" data-reveal>{c.why.eyebrow}</p>
     <h2
       class="font-display mt-3 max-w-2xl font-bold text-text"
@@ -186,7 +187,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
   </section>
 
   <!-- ──────────────────── 6 · Founder teaser ──────────────────── -->
-  <section class="border-t border-line bg-surface/30">
+  <section class="cv-auto border-t border-line bg-surface/30">
     <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-24 md:grid-cols-2 md:py-32" data-reveal-group>
       <FounderPanel lang={lang} class="max-w-md" data-reveal />
       <div data-reveal>

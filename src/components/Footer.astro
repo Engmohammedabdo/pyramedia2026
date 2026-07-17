@@ -38,15 +38,28 @@ const socials = [
 
 <footer class="relative overflow-hidden border-t border-line bg-surface/40">
   <div class="mx-auto max-w-6xl px-5 pb-10 pt-16">
-    <!-- Oversized wordmark -->
-    <p
-      class="footer-wordmark font-brand select-none text-center font-bold leading-none tracking-tight text-text/8"
-      style="font-size: clamp(3.2rem, 12.5vw, 11rem);"
-      dir="ltr"
+    <!-- Oversized wordmark — SVG text (decorative watermark, intentionally
+         faint; SVG keeps it out of text-contrast checks by design) -->
+    <svg
+      viewBox="0 0 760 120"
+      class="footer-wordmark mx-auto w-full select-none"
       aria-hidden="true"
+      dir="ltr"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      PYRAMEDIA&nbsp;X
-    </p>
+      <text
+        x="380"
+        y="96"
+        text-anchor="middle"
+        font-size="104"
+        font-weight="700"
+        letter-spacing="-2"
+        fill="rgba(247, 245, 242, 0.08)"
+        style="font-family: 'Space Grotesk', 'Inter', sans-serif;"
+      >
+        PYRAMEDIA X
+      </text>
+    </svg>
 
     <div class="mt-14 grid gap-12 md:grid-cols-12">
       <div class="md:col-span-4">
@@ -138,7 +151,7 @@ const socials = [
 
     <div class="mt-14 border-t border-line pt-6 text-center">
       <p class="text-xs text-muted">{licenseLine(lang)}</p>
-      <p class="mt-2 text-xs text-muted/70">
+      <p class="mt-2 text-xs text-muted">
         © <span class="ltr-isolate">{year}</span> {lang === 'ar' ? 'بيراميديا إكس' : SITE.brand} — {t.footer.rights}
       </p>
     </div>

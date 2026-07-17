@@ -92,11 +92,14 @@ function isActive(href: string): boolean {
     </div>
   </div>
 
-  <!-- Mobile full-screen overlay -->
-  <div
-    id="mobile-menu"
-    class="fixed inset-0 top-16 z-40 hidden flex-col justify-between bg-bg/97 px-6 pb-10 pt-10 backdrop-blur-xl md:hidden!"
-  >
+</header>
+
+<!-- Mobile full-screen overlay. Lives OUTSIDE <header>: its backdrop-blur
+     creates a containing block that would trap this fixed element. -->
+<div
+  id="mobile-menu"
+  class="fixed inset-0 top-16 z-40 hidden flex-col justify-between bg-bg/97 px-6 pb-10 pt-10 backdrop-blur-xl md:hidden!"
+>
     <nav class="flex flex-col gap-2" aria-label={lang === 'ar' ? 'قائمة الجوال' : 'Mobile'}>
       {
         links.map((link, i) => (
@@ -124,8 +127,7 @@ function isActive(href: string): boolean {
         {t.cta.whatsapp}
       </a>
     </div>
-  </div>
-</header>
+</div>
 
 <style>
   .nav-link::after {

@@ -19,15 +19,44 @@
   --color-white: #ffffff;
   --color-transparent: transparent;
 
-  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-arabic: 'Cairo', 'Tajawal', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Space Grotesk Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: 'Cairo', 'Cairo Fallback', 'Tajawal', ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 1.25rem; /* 20px card radius, SPEC §6.4 */
 
   --text-h1: clamp(2.5rem, 6vw, 5.5rem); /* SPEC §6.2 */
   --text-h2: clamp(1.9rem, 4vw, 3.25rem);
   --text-h3: clamp(1.3rem, 2.2vw, 1.75rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* Metric-matched local fallbacks — the webfont swap repaints at the   */
+/* same box size, so LCP settles on first paint (SPEC §12 budgets).    */
+/* ------------------------------------------------------------------ */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  size-adjust: 107.12%;
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Space Grotesk Fallback';
+  src: local('Arial');
+  size-adjust: 104.5%;
+  ascent-override: 94.3%;
+  descent-override: 26.5%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Cairo Fallback';
+  src: local('Tahoma');
+  size-adjust: 103%;
+  ascent-override: 121.6%;
+  descent-override: 51.4%;
+  line-gap-override: 0%;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,7 +93,7 @@ html[lang='ar'] .font-display {
 /* Brand marks (wordmark, tagline, hero H1) keep Space Grotesk on BOTH
    language versions — the tagline is a brand mark, not body copy (SPEC §2.4) */
 .font-brand {
-  font-family: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Space Grotesk Fallback', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,
@@ -73,6 +102,14 @@ h3,
 h4 {
   color: var(--color-text);
   text-wrap: balance;
+}
+/* Balancing is layout-expensive with Arabic bidi shaping — plain wrapping
+   reads equally well with Cairo's generous metrics. */
+html[lang='ar'] h1,
+html[lang='ar'] h2,
+html[lang='ar'] h3,
+html[lang='ar'] h4 {
+  text-wrap: wrap;
 }
 
 ::selection {
@@ -110,7 +147,7 @@ h4 {
   pointer-events: none;
   opacity: 0.03;
   background-image: url('/noise.png');
-  background-size: 128px 128px;
+  background-size: 64px 64px;
 }
 
 .glow-orange {
@@ -234,6 +271,15 @@ html[lang='ar'] .eyebrow {
   .cursor-dot {
     display: none;
   }
+}
+
+/* Below-the-fold layout containment — these regions are never in the first
+   viewport; skipping their layout/shaping work speeds first paint. The
+   pinned methodology section is excluded (ScrollTrigger measures it). */
+footer,
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 780px;
 }
 
 /* Skip link (SPEC §12) */

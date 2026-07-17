@@ -257,28 +257,49 @@ function initCursor() {
 /* Lifecycle                                                           */
 /* ------------------------------------------------------------------ */
 let ctx: gsap.Context | null = null;
+let deferredCtx: gsap.Context | null = null;
+let booted = false;
 
 function boot() {
+  if (booted) return;
+  booted = true;
   if (reduced()) return; // SPEC §8 law 4 — CSS media query handles the rest
 
-  initLenis();
-  initCursor();
-
+  // Visible-immediately work only; everything scroll-dependent is deferred
+  // past first paint so the LCP render is never contended.
   ctx = gsap.context(() => {
     heroIntro();
-    scrollReveals();
-    parallax();
-    methodologyPin();
-    magneticButtons();
-    footerSkew();
   });
 
-  // Recalculate trigger positions once fonts have settled
-  document.fonts?.ready.then(() => ScrollTrigger.refresh());
+  const later = () => {
+    initLenis();
+    initCursor();
+    deferredCtx = gsap.context(() => {
+      scrollReveals();
+      parallax();
+      methodologyPin();
+      magneticButtons();
+      footerSkew();
+    });
+    // Recalculate trigger positions once fonts have settled
+    document.fonts?.ready.then(() => ScrollTrigger.refresh());
+  };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(later, { timeout: 1000 });
+  } else {
+    setTimeout(later, 250);
+  }
 }
 
 document.addEventListener('astro:page-load', boot);
 document.addEventListener('astro:before-swap', () => {
+  booted = false;
   ctx?.revert();
   ctx = null;
+  deferredCtx?.revert();
+  deferredCtx = null;
 });
+
+// This module is dynamically imported after the window load event — the
+// initial astro:page-load has already fired by then, so boot directly.
+boot();

@@ -59,3 +59,7 @@ function bind() {
 }
 
 document.addEventListener('astro:page-load', bind);
+
+// Dynamically imported after the load event — bind immediately as well
+// (the initial astro:page-load has already fired; `bound` guards doubles).
+bind();

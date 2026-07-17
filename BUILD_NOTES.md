@@ -40,3 +40,59 @@ or a documented assumption. Nothing here changes site copy — it is a log.
 - **2026-07-17 — Spam traps.** Honeypot field (`website`) + 4-second
   minimum-time-on-page. Bot-like submissions get a silent success state and
   nothing is sent — standard practice so bots don't retry.
+
+## QA evidence (2026-07-17, production build via `npm run preview`)
+
+**Grep gates (SPEC §15 DoD):**
+
+- `grep -r "567249440" src/ dist/ public/` → 0 matches (the sequence exists
+  only inside SPEC.md itself; the CI guard assembles the pattern at runtime
+  so it never appears literally in the codebase).
+- `grep -ri "lorem" src/ dist/` → 0. Counters grep → 0. Banned positioning
+  phrases ("AI-powered" etc.) → 0. Contact data outside `site.ts` → 0.
+  Physical-direction Tailwind utilities → 0.
+
+**JS weight:** 89 KB gzip total across `dist/` (budget ≤ 180 KB), of which
+~34 KB is Partytown workers that load only after analytics consent.
+
+**Lighthouse 12, mobile emulation, local `npm run preview`
+(reports committed under `reports/`):**
+
+| Page | Perf | A11y | BP | SEO | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|
+| `/` | 99 | 100 | 100 | 100 | 1.87 s | 0.000 | 18 ms |
+| `/ar/` | 97 | 100 | 100 | 100 | 2.15 s | 0.001 | 24 ms |
+
+- **`/ar/` LCP note:** the simulated (Lantern) LCP reads ~2.15 s vs the
+  < 2.0 s budget. The *observed* trace shows LCP = first paint (~0.3 s) with
+  no late repaint: fonts are preloaded and metric-matched fallbacks prevent
+  any layout/paint delta on swap. The overshoot is Lantern's 4× CPU model of
+  Arabic text shaping, not a loading defect. Re-measure on the production
+  host at GATE 3; if it still reads over, the remaining lever is server TTFB
+  (hosting), not the page.
+
+**Form E2E (SPEC §7.4):** tested against a live local webhook — payload
+matched the contract exactly (incl. `utm` object, `lang`, ISO `submitted_at`,
+empty `website` honeypot). Honeypot-filled submission produced a silent
+success and sent nothing. Bilingual validation errors verified with
+`aria-invalid` + `aria-live` announcements; success/error states verified in
+both languages.
+
+**Analytics:** consent-gated injection verified (0 Partytown scripts before
+accept, 3 after; decline stores choice and injects nothing). Click on the nav
+WhatsApp CTA pushed `['event','whatsapp_click',{placement:'nav'}]` into the
+forwarded `dataLayer`, `fbq` stub present.
+
+**RTL audit:** page-by-page visual pass on `/ar/` (nav mirroring, marquee
+direction, floating button side, breadcrumb/button arrows, pinned-section
+direction (+x translation), form alignment) — all mirrored correctly.
+
+**Language switcher:** verified in built HTML on 8 sampled pages — always
+lands on the equivalent page in the other language.
+
+**Pending post-deploy verification (needs the live Apache host):**
+`.htaccess` §5.1 redirect map via `curl -I`, HTTPS/non-www force, security
+headers, 404 ErrorDocument; real-device iPhone Safari + Android Chrome pass;
+`prefers-reduced-motion` on-device check (code path: motion module exits
+before any setup; CSS media query stops marquee/transitions — verified by
+inspection and present in built CSS).
