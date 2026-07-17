@@ -26,6 +26,7 @@ import Nav from '@/components/Nav.astro';
 import Footer from '@/components/Footer.astro';
 import WhatsAppFloat from '@/components/WhatsAppFloat.astro';
 import ConsentBanner from '@/components/ConsentBanner.astro';
+import Analytics from '@/components/Analytics.astro';
 import Seo from '@/components/Seo.astro';
 
 interface Props {
@@ -66,9 +67,11 @@ const preloads =
     <Footer lang={lang} />
     <WhatsAppFloat lang={lang} />
     <ConsentBanner lang={lang} />
+    <Analytics />
     <slot name="scripts" />
     <script>
       import '@/scripts/motion';
+      import '@/scripts/analytics';
     </script>
   </body>
 </html>

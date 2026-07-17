@@ -1,0 +1,50 @@
+---
+/**
+ * Consent-gated analytics (SPEC §10). GA4 + Meta Pixel load through
+ * Partytown (web worker) and ONLY after the visitor accepts the consent
+ * banner. Decline ⇒ nothing is injected, ever. Missing env IDs ⇒ this
+ * component renders nothing at all (SPEC §14).
+ */
+import { SITE } from '@/config/site';
+
+const ga4 = SITE.ga4Id; // TODO_GA4_ID — not injected while empty (SPEC §14)
+const pixel = SITE.metaPixelId; // TODO_META_PIXEL_ID — not injected while empty (SPEC §14)
+const enabled = Boolean(ga4 || pixel);
+
+const loader = `
+(function () {
+  var GA4 = ${JSON.stringify(ga4)};
+  var PIXEL = ${JSON.stringify(pixel)};
+  var injected = false;
+  function inject() {
+    if (injected) return;
+    injected = true;
+    if (GA4) {
+      var lib = document.createElement('script');
+      lib.type = 'text/partytown';
+      lib.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4;
+      document.head.appendChild(lib);
+      var init = document.createElement('script');
+      init.type = 'text/partytown';
+      init.text = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + GA4 + "');";
+      document.head.appendChild(init);
+    }
+    if (PIXEL) {
+      var fb = document.createElement('script');
+      fb.type = 'text/partytown';
+      fb.text = "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','" + PIXEL + "');fbq('track','PageView');";
+      document.head.appendChild(fb);
+    }
+    window.dispatchEvent(new CustomEvent('ptupdate'));
+  }
+  try {
+    if (localStorage.getItem('pyx-consent') === 'accepted') inject();
+  } catch (e) {}
+  window.addEventListener('pyx:consent', function (e) {
+    if (e && e.detail === 'accepted') inject();
+  });
+})();
+`;
+---
+
+{enabled && <script is:inline set:html={loader} />}
