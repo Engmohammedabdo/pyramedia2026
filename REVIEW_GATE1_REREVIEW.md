@@ -211,6 +211,59 @@ Fresh AR mobile/RTL/font result at 390×844:
 }
 ```
 
+Fresh narrow-mobile matrix (in-app Browser production preview; each requested
+viewport height was 844 CSS px):
+
+```json
+{
+  "en320": {
+    "url": "http://127.0.0.1:4321/",
+    "innerWidth": 320,
+    "documentClientWidth": 305,
+    "documentScrollWidth": 305,
+    "dir": "ltr",
+    "menu": { "left": 242.390625, "right": 282.390625, "width": 40 },
+    "desktopCtaVisible": false,
+    "desktopCtaWrapperDisplay": "none"
+  },
+  "ar320": {
+    "url": "http://127.0.0.1:4321/ar/",
+    "innerWidth": 320,
+    "documentClientWidth": 305,
+    "documentScrollWidth": 305,
+    "dir": "rtl",
+    "menu": { "left": 22.609375, "right": 62.609375, "width": 40 },
+    "desktopCtaVisible": false,
+    "desktopCtaWrapperDisplay": "none"
+  },
+  "en375": {
+    "url": "http://127.0.0.1:4321/",
+    "innerWidth": 375,
+    "documentClientWidth": 360,
+    "documentScrollWidth": 360,
+    "dir": "ltr",
+    "menu": { "left": 242.390625, "right": 282.390625, "width": 40 },
+    "desktopCtaVisible": false,
+    "desktopCtaWrapperDisplay": "none"
+  },
+  "ar375": {
+    "url": "http://127.0.0.1:4321/ar/",
+    "innerWidth": 375,
+    "documentClientWidth": 360,
+    "documentScrollWidth": 360,
+    "dir": "rtl",
+    "menu": { "left": 77.609375, "right": 117.609375, "width": 40 },
+    "desktopCtaVisible": false,
+    "desktopCtaWrapperDisplay": "none"
+  }
+}
+```
+
+All four narrow-mobile cases PASS: the menu bounds are within the respective
+viewport, `documentScrollWidth <= documentClientWidth`, the desktop CTA has no
+client rects, its responsive wrapper computes to `display: none`, and the EN/AR
+document directions are respectively `ltr`/`rtl`.
+
 Keyboard-only checks:
 
 ```json
