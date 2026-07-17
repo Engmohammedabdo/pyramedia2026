@@ -1,0 +1,258 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ */
+/* Design tokens — SPEC §6.1. The single place colors are defined.     */
+/* ------------------------------------------------------------------ */
+@theme {
+  --color-*: initial;
+  --color-bg: #0e0e0f; /* page background */
+  --color-surface: #17171a; /* cards, nav glass base */
+  --color-surface-2: #1f1f23;
+  --color-brand-dark: #231f20;
+  --color-orange: #f26e24; /* primary — dominant accent */
+  --color-orange-hot: #ff7e33; /* hover state */
+  --color-gold: #f4c430; /* rare accent: thin rules, small tags only */
+  --color-text: #f7f5f2; /* headings */
+  --color-muted: #a6a19b; /* body on dark */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-btn-ink: #141414; /* dark text on orange buttons */
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: 'Cairo', 'Tajawal', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 1.25rem; /* 20px card radius, SPEC §6.4 */
+
+  --text-h1: clamp(2.5rem, 6vw, 5.5rem); /* SPEC §6.2 */
+  --text-h2: clamp(1.9rem, 4vw, 3.25rem);
+  --text-h3: clamp(1.3rem, 2.2vw, 1.75rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+html {
+  background-color: var(--color-bg);
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.7;
+  overflow-x: clip;
+}
+
+/* Arabic pages: Cairo everywhere, tuned line-height for ascenders (SPEC §6.2) */
+html[lang='ar'] body {
+  font-family: var(--font-arabic);
+  line-height: 1.9;
+}
+html[lang='ar'] .font-display {
+  font-family: var(--font-arabic);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+::selection {
+  background-color: var(--color-orange);
+  color: var(--color-btn-ink);
+}
+
+/* Visible focus states everywhere (SPEC §12) */
+:focus-visible {
+  outline: 2px solid var(--color-orange);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Phone numbers & latin fragments inside Arabic text render LTR-isolated */
+.ltr-isolate {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+/* ------------------------------------------------------------------ */
+/* Texture — film grain + orange glow (SPEC §6.3)                      */
+/* ------------------------------------------------------------------ */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+.glow-orange {
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 40%,
+    rgba(242, 110, 36, 0.14),
+    transparent 70%
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared component primitives (SPEC §6.4)                             */
+/* ------------------------------------------------------------------ */
+.eyebrow {
+  color: var(--color-orange);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+html[lang='ar'] .eyebrow {
+  letter-spacing: 0;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(242, 110, 36, 0.45);
+  box-shadow: 0 0 0 1px rgba(242, 110, 36, 0.25), 0 20px 50px -20px rgba(242, 110, 36, 0.18);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: var(--color-orange);
+  color: var(--color-btn-ink);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.9rem 1.75rem;
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+  will-change: transform;
+}
+.btn-primary:hover {
+  background-color: var(--color-orange-hot);
+  box-shadow: 0 0 32px -6px rgba(255, 126, 51, 0.55);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 0.9rem 1.75rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--color-surface);
+}
+/* Arrow slides on hover; RTL flips both icon and travel direction */
+.btn-secondary .btn-arrow {
+  transition: transform 0.25s ease;
+}
+.btn-secondary:hover .btn-arrow {
+  transform: translateX(4px);
+}
+[dir='rtl'] .btn-secondary .btn-arrow {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .btn-secondary:hover .btn-arrow {
+  transform: scaleX(-1) translateX(4px);
+}
+
+/* Skip link (SPEC §12) */
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  background: var(--color-orange);
+  color: var(--color-btn-ink);
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Marquee (SPEC §7.1 s2, §8) — transform-only animation               */
+/* ------------------------------------------------------------------ */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 36s linear infinite;
+}
+/* Mirrored travel direction in RTL */
+[dir='rtl'] .marquee-track {
+  animation-direction: reverse;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion base states (SPEC §8) — JS enhances, CSS never hides content */
+/* ------------------------------------------------------------------ */
+/* LCP-safe: elements are fully visible without JS; the motion script  */
+/* sets its own "from" states at runtime only when allowed to animate. */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
