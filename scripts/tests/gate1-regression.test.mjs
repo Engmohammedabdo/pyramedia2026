@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 const projectRoot = new URL('../../', import.meta.url);
 
@@ -51,4 +51,20 @@ test('component alpha colors come from the token file', async () => {
   assert.match(css, /--color-orange-clear:\s*rgb\(242 110 36 \/ 0\);/);
   assert.doesNotMatch(footer, /rgba\(247, 245, 242/);
   assert.doesNotMatch(whatsapp, /rgba\(242, 110, 36/);
+});
+
+test('owner asset swap slots exist and reject fabricated assets', async () => {
+  const paths = ['src/assets/clients/README.md', 'src/assets/founder/README.md'];
+
+  for (const relativePath of paths) {
+    const entry = await stat(new URL(relativePath, projectRoot));
+    assert.equal(entry.isFile(), true);
+  }
+
+  const clients = await source(paths[0]);
+  const founder = await source(paths[1]);
+  assert.match(clients, /owner-approved real client logos/i);
+  assert.match(clients, /Do not add generated or reconstructed logos/i);
+  assert.match(founder, /real photo supplied by Mohamed Abdou/i);
+  assert.match(founder, /Do not add stock or AI-generated people/i);
 });
