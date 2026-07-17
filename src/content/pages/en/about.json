@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "title": "About PyramediaX — Marketing Agency in Dubai",
+    "description": "A Dubai-licensed full-service digital marketing agency in Deira — what we believe, how we work, and the founder behind PyramediaX."
+  },
+  "hero": {
+    "eyebrow": "About us",
+    "title": "The agency that skips the hype."
+  },
+  "story": [
+    "PyramediaX is a full-service digital marketing agency headquartered in Deira, Port Saeed — Dubai. We work across the disciplines a brand actually needs — branding, social media and content, web, performance ads, SEO, and the automation layer that ties them together — as one team running one system.",
+    "We believe in performance over promises. This industry runs on inflated claims, recycled case studies, and numbers nobody can verify — so we deliberately make none. No invented statistics, no borrowed portfolios. What we put our name on is the work itself, and this website is built to that standard.",
+    "We serve businesses across the UAE and the GCC — companies that want marketing they can hold accountable: clear scope, honest reporting, and work that compounds month over month."
+  ],
+  "values": {
+    "eyebrow": "What we stand for",
+    "title": "Three rules we don't bend.",
+    "items": [
+      {
+        "title": "Performance over promises",
+        "body": "We commit to the work and the reporting, not to outcomes nobody can guarantee. What gets measured honestly gets improved."
+      },
+      {
+        "title": "Systems over chaos",
+        "body": "Retainers run on content systems, automation, and CRM discipline — so quality never depends on anyone's mood or memory."
+      },
+      {
+        "title": "Honesty over hype",
+        "body": "If a number isn't real, it doesn't get said. That rule applies to our clients' campaigns and to every claim on this website."
+      }
+    ]
+  },
+  "methodology": {
+    "eyebrow": "Methodology",
+    "title": "How we work — in full.",
+    "stages": [
+      {
+        "name": "Data",
+        "body": "Every engagement starts with what can be measured: your market, your audience, your accounts, and your current numbers. No strategy is written before the inputs are real."
+      },
+      {
+        "name": "Analysis",
+        "body": "We read the data for signal — where the opportunities sit, what is underperforming, and why. This is where opinions end and evidence takes over."
+      },
+      {
+        "name": "Decision",
+        "body": "Analysis becomes a plan: channels, budgets, priorities, and responsibilities, agreed with you before execution starts. Everyone knows what is being done and why."
+      },
+      {
+        "name": "Execution",
+        "body": "Content, campaigns, and builds ship on schedule as one coordinated system — creative, media, and tech moving together instead of in silos."
+      },
+      {
+        "name": "Result",
+        "body": "Outcomes are measured against the plan we agreed on, and reported in plain language. What worked is visible; what didn't is not hidden."
+      },
+      {
+        "name": "Optimization",
+        "body": "The findings feed the next cycle: winners get scaled, weak points get fixed, and the system compounds. That loop is the product."
+      }
+    ]
+  },
+  "founder": {
+    "eyebrow": "The founder",
+    "bio": "Mohamed Abdou is the founder and CEO of PyramediaX. He leads strategy across marketing and automation for the agency's clients — and he is who you deal with, directly."
+  }
+}

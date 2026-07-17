@@ -1,0 +1,69 @@
+---
+/**
+ * Branded bilingual 404 (SPEC §13.2) — one page serves both languages
+ * (Apache ErrorDocument can only point at a single file), links home.
+ */
+import '@fontsource/cairo/arabic-400.css';
+import '@fontsource/cairo/arabic-800.css';
+import '@fontsource/space-grotesk/latin-700.css';
+import '@fontsource/inter/latin-400.css';
+import '@/styles/global.css';
+import { SITE } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import PyramidMark from '@/components/PyramidMark.astro';
+import Icon from '@/components/Icon.astro';
+
+const en = useTranslations('en');
+const ar = useTranslations('ar');
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>404 — {SITE.brand}</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0E0E0F" />
+  </head>
+  <body class="grain grid min-h-screen place-items-center bg-bg px-5 py-16">
+    <main class="relative w-full max-w-xl text-center">
+      <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+      <PyramidMark variant="line" class="mx-auto w-40 opacity-70" />
+      <p
+        class="mt-8 font-bold text-orange"
+        style="font-family: var(--font-display); font-size: clamp(3rem, 10vw, 5rem); line-height: 1;"
+        dir="ltr"
+      >
+        404
+      </p>
+
+      <section class="mt-8">
+        <h1 class="text-2xl font-bold text-text" style="font-family: var(--font-display);">
+          {en.notFound.title}
+        </h1>
+        <p class="mt-2 text-muted">{en.notFound.body}</p>
+        <a href="/" class="btn-primary mt-5 !px-6 !py-2.5 text-sm">
+          {en.notFound.back}
+          <Icon name="arrow-right" size={16} class="btn-arrow" />
+        </a>
+      </section>
+
+      <hr class="mx-auto mt-10 w-24 border-line" />
+
+      <section dir="rtl" lang="ar" class="mt-10" style="font-family: var(--font-arabic);">
+        <h2 class="text-2xl font-extrabold text-text">{ar.notFound.title}</h2>
+        <p class="mt-2 leading-relaxed text-muted">{ar.notFound.body}</p>
+        <a href="/ar/" class="btn-secondary mt-5 !px-6 !py-2.5 text-sm">
+          {ar.notFound.back}
+          <Icon name="arrow-right" size={16} class="btn-arrow" />
+        </a>
+      </section>
+
+      <p class="mt-12 text-xs text-muted/60" dir="ltr" style="font-family: var(--font-display);">
+        PYRAMEDIA X — {SITE.tagline}
+      </p>
+    </main>
+  </body>
+</html>

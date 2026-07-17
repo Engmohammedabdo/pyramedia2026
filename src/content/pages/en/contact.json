@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "title": "Contact PyramediaX — Marketing Agency in Dubai",
+    "description": "Talk to PyramediaX in Dubai — WhatsApp, phone, email, or the contact form. Tell us what you need and we will get back to you quickly."
+  },
+  "hero": {
+    "eyebrow": "Contact",
+    "title": "Let's talk.",
+    "intro": "Tell us where your marketing stands and where you want it to go. WhatsApp is the fastest way to reach us — the form works too."
+  },
+  "whatsCard": {
+    "title": "Fastest: WhatsApp",
+    "body": "Message us directly — the quickest way to reach the team."
+  },
+  "infoCard": {
+    "title": "Contact details"
+  },
+  "form": {
+    "title": "Send us a message"
+  }
+}

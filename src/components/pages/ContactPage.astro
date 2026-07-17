@@ -1,0 +1,444 @@
+---
+/**
+ * Contact page (SPEC §7.4): form with client-side bilingual validation,
+ * honeypot + minimum-time-on-page trap, POST JSON to PUBLIC_N8N_WEBHOOK_URL
+ * per the payload contract; WhatsApp card; info card with click-to-load map.
+ */
+import { getEntry, getCollection } from 'astro:content';
+import type { Lang } from '@/config/site';
+import { SITE, waLink, TEL_LINK, MAILTO_LINK } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const page = await getEntry('pages', `${lang}/contact`);
+if (!page) throw new Error(`Missing contact content for ${lang}`);
+const c = page.data as any;
+
+const services = (await getCollection('services', (e) => e.data.lang === lang)).sort(
+  (a, b) => a.data.order - b.data.order
+);
+
+const address = lang === 'ar' ? SITE.addressAr : SITE.addressEn;
+const webhookConfigured = Boolean(SITE.n8nWebhookUrl);
+
+// Strings the client-side script needs, embedded once as JSON.
+const formConfig = {
+  webhook: SITE.n8nWebhookUrl,
+  lang,
+  minSeconds: 4,
+  msg: {
+    errRequired: t.form.errRequired,
+    errPhone: t.form.errPhone,
+    errEmail: t.form.errEmail,
+    sending: t.form.sending,
+    send: t.form.send,
+  },
+};
+
+const inputClass =
+  'w-full rounded-xl border border-line bg-surface px-4 py-3 text-text placeholder:text-muted/50 transition-colors focus:border-orange/60 focus:outline-none';
+---
+
+<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-6xl px-5 pb-14 pt-20 md:pt-28">
+      <p class="eyebrow" data-reveal>{c.hero.eyebrow}</p>
+      <h1
+        class="font-display mt-3 font-bold text-text"
+        style="font-family: var(--font-display); font-size: var(--text-h1);"
+      >
+        {c.hero.title}
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted" data-hero-fade>{c.hero.intro}</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-5 pb-24 md:pb-32">
+    <div class="grid gap-8 lg:grid-cols-5" data-reveal-group>
+      <!-- Form -->
+      <div class="card p-8 lg:col-span-3" data-reveal>
+        <h2 class="font-display text-2xl font-bold text-text">{c.form.title}</h2>
+
+        {
+          !webhookConfigured && (
+            <div
+              class="mt-6 flex flex-col items-start gap-4 rounded-xl border border-orange/30 bg-surface-2 p-6"
+              role="status"
+            >
+              {/* TODO_N8N_WEBHOOK: PUBLIC_N8N_WEBHOOK_URL not set — form ships
+                  in disabled state with WhatsApp fallback (SPEC §14). */}
+              <p class="text-muted">{t.form.disabledNotice}</p>
+              <a
+                href={waLink(lang)}
+                target="_blank"
+                rel="noopener"
+                class="btn-primary !px-5 !py-2.5 text-sm"
+                data-event="whatsapp_click"
+                data-placement="contact-form-disabled"
+              >
+                <Icon name="whatsapp" size={17} />
+                {t.cta.whatsapp}
+              </a>
+            </div>
+          )
+        }
+
+        <form
+          id="contact-form"
+          class:list={['mt-6 grid gap-5 sm:grid-cols-2', !webhookConfigured && 'pointer-events-none opacity-50']}
+          novalidate
+          data-config={JSON.stringify(formConfig)}
+          aria-disabled={!webhookConfigured ? 'true' : undefined}
+        >
+          <div>
+            <label for="cf-name" class="mb-2 block text-sm font-medium text-text">{t.form.name} *</label>
+            <input id="cf-name" name="name" type="text" required class={inputClass} autocomplete="name" disabled={!webhookConfigured} />
+            <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="name"></p>
+          </div>
+          <div>
+            <label for="cf-phone" class="mb-2 block text-sm font-medium text-text">{t.form.phone} *</label>
+            <input
+              id="cf-phone"
+              name="phone"
+              type="tel"
+              required
+              dir="ltr"
+              placeholder={t.form.phoneHint}
+              class={`${inputClass} text-start`}
+              autocomplete="tel"
+              disabled={!webhookConfigured}
+            />
+            <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="phone"></p>
+          </div>
+          <div>
+            <label for="cf-email" class="mb-2 block text-sm font-medium text-text">
+              {t.form.email} <span class="font-normal text-muted">({t.form.optional})</span>
+            </label>
+            <input id="cf-email" name="email" type="email" dir="ltr" class={`${inputClass} text-start`} autocomplete="email" disabled={!webhookConfigured} />
+            <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="email"></p>
+          </div>
+          <div>
+            <label for="cf-company" class="mb-2 block text-sm font-medium text-text">
+              {t.form.company} <span class="font-normal text-muted">({t.form.optional})</span>
+            </label>
+            <input id="cf-company" name="company" type="text" class={inputClass} autocomplete="organization" disabled={!webhookConfigured} />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="cf-service" class="mb-2 block text-sm font-medium text-text">{t.form.service}</label>
+            <select id="cf-service" name="service" class={inputClass} disabled={!webhookConfigured}>
+              <option value="general" selected>{t.form.serviceGeneral}</option>
+              {services.map((s) => <option value={s.data.slug}>{s.data.name}</option>)}
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label for="cf-message" class="mb-2 block text-sm font-medium text-text">{t.form.message} *</label>
+            <textarea id="cf-message" name="message" rows="5" required class={inputClass} disabled={!webhookConfigured}
+            ></textarea>
+            <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="message"></p>
+          </div>
+
+          <!-- Honeypot (SPEC §7.4): must stay empty; hidden from humans -->
+          <div class="hp-field" aria-hidden="true">
+            <label for="cf-website">Website</label>
+            <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <button type="submit" class="btn-primary w-full justify-center sm:w-auto" disabled={!webhookConfigured}>
+              <Icon name="send" size={17} />
+              <span data-submit-label>{t.form.send}</span>
+            </button>
+          </div>
+
+          <!-- Announced to screen readers (SPEC §12: errors via aria-live) -->
+          <p class="sr-only" role="status" aria-live="polite" data-form-announcer></p>
+        </form>
+
+        <!-- Success state -->
+        <div id="form-success" class="mt-6 hidden rounded-xl border border-orange/30 bg-surface-2 p-8 text-center" role="status">
+          <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
+            <Icon name="check-circle" size={28} />
+          </span>
+          <h3 class="font-display mt-5 text-xl font-bold text-text">{t.form.successTitle}</h3>
+          <p class="mt-2 text-muted">{t.form.successBody}</p>
+          <a
+            href={waLink(lang)}
+            target="_blank"
+            rel="noopener"
+            class="btn-primary mt-6 !px-5 !py-2.5 text-sm"
+            data-event="whatsapp_click"
+            data-placement="contact-success"
+          >
+            <Icon name="whatsapp" size={17} />
+            {t.cta.whatsapp}
+          </a>
+        </div>
+
+        <!-- Error state -->
+        <div id="form-error" class="mt-6 hidden rounded-xl border border-orange-hot/40 bg-surface-2 p-8 text-center" role="alert">
+          <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange-hot/50 text-orange-hot">
+            <Icon name="alert-circle" size={28} />
+          </span>
+          <h3 class="font-display mt-5 text-xl font-bold text-text">{t.form.errorTitle}</h3>
+          <p class="mt-2 text-muted">{t.form.errorBody}</p>
+          <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <button type="button" class="btn-secondary !px-5 !py-2.5 text-sm" data-form-retry>{t.form.retry}</button>
+            <a
+              href={waLink(lang)}
+              target="_blank"
+              rel="noopener"
+              class="btn-primary !px-5 !py-2.5 text-sm"
+              data-event="whatsapp_click"
+              data-placement="contact-error"
+            >
+              <Icon name="whatsapp" size={17} />
+              {t.cta.whatsapp}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side cards -->
+      <div class="space-y-6 lg:col-span-2">
+        <div class="card p-8" data-reveal>
+          <h2 class="font-display text-xl font-bold text-text">{c.whatsCard.title}</h2>
+          <p class="mt-2 text-muted">{c.whatsCard.body}</p>
+          <a
+            href={waLink(lang)}
+            target="_blank"
+            rel="noopener"
+            class="btn-primary mt-6"
+            data-event="whatsapp_click"
+            data-placement="contact-card"
+          >
+            <Icon name="whatsapp" size={18} />
+            {t.cta.whatsapp}
+          </a>
+        </div>
+
+        <div class="card p-8" data-reveal>
+          <h2 class="font-display text-xl font-bold text-text">{c.infoCard.title}</h2>
+          <ul class="mt-5 space-y-4">
+            <li class="flex items-center gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-orange">
+                <Icon name="phone" size={17} />
+              </span>
+              <a href={TEL_LINK} class="ltr-isolate text-text/90 hover:text-text" data-event="call_click" data-placement="contact-info">
+                {SITE.phoneDisplay}
+              </a>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-orange">
+                <Icon name="mail" size={17} />
+              </span>
+              <a href={MAILTO_LINK} class="ltr-isolate text-text/90 hover:text-text" data-event="email_click" data-placement="contact-info">
+                {SITE.email}
+              </a>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-orange">
+                <Icon name="map-pin" size={17} />
+              </span>
+              <span class="pt-2 text-text/90">{address}</span>
+            </li>
+          </ul>
+
+          {
+            SITE.mapsEmbedUrl ? (
+              /* Click-to-load facade — no third-party iframe cost on page load (SPEC §7.4) */
+              <button
+                type="button"
+                class="btn-secondary mt-6 w-full justify-center text-sm"
+                data-map-load
+                data-map-src={SITE.mapsEmbedUrl}
+              >
+                <Icon name="map-pin" size={16} />
+                {lang === 'ar' ? 'اعرض الخريطة' : 'Load the map'}
+              </button>
+            ) : null
+            /* TODO_MAPS_EMBED_URL: address card renders without the map block
+               until the owner supplies the Google Maps embed URL (SPEC §14). */
+          }
+          <div data-map-slot class="mt-4 hidden overflow-hidden rounded-xl border border-line"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Honeypot: visually removed, still in the DOM for bots */
+  .hp-field {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  function initContactForm() {
+    const form = document.getElementById('contact-form') as HTMLFormElement | null;
+    if (!form || form.dataset.bound === 'true') return;
+    form.dataset.bound = 'true';
+
+    const config = JSON.parse(form.dataset.config || '{}');
+    const successBox = document.getElementById('form-success')!;
+    const errorBox = document.getElementById('form-error')!;
+    const announcer = form.querySelector('[data-form-announcer]')!;
+    const submitLabel = form.querySelector('[data-submit-label]')!;
+    const loadedAt = Date.now();
+
+    if (!config.webhook && import.meta.env.DEV) {
+      // TODO_N8N_WEBHOOK — dev-time reminder per SPEC §14
+      console.warn('[pyramedia] PUBLIC_N8N_WEBHOOK_URL is not set — contact form is disabled.');
+    }
+
+    const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement;
+    const errorEl = (name: string) => form.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+
+    function setError(name: string, message: string | null) {
+      const el = errorEl(name);
+      const input = field(name);
+      if (!el || !input) return;
+      if (message) {
+        el.textContent = message;
+        el.classList.remove('hidden');
+        input.setAttribute('aria-invalid', 'true');
+      } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+        input.removeAttribute('aria-invalid');
+      }
+    }
+
+    function validate(): boolean {
+      let ok = true;
+      const errors: string[] = [];
+      for (const name of ['name', 'phone', 'message']) {
+        if (!field(name).value.trim()) {
+          setError(name, config.msg.errRequired);
+          errors.push(config.msg.errRequired);
+          ok = false;
+        } else setError(name, null);
+      }
+      const phone = field('phone').value.trim();
+      if (phone && !/^\+?[0-9][0-9\s\-()]{6,18}$/.test(phone)) {
+        setError('phone', config.msg.errPhone);
+        errors.push(config.msg.errPhone);
+        ok = false;
+      }
+      const email = field('email').value.trim();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        setError('email', config.msg.errEmail);
+        errors.push(config.msg.errEmail);
+        ok = false;
+      }
+      announcer.textContent = ok ? '' : errors.join(' ');
+      return ok;
+    }
+
+    function utmParams() {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        source: p.get('utm_source') || '',
+        medium: p.get('utm_medium') || '',
+        campaign: p.get('utm_campaign') || '',
+        term: p.get('utm_term') || '',
+        content: p.get('utm_content') || '',
+      };
+    }
+
+    function track(event: string, params: Record<string, string> = {}) {
+      window.dispatchEvent(new CustomEvent('pyx:track', { detail: { event, params } }));
+    }
+
+    function showSuccess() {
+      form.classList.add('hidden');
+      errorBox.classList.add('hidden');
+      successBox.classList.remove('hidden');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!config.webhook) return;
+      if (!validate()) return;
+
+      // Spam traps (SPEC §7.4): filled honeypot or a submission faster than a
+      // human could type gets a silent "success" — nothing is sent.
+      const honeypot = field('website').value;
+      const tooFast = (Date.now() - loadedAt) / 1000 < config.minSeconds;
+      if (honeypot || tooFast) {
+        showSuccess();
+        return;
+      }
+
+      const payload = {
+        name: field('name').value.trim(),
+        phone: field('phone').value.trim(),
+        email: field('email').value.trim(),
+        company: field('company').value.trim(),
+        service: (form.elements.namedItem('service') as HTMLSelectElement).value,
+        message: field('message').value.trim(),
+        lang: config.lang,
+        page_url: window.location.href,
+        utm: utmParams(),
+        submitted_at: new Date().toISOString(),
+        website: honeypot,
+      };
+
+      track('form_submit');
+      submitLabel.textContent = config.msg.sending;
+
+      try {
+        const res = await fetch(config.webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        track('form_success');
+        showSuccess();
+      } catch {
+        form.classList.add('hidden');
+        errorBox.classList.remove('hidden');
+      } finally {
+        submitLabel.textContent = config.msg.send;
+      }
+    });
+
+    document.querySelector('[data-form-retry]')?.addEventListener('click', () => {
+      errorBox.classList.add('hidden');
+      form.classList.remove('hidden');
+    });
+
+    // Click-to-load map facade
+    const mapBtn = document.querySelector<HTMLButtonElement>('[data-map-load]');
+    mapBtn?.addEventListener('click', () => {
+      const slot = document.querySelector<HTMLElement>('[data-map-slot]');
+      if (!slot) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = mapBtn.dataset.mapSrc || '';
+      iframe.width = '100%';
+      iframe.height = '300';
+      iframe.loading = 'lazy';
+      iframe.style.border = '0';
+      iframe.referrerPolicy = 'no-referrer-when-downgrade';
+      iframe.title = 'Google Maps';
+      slot.appendChild(iframe);
+      slot.classList.remove('hidden');
+      mapBtn.classList.add('hidden');
+    });
+  }
+  document.addEventListener('astro:page-load', initContactForm);
+</script>

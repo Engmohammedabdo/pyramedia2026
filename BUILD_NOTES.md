@@ -15,8 +15,8 @@ or a documented assumption. Nothing here changes site copy — it is a log.
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 not injected | Set the env var and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel not injected | Set the env var and rebuild |
 
-(Entries for `TODO_FOUNDER_PHOTO` and `TODO_CLIENT_LOGO_1..5` are added in the
-phases that introduce those components.)
+| `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | On-brand dark panel with pyramid line-art + name/title (never a stock face) | Drop photo into `src/assets/founder/`, replace the panel body with an astro:assets `<Image>` |
+| `TODO_CLIENT_LOGO_1..5` | `src/components/pages/HomePage.astro` (trusted-by marquee) | Styled text of client names in muted color — never fake logos | Drop SVG/PNG files into `src/assets/clients/`, replace the marquee `<li>` text with `<Image>` tags |
 
 ## Decisions log
 
@@ -29,3 +29,14 @@ phases that introduce those components.)
 - **2026-07-17 — URL format.** Astro `build.format: 'file'` + `.htaccess`
   extensionless rewrite so live URLs match SPEC §5 exactly (no trailing
   slashes) on Apache shared hosting.
+- **2026-07-17 — Client names without approved Arabic renderings.** SPEC §4
+  gives Arabic names for two clients only (مجموعة إنجازات، مركز إتمام). The
+  other three (Mazaya Platinum Real Estate, Bashayer Real Estate, SynthCity
+  DXB) appear in their original Latin form on `/ar/` — inventing Arabic
+  renderings would risk fabricating brand names. Swap in
+  `src/content/pages/ar/home.json` if the owner supplies official Arabic names.
+- **2026-07-17 — Legal pages "Last updated".** Set to 2026-07-17 (the real
+  build date), field `lastUpdated` in `src/content/pages/{en,ar}/{privacy,terms}.mdx`.
+- **2026-07-17 — Spam traps.** Honeypot field (`website`) + 4-second
+  minimum-time-on-page. Bot-like submissions get a silent success state and
+  nothing is sent — standard practice so bots don't retry.

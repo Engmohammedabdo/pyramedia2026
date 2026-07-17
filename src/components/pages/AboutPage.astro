@@ -1,0 +1,126 @@
+---
+/**
+ * About page (SPEC §7.2): story (3 paragraphs) → values (3 cards) →
+ * methodology expanded → founder section → license trust line + CTA band.
+ */
+import { getEntry } from 'astro:content';
+import type { Lang } from '@/config/site';
+import { licenseLine } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import FounderPanel from '@/components/FounderPanel.astro';
+import PyramidMark from '@/components/PyramidMark.astro';
+import CtaBand from '@/components/CtaBand.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const page = await getEntry('pages', `${lang}/about`);
+if (!page) throw new Error(`Missing about content for ${lang}`);
+const c = page.data as any;
+---
+
+<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
+  <!-- Story -->
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+    <PyramidMark
+      variant="line"
+      class="pointer-events-none absolute -end-32 top-8 hidden w-[36rem] max-w-none opacity-15 lg:block"
+    />
+    <div class="relative mx-auto max-w-6xl px-5 pb-20 pt-20 md:pt-28">
+      <p class="eyebrow" data-reveal>{c.hero.eyebrow}</p>
+      <h1
+        class="font-display mt-3 max-w-3xl font-bold text-text"
+        style="font-family: var(--font-display); font-size: var(--text-h1);"
+      >
+        {c.hero.title}
+      </h1>
+      <div class="mt-10 max-w-2xl space-y-6 text-lg leading-relaxed text-muted" data-hero-fade>
+        {c.story.map((p: string) => <p>{p}</p>)}
+      </div>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="border-y border-line bg-surface/30">
+    <div class="mx-auto max-w-6xl px-5 py-20 md:py-28" data-reveal-group>
+      <p class="eyebrow" data-reveal>{c.values.eyebrow}</p>
+      <h2
+        class="font-display mt-3 font-bold text-text"
+        style="font-family: var(--font-display); font-size: var(--text-h2);"
+        data-reveal
+      >
+        {c.values.title}
+      </h2>
+      <div class="mt-12 grid gap-5 md:grid-cols-3">
+        {
+          c.values.items.map((v: { title: string; body: string }) => (
+            <article class="card p-8" data-reveal>
+              <h3 class="font-display text-xl font-bold text-text">{v.title}</h3>
+              <p class="mt-3 leading-relaxed text-muted">{v.body}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Methodology expanded -->
+  <section class="mx-auto max-w-6xl px-5 py-20 md:py-28" data-reveal-group>
+    <p class="eyebrow" data-reveal>{c.methodology.eyebrow}</p>
+    <h2
+      class="font-display mt-3 font-bold text-text"
+      style="font-family: var(--font-display); font-size: var(--text-h2);"
+      data-reveal
+    >
+      {c.methodology.title}
+    </h2>
+    <ol class="mt-12 grid gap-x-8 gap-y-10 md:grid-cols-2">
+      {
+        c.methodology.stages.map((stage: { name: string; body: string }, i: number) => (
+          <li class="flex gap-5" data-reveal>
+            <span
+              class="font-display text-4xl font-bold text-orange/30"
+              dir="ltr"
+              aria-hidden="true"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <div>
+              <h3 class="font-display text-xl font-bold text-text">{stage.name}</h3>
+              <p class="mt-2 leading-relaxed text-muted">{stage.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- Founder -->
+  <section class="border-t border-line bg-surface/30">
+    <div
+      class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:py-28"
+      data-reveal-group
+    >
+      <FounderPanel lang={lang} class="max-w-md" data-reveal />
+      <div data-reveal>
+        <p class="eyebrow">{c.founder.eyebrow}</p>
+        <h2
+          class="font-display mt-3 font-bold text-text"
+          style="font-family: var(--font-display); font-size: var(--text-h2);"
+        >
+          {t.founder.name}
+        </h2>
+        <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
+        <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.bio}</p>
+        <p class="mt-8 border-t border-line pt-5 text-xs text-muted/80">{licenseLine(lang)}</p>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand lang={lang} placement="about-cta-band" />
+</BaseLayout>
