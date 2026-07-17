@@ -9,10 +9,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL || 'https://pyramedia.info',
   output: 'static',
-  // 'file' format => /about builds to /about.html; .htaccess serves it
-  // extensionless so live URLs match SPEC §5 exactly (no trailing slash).
+  // File output keeps extensionless Apache URLs. Preview accepts both forms so
+  // the canonical Arabic root /ar/ can be exercised before deployment.
   build: { format: 'file' },
-  trailingSlash: 'never',
+  trailingSlash: 'ignore',
   i18n: {
     locales: ['en', 'ar'],
     defaultLocale: 'en',

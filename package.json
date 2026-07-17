@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build && node scripts/postbuild.mjs",
+    "test:gate1": "node --test scripts/tests/gate1-regression.test.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
