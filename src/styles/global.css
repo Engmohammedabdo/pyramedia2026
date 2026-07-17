@@ -195,6 +195,20 @@ html[lang='ar'] .eyebrow {
   transform: scaleX(-1) translateX(4px);
 }
 
+/* Card link arrows — same travel logic as .btn-arrow, mirrored in RTL */
+.card-arrow {
+  transition: transform 0.3s ease;
+}
+.group:hover .card-arrow {
+  transform: translateX(4px);
+}
+[dir='rtl'] .card-arrow {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .group:hover .card-arrow {
+  transform: scaleX(-1) translateX(4px);
+}
+
 /* Skip link (SPEC §12) */
 .skip-link {
   position: fixed;

@@ -8,7 +8,14 @@ import { glob } from 'astro/loaders';
  */
 
 const services = defineCollection({
-  loader: glob({ pattern: '**/*.mdx', base: './src/content/services' }),
+  // generateId: keep folder-based ids (en/seo, ar/seo) — otherwise the glob
+  // loader would use the `slug` frontmatter field as the id and the EN/AR
+  // pairs would collide on identical slugs.
+  loader: glob({
+    pattern: '**/*.mdx',
+    base: './src/content/services',
+    generateId: ({ entry }) => entry.replace(/\.mdx$/, ''),
+  }),
   schema: z.object({
     lang: z.enum(['en', 'ar']),
     slug: z.string(),
