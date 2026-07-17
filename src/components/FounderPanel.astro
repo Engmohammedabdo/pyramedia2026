@@ -1,0 +1,33 @@
+---
+/**
+ * TODO_FOUNDER_PHOTO — placeholder until the real photo of Mohamed Abdou is
+ * supplied (SPEC §14): on-brand dark panel with pyramid line-art +
+ * name/title. Never a stock face. To swap: drop the real photo into
+ * src/assets/founder/ and replace this panel's inner markup with an
+ * astro:assets <Image>.
+ */
+import type { Lang } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import PyramidMark from './PyramidMark.astro';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: className = '' } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div
+  class={`relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface-2 p-7 ${className}`}
+>
+  <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+  <PyramidMark
+    variant="line"
+    class="pointer-events-none absolute -end-10 top-6 w-[130%] opacity-20"
+  />
+  <div class="relative">
+    <p class="font-display text-2xl font-bold text-text">{t.founder.name}</p>
+    <p class="mt-1 text-sm font-semibold text-orange">{t.founder.title}</p>
+  </div>
+</div>

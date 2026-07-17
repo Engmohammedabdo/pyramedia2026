@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "title": "PyramediaX — Digital Marketing Agency in Dubai",
+    "description": "Full-service digital marketing agency in Dubai: branding, content, web, performance ads and SEO — one system that delivers measurable results."
+  },
+  "hero": {
+    "h1Line1": "Less Talk.",
+    "h1Line2": "More Performance.",
+    "sub": "PyramediaX is a full-service digital marketing agency in Dubai — branding, content, web, and performance ads, built as one system that delivers measurable results."
+  },
+  "trustedBy": {
+    "eyebrow": "Trusted by businesses in the UAE",
+    "clients": [
+      "Injazat Services Group",
+      "Etmam Center for Judicial Services",
+      "Mazaya Platinum Real Estate",
+      "Bashayer Real Estate",
+      "SynthCity DXB"
+    ]
+  },
+  "services": {
+    "eyebrow": "What we do",
+    "title": "Six services. One system."
+  },
+  "methodology": {
+    "eyebrow": "Methodology",
+    "title": "How we work",
+    "stages": [
+      {
+        "name": "Data",
+        "blurb": "We start with the numbers — your market, your audience, and what is actually happening in your accounts."
+      },
+      {
+        "name": "Analysis",
+        "blurb": "We read the data for what matters: where the opportunities are and what is holding performance back."
+      },
+      {
+        "name": "Decision",
+        "blurb": "We commit to a clear plan — channels, budgets, and priorities, agreed before work starts."
+      },
+      {
+        "name": "Execution",
+        "blurb": "Content, campaigns, and builds go live on schedule, as one coordinated system."
+      },
+      {
+        "name": "Result",
+        "blurb": "Outcomes are measured against what we set out to do — and reported plainly, without spin."
+      },
+      {
+        "name": "Optimization",
+        "blurb": "What worked gets scaled. What did not gets fixed. Then the cycle runs again."
+      }
+    ]
+  },
+  "why": {
+    "eyebrow": "Why PyramediaX",
+    "title": "Built different, on purpose.",
+    "items": [
+      {
+        "title": "Arabic-first, English-native.",
+        "body": "Both languages are built to the same standard — copy, typography, and design direction. Half-hearted Arabic loses Gulf clients, so we never treat it as a translation afterthought."
+      },
+      {
+        "title": "Systems, not one-off posts.",
+        "body": "Every retainer runs on an operations backbone — content systems, automation, and CRM discipline — so output stays consistent instead of mood-dependent."
+      },
+      {
+        "title": "Licensed and local.",
+        "body": "A Dubai-licensed company with a real office in Deira — not a freelancer collective behind a logo."
+      },
+      {
+        "title": "Direct access to the founder.",
+        "body": "No account-manager maze. Strategy comes from the top, and you can reach the person responsible for it."
+      }
+    ]
+  },
+  "founder": {
+    "eyebrow": "The founder",
+    "line": "Leads strategy across marketing and automation for every client the agency takes on."
+  }
+}
