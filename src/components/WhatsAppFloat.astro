@@ -35,21 +35,21 @@ const t = useTranslations(lang);
     position: absolute;
     inset: 0;
     border-radius: 999px;
-    box-shadow: 0 0 0 0 rgba(242, 110, 36, 0.5);
+    box-shadow: 0 0 0 0 var(--color-orange-pulse-50);
     animation: wa-pulse 2.8s ease-out infinite;
     pointer-events: none;
   }
   @keyframes wa-pulse {
     0% {
-      box-shadow: 0 0 0 0 rgba(242, 110, 36, 0.45);
+      box-shadow: 0 0 0 0 var(--color-orange-pulse-45);
       opacity: 1;
     }
     70% {
-      box-shadow: 0 0 0 14px rgba(242, 110, 36, 0);
+      box-shadow: 0 0 0 14px var(--color-orange-clear);
       opacity: 1;
     }
     100% {
-      box-shadow: 0 0 0 0 rgba(242, 110, 36, 0);
+      box-shadow: 0 0 0 0 var(--color-orange-clear);
       opacity: 1;
     }
   }

@@ -37,3 +37,18 @@ test('Arabic pages preload the brand H1 and Arabic body fonts', async () => {
   assert.match(layout, /\?\s*\[spaceGrotesk700Url,\s*cairo400Url\]/);
   assert.match(layout, /:\s*\[spaceGrotesk700Url,\s*inter400Url\]/);
 });
+
+test('component alpha colors come from the token file', async () => {
+  const [css, footer, whatsapp] = await Promise.all([
+    source('src/styles/global.css'),
+    source('src/components/Footer.astro'),
+    source('src/components/WhatsAppFloat.astro'),
+  ]);
+
+  assert.match(css, /--color-text-faint:\s*rgb\(247 245 242 \/ 0\.08\);/);
+  assert.match(css, /--color-orange-pulse-50:\s*rgb\(242 110 36 \/ 0\.5\);/);
+  assert.match(css, /--color-orange-pulse-45:\s*rgb\(242 110 36 \/ 0\.45\);/);
+  assert.match(css, /--color-orange-clear:\s*rgb\(242 110 36 \/ 0\);/);
+  assert.doesNotMatch(footer, /rgba\(247, 245, 242/);
+  assert.doesNotMatch(whatsapp, /rgba\(242, 110, 36/);
+});
