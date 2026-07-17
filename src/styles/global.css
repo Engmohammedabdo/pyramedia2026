@@ -395,11 +395,6 @@ html[lang='ar'] .eyebrow {
   background: var(--color-orange);
   box-shadow: 0 0 14px 2px var(--color-orange-pulse-45);
 }
-@media (max-width: 47.9rem) {
-  .method-rail {
-    display: none; /* strip scrolls natively on small screens — no pin */
-  }
-}
 
 /* Methodology stage state — number pops as its card crosses center.
    0.7 resting opacity keeps the large-text contrast comfortably above AA. */
