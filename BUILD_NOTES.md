@@ -80,8 +80,8 @@ or a documented assumption. Nothing here changes site copy — it is a log.
 **JS weight:** 89 KB gzip total across `dist/` (budget ≤ 180 KB), of which
 ~34 KB is Partytown workers that load only after analytics consent.
 
-**Lighthouse 12, mobile emulation, local `npm run preview`
-(reports committed under `reports/`):**
+**Historical Lighthouse 12, mobile emulation, local `npm run preview`
+(reports committed under `reports/`; `/ar` was measured; this did not verify canonical `/ar/`):**
 
 | Page | Perf | A11y | BP | SEO | LCP | CLS | TBT |
 |---|---|---|---|---|---|---|---|
@@ -112,8 +112,14 @@ forwarded `dataLayer`, `fbq` stub present.
 direction, floating button side, breadcrumb/button arrows, pinned-section
 direction (+x translation), form alignment) — all mirrored correctly.
 
-**Language switcher:** verified in built HTML on 8 sampled pages — always
-lands on the equivalent page in the other language.
+**GATE 1 remediation verification (2026-07-17):**
+
+- `npm run test:gate1` passed all 7 regression checks.
+- `npm run build` completed successfully and generated 25 static pages.
+- Production preview returned HTTP 200 for `/` and canonical `/ar/`; clicking the rendered EN language switcher reached `/ar/` with Arabic content.
+- At 390 CSS px in both languages, the desktop WhatsApp CTA was hidden and the mobile-menu button remained inside the viewport.
+- Activating the skip link moved keyboard focus to `main#main`.
+- The Arabic homepage preloaded Space Grotesk 700 for the brand H1 and Cairo Arabic 400 for Arabic body copy.
 
 **Pending post-deploy verification (needs the live Apache host):**
 `.htaccess` §5.1 redirect map via `curl -I`, HTTPS/non-www force, security

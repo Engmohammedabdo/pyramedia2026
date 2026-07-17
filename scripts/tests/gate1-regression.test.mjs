@@ -68,3 +68,11 @@ test('owner asset swap slots exist and reject fabricated assets', async () => {
   assert.match(founder, /real photo supplied by Mohamed Abdou/i);
   assert.match(founder, /Do not add stock or AI-generated people/i);
 });
+
+test('BUILD_NOTES labels historical Arabic evidence and current remediation accurately', async () => {
+  const notes = await source('BUILD_NOTES.md');
+
+  assert.match(notes, /Historical Lighthouse 12[\s\S]*`\/ar` was measured; this did not verify canonical `\/ar\/`/);
+  assert.match(notes, /GATE 1 remediation verification \(2026-07-17\)/);
+  assert.doesNotMatch(notes, /verified in built HTML on 8 sampled pages â€” always/);
+});
