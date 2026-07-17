@@ -208,6 +208,8 @@ html[lang='ar'] .eyebrow {
 }
 
 .btn-primary {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -225,6 +227,35 @@ html[lang='ar'] .eyebrow {
 .btn-primary:hover {
   background-color: var(--color-orange-hot);
   box-shadow: 0 0 32px -6px rgba(255, 126, 51, 0.55);
+}
+/* Shine sweep on hover — transform/opacity only; travel mirrors in RTL */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -55%;
+  inline-size: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+.btn-primary:hover::before {
+  opacity: 1;
+  animation: btn-shine 0.8s ease;
+}
+@keyframes btn-shine {
+  to {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+[dir='rtl'] .btn-primary:hover::before {
+  animation-name: btn-shine-rtl;
+}
+@keyframes btn-shine-rtl {
+  to {
+    transform: translateX(-340%) skewX(-18deg);
+  }
 }
 
 .btn-secondary {
@@ -270,9 +301,9 @@ html[lang='ar'] .eyebrow {
   transform: scaleX(-1) translateX(4px);
 }
 
-/* Custom cursor dot — desktop pointer devices only (SPEC §8).
-   Physical top/left is intentional: it tracks physical mouse coordinates,
-   which do not mirror in RTL. */
+/* Custom cursor dot + trailing ring — desktop pointer devices only
+   (SPEC §8). Physical top/left is intentional: they track physical mouse
+   coordinates, which do not mirror in RTL. */
 .cursor-dot {
   position: fixed;
   top: -5px;
@@ -285,10 +316,113 @@ html[lang='ar'] .eyebrow {
   pointer-events: none;
   z-index: 95;
 }
+.cursor-ring {
+  position: fixed;
+  top: -17px;
+  left: -17px;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--color-orange-pulse-45);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 94;
+}
 @media (pointer: coarse) {
-  .cursor-dot {
+  .cursor-dot,
+  .cursor-ring {
     display: none;
   }
+}
+
+/* Pointer-tilt cards: JS drives lift + tilt on fine pointers; the injected
+   glow spot follows the cursor (transform/opacity only). */
+.card.tilt-on {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+.card.tilt-on:hover {
+  transform: none; /* JS owns the transform while tilting */
+}
+.card-glow {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 240px;
+  block-size: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(242, 110, 36, 0.13), transparent 65%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Methodology rail — progress line + traveling dot under the pinned strip */
+.method-rail {
+  position: absolute;
+  inset-inline: 1.25rem;
+  inset-block-end: 3.5rem;
+  block-size: 10px;
+  pointer-events: none;
+}
+.method-rail-line,
+.method-rail-fill {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  block-size: 1px;
+}
+.method-rail-line {
+  background: var(--color-line);
+}
+.method-rail-fill {
+  background: var(--color-orange);
+  transform: scaleX(0);
+  transform-origin: var(--flow-origin, left);
+}
+[dir='rtl'] .method-rail-fill {
+  --flow-origin: right;
+}
+.method-rail-dot {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: -5px;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 999px;
+  background: var(--color-orange);
+  box-shadow: 0 0 14px 2px var(--color-orange-pulse-45);
+}
+@media (max-width: 47.9rem) {
+  .method-rail {
+    display: none; /* strip scrolls natively on small screens — no pin */
+  }
+}
+
+/* Methodology stage state — number pops as its card crosses center.
+   0.7 resting opacity keeps the large-text contrast comfortably above AA. */
+.method-stage .stage-num {
+  opacity: 0.7;
+  transition: opacity 0.4s ease;
+}
+.method-stage.is-active .stage-num {
+  opacity: 1;
+}
+.method-stage.is-active {
+  border-color: rgba(242, 110, 36, 0.45);
+}
+
+/* Marquee items lift under the pointer */
+.marquee li {
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+.marquee li:hover {
+  color: var(--color-text);
+  transform: translateY(-2px);
 }
 
 /* Below-the-fold layout containment — these regions are never in the first

@@ -164,7 +164,7 @@ const inputClass =
 
         <!-- Success state -->
         <div id="form-success" class="mt-6 hidden rounded-xl border border-orange/30 bg-surface-2 p-8 text-center" role="status">
-          <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
+          <span class="success-badge mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
             <Icon name="check-circle" size={28} />
           </span>
           <h3 class="font-display mt-5 text-xl font-bold text-text">{t.form.successTitle}</h3>
@@ -283,6 +283,29 @@ const inputClass =
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  /* Success state entrance: panel pops, check-mark draws itself.
+     Animations start when the panel is first rendered (hidden removed);
+     the global reduced-motion rule collapses them to their end state. */
+  #form-success:not(.hidden) {
+    animation: success-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  #form-success .success-badge :global(svg path) {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: success-draw 0.9s ease-out 0.2s forwards;
+  }
+  @keyframes success-pop {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+    }
+  }
+  @keyframes success-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
   }
 </style>
 
