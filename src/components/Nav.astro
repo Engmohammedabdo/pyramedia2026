@@ -6,7 +6,7 @@
  */
 import type { Lang } from '@/config/site';
 import { SITE, waLink } from '@/config/site';
-import { useTranslations, localizePath, switchLangPath } from '@/i18n';
+import { useTranslations, localizePath, switchLangPath, normalizePathname } from '@/i18n';
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 
@@ -23,13 +23,12 @@ const links = [
   { href: localizePath('/contact', lang), label: t.nav.contact },
 ];
 
-const currentPath = Astro.url.pathname;
+const currentPath = normalizePathname(Astro.url.pathname);
 const switchHref = switchLangPath(currentPath);
 const homeHref = localizePath('/', lang);
 
 function isActive(href: string): boolean {
-  const clean = (p: string) => (p !== '/' && p !== '/ar/' ? p.replace(/\/$/, '') : p);
-  return clean(currentPath) === clean(href);
+  return currentPath === normalizePathname(href);
 }
 ---
 

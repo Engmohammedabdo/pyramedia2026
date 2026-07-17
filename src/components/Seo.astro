@@ -17,11 +17,14 @@ interface Props {
 }
 const { lang, title, description, jsonLd = [] } = Astro.props;
 
-/** Normalizes a pathname to its canonical live URL form (SPEC §5). */
+/** Normalizes a pathname to its canonical live URL form (SPEC §5).
+ *  With build.format 'file' the build-time pathname is e.g. /about.html —
+ *  strip the extension so canonicals match the live extensionless URLs. */
 function canonicalPath(pathname: string): string {
-  if (pathname === '/' ) return '/';
-  if (pathname === '/ar' || pathname === '/ar/') return '/ar/';
-  return pathname.replace(/\/$/, '');
+  let p = pathname.replace(/\.html$/, '');
+  if (p === '' || p === '/' || p === '/index') return '/';
+  if (p === '/ar' || p === '/ar/') return '/ar/';
+  return p.replace(/\/$/, '');
 }
 
 const path = canonicalPath(Astro.url.pathname);

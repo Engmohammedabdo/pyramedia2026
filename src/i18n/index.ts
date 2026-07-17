@@ -30,11 +30,22 @@ export function localizePath(path: string, lang: Lang): string {
 }
 
 /**
+ * Normalizes a pathname to its canonical extensionless form. Build-time
+ * pathnames look like /about.html (build.format 'file') — live URLs don't.
+ */
+export function normalizePathname(pathname: string): string {
+  let p = pathname.replace(/\.html$/, '');
+  if (p === '' || p === '/index') return '/';
+  if (p !== '/' && p !== '/ar/') p = p.replace(/\/$/, '');
+  return p;
+}
+
+/**
  * Maps the current pathname to the equivalent page in the other language
  * (SPEC §6.4 — the switcher lands on the same page, never the homepage).
  */
 export function switchLangPath(pathname: string): string {
-  const normalized = pathname !== '/' && pathname !== '/ar/' ? pathname.replace(/\/$/, '') : pathname;
+  const normalized = normalizePathname(pathname);
   if (normalized === '/ar' || normalized === '/ar/') return '/';
   if (normalized.startsWith('/ar/')) return normalized.slice(3) || '/';
   return normalized === '/' ? '/ar/' : `/ar${normalized}`;
@@ -42,5 +53,6 @@ export function switchLangPath(pathname: string): string {
 
 /** Language of the current pathname. */
 export function langFromPath(pathname: string): Lang {
-  return pathname === '/ar' || pathname === '/ar/' || pathname.startsWith('/ar/') ? 'ar' : 'en';
+  const p = normalizePathname(pathname);
+  return p === '/ar' || p === '/ar/' || p.startsWith('/ar/') ? 'ar' : 'en';
 }
