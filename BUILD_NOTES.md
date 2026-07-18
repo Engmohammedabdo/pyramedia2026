@@ -46,6 +46,14 @@ It does not replace the independent review reports.
   both languages. A failed thumbnail fetch at build degrades to a branded
   panel and never breaks the build. Meta's June-2026 tokenless oEmbed change
   means no access token is needed for this feature.
+- **2026-07-18 — No like/view counters on the reels cards (owner decision).**
+  Muhammad asked about showing like/view counts on the facade cards and,
+  after review, accepted the recommendation to keep them off: SPEC §2.1 bans
+  counter components outright and Addendum A.1 explicitly commits to "no
+  counters", and small live numbers on the agency's own homepage would
+  undercut the "Honesty over hype" positioning. Live like/comment numbers
+  remain visible inside the official Instagram player after a card is
+  clicked — Instagram's UI, not site copy. §2.1 stays fully intact.
 
 ## Asset arrivals
 
