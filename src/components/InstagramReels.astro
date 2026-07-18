@@ -11,6 +11,7 @@
  */
 import { Image } from 'astro:assets';
 import type { Lang } from '@/config/site';
+import { IG_HANDLE } from '@/config/site';
 import { SITE } from '@/config/site';
 import { useTranslations } from '@/i18n';
 import Icon from './Icon.astro';
@@ -39,10 +40,28 @@ async function resolveThumb(url: string): Promise<string | null> {
   }
 }
 
+// Build-wide cache: the redirect target carries time-varying CDN signatures,
+// so each fetch yields a "new" URL and Astro would emit a duplicate
+// optimized-asset set per locale render (G2-RR-010). The cache lives on
+// globalThis because the bundler may instantiate this module once per page
+// entry — a module-level Map would not be shared across the two locales.
+const globalCache = globalThis as typeof globalThis & {
+  __pyxIgThumbCache?: Map<string, Promise<string | null>>;
+};
+const thumbCache = (globalCache.__pyxIgThumbCache ??= new Map());
+function resolveThumbOnce(url: string): Promise<string | null> {
+  let cached = thumbCache.get(url);
+  if (!cached) {
+    cached = resolveThumb(url);
+    thumbCache.set(url, cached);
+  }
+  return cached;
+}
+
 const reels = await Promise.all(
   (igContent.reels as string[]).slice(0, 3).map(async (url, i) => ({
     url,
-    thumb: await resolveThumb(url),
+    thumb: await resolveThumbOnce(url),
     index: i + 1,
   }))
 );
@@ -74,8 +93,9 @@ const reels = await Promise.all(
               class="card group relative block overflow-hidden !p-0"
               data-ig-card
               data-ig-url={reel.url}
+              data-ig-player-label={`${t.instagram.player} — @${IG_HANDLE}`}
               data-reveal
-              aria-label={`${t.instagram.card} ${reel.index} — @pyramedia.dxb. ${t.instagram.play}`}
+              aria-label={`${t.instagram.card} ${reel.index} — @${IG_HANDLE}. ${t.instagram.play}`}
             >
               <span class="block aspect-[4/5]">
                 {reel.thumb ? (
@@ -144,6 +164,11 @@ const reels = await Promise.all(
     if (!url) return;
     const holder = document.createElement('div');
     holder.className = 'ig-embed';
+    // Keyboard/AT contract (G2-RR-007): the replacement region receives
+    // focus and an accessible name so users don't land on <body>.
+    holder.tabIndex = -1;
+    holder.setAttribute('role', 'group');
+    holder.setAttribute('aria-label', card.dataset.igPlayerLabel || '');
     const quote = document.createElement('blockquote');
     quote.className = 'instagram-media';
     quote.setAttribute('data-instgrm-permalink', url);
@@ -151,6 +176,7 @@ const reels = await Promise.all(
     quote.setAttribute('data-instgrm-captioned', '');
     holder.appendChild(quote);
     card.replaceWith(holder);
+    holder.focus();
 
     const w = window as typeof window & {
       instgrm?: { Embeds?: { process?: () => void } };

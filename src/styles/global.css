@@ -18,6 +18,8 @@
   --color-orange-pulse-50: rgb(242 110 36 / 0.5);
   --color-orange-pulse-45: rgb(242 110 36 / 0.45);
   --color-line: rgba(255, 255, 255, 0.08);
+  /* Form-control boundary — ≥3:1 against surface/surface-2 (WCAG 1.4.11) */
+  --color-line-strong: rgb(255 255 255 / 0.36);
   --color-btn-ink: #141414; /* dark text on orange buttons */
   --color-white: #ffffff;
   --color-transparent: transparent;

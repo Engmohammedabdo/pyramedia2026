@@ -328,11 +328,32 @@ test('typed UI dictionaries provide the required labels and affected components 
   }
 });
 
-test('Arabic UI copy uses natural MSA instead of the reported colloquialisms', async () => {
+test('Arabic UI copy keeps SPEC §7.1 founder-verbatim strings exactly (G2-RR-003)', async () => {
   const arabic = await source('src/i18n/ar.ts');
-  for (const colloquialism of ['كلمنا', 'اعرف', 'جاهزين', 'تبغى', 'صار', 'مرة ثانية', 'بنرد', 'اللي']) {
-    assert.doesNotMatch(arabic, standalone(colloquialism), `Arabic UI copy contains ${colloquialism}`);
+  // These two strings are locked verbatim by the founder in SPEC §7.1 —
+  // MSA "improvements" to them are a SPEC violation, not a fix.
+  assert.match(arabic, /whatsapp:\s*'كلمنا على الواتساب'/u);
+  assert.match(arabic, /title:\s*'جاهزين لما تكون جاهز\.'/u);
+});
+
+test('Arabic UI copy uses natural MSA outside the founder-verbatim strings', async () => {
+  const arabic = await source('src/i18n/ar.ts');
+  // Verbatim carve-outs (SPEC §7.1): كلمنا على الواتساب / جاهزين لما تكون جاهز.
+  const scrubbed = arabic
+    .replaceAll('كلمنا على الواتساب', '')
+    .replaceAll('جاهزين لما تكون جاهز.', '');
+  for (const colloquialism of ['اعرف', 'تبغى', 'صار', 'مرة ثانية', 'بنرد', 'اللي']) {
+    assert.doesNotMatch(scrubbed, standalone(colloquialism), `Arabic UI copy contains ${colloquialism}`);
   }
+});
+
+test('Arabic home keeps the verbatim hero sub and methodology title (G2-RR-003)', async () => {
+  const home = JSON.parse(await source('src/content/pages/ar/home.json'));
+  assert.equal(
+    home.hero.sub,
+    'بيراميديا إكس وكالة تسويق رقمي متكاملة في دبي — هوية، ومحتوى، ومواقع، وإعلانات أداء، تشتغل كنظام واحد يحقق نتائج قابلة للقياس.',
+  );
+  assert.equal(home.methodology.title, 'منهجية شغلنا');
 });
 
 test('Terms identifies the operator through one isolated SITE legal-name value above the MDX body', async () => {
@@ -648,9 +669,122 @@ test('handoff records completed local Gate 2 remediation without claiming an ind
   assert.match(handoff, /All 18 GATE 2 findings have been remediated locally/i);
   assert.match(remediationReport, /All 18 GATE 2 findings have been remediated locally/i);
   assert.match(handoff, /formal independent GATE 2 re-review[^\n]*pending/i);
+  // The git-state block must not regress to the stale pre-re-review baseline
+  assert.doesNotMatch(handoff, /base HEAD `58fab[^`]*` plus uncommitted/i);
+  assert.match(handoff, /re-review `REVIEW_GATE2_REREVIEW\.md`[^\n]*returned \*\*FAIL\*\*/i);
   assert.doesNotMatch(handoff, /GATE 2 future work/i);
   assert.doesNotMatch(handoff, /GATE 2 and GATE 3[\s\S]*The following are not completed merely because GATE 1 passed/i);
   [notes, handoff, remediationReport].forEach((document) => {
     assert.doesNotMatch(document, positiveIndependentVerdict);
   });
+});
+
+test('UI dictionaries carry no response-time or speed promises (G2-001)', async () => {
+  const english = await source('src/i18n/en.ts');
+  const arabic = await source('src/i18n/ar.ts');
+  assert.doesNotMatch(english, /\b(shortly|reply fast|right away|as soon as possible|quickly)\b/i);
+  assert.doesNotMatch(arabic, /بسرعة|أسرع|في أقرب وقت/u);
+});
+
+test('Arabic pages publish only the approved English legal identity, LTR-isolated (G2-RR-002)', async () => {
+  const site = await source('src/config/site.ts');
+  assert.doesNotMatch(site, /legalNameAr\s*:/);
+  // The Arabic license line wraps the English legal name in LRI…PDI isolates
+  assert.match(site, /⁦\$\{SITE\.legalName\}⁩/u);
+});
+
+test('legal documents carry revision dates no older than their last substantive change (G2-RR-001)', async () => {
+  for (const legalPath of [
+    'src/content/pages/en/privacy.mdx',
+    'src/content/pages/ar/privacy.mdx',
+    'src/content/pages/en/terms.mdx',
+    'src/content/pages/ar/terms.mdx',
+  ]) {
+    const legal = await source(legalPath);
+    const match = legal.match(/lastUpdated:\s*'(\d{4}-\d{2}-\d{2})'/);
+    assert.ok(match, `${legalPath} is missing lastUpdated`);
+    assert.ok(match[1] >= '2026-07-18', `${legalPath} lastUpdated predates the 2026-07-18 disclosure changes`);
+  }
+});
+
+test('no dead data-hero-fade hooks remain; interior heroes and legal pages use the reveal system (G2-RR-005)', async () => {
+  const pages = [
+    'src/components/pages/HomePage.astro',
+    'src/components/pages/AboutPage.astro',
+    'src/components/pages/ContactPage.astro',
+    'src/components/pages/ServicePage.astro',
+    'src/components/pages/ServicesHubPage.astro',
+    'src/components/pages/LegalPage.astro',
+  ];
+  for (const pagePath of pages) {
+    const page = await source(pagePath);
+    assert.doesNotMatch(page, /data-hero-fade/, `${pagePath} still carries a dead motion hook`);
+  }
+  const legal = await source('src/components/pages/LegalPage.astro');
+  assert.ok((legal.match(/data-reveal/g) ?? []).length >= 3, 'LegalPage sections lack reveal hooks');
+});
+
+test('mobile menu contains and restores keyboard focus (G2-RR-006)', async () => {
+  const nav = await source('src/components/Nav.astro');
+  assert.match(nav, /__pyxNavTrap/);
+  assert.match(nav, /toggle\.focus\(\)/);
+  assert.match(nav, /menu\.querySelector<HTMLElement>\('a'\)\?\.focus\(\)/);
+});
+
+test('form states and Instagram embeds hand keyboard focus to their replacements (G2-RR-007)', async () => {
+  const contact = await source('src/components/pages/ContactPage.astro');
+  const reels = await source('src/components/InstagramReels.astro');
+  assert.match(contact, /id="form-success"[^>]*tabindex="-1"/);
+  assert.match(contact, /id="form-error"[^>]*tabindex="-1"/);
+  assert.match(contact, /successBox\.focus\(\)/);
+  assert.match(contact, /errorBox\.focus\(\)/);
+  assert.match(reels, /holder\.tabIndex = -1/);
+  assert.match(reels, /holder\.focus\(\)/);
+});
+
+test('form-control boundaries use the >=3:1 strong line token (G2-RR-008)', async () => {
+  const css = await source('src/styles/global.css');
+  const contact = await source('src/components/pages/ContactPage.astro');
+  assert.match(css, /--color-line-strong:\s*rgb\(255 255 255 \/ 0\.36\)/);
+  assert.match(contact, /border-line-strong/);
+});
+
+test('brand wordmark, Instagram handle, and honeypot label come from central sources (G2-008)', async () => {
+  for (const componentPath of [
+    'src/components/Logo.astro',
+    'src/components/Footer.astro',
+    'src/pages/404.astro',
+  ]) {
+    const component = await source(componentPath);
+    assert.match(component, /SITE\.wordmark/, `${componentPath} does not consume SITE.wordmark`);
+  }
+  const footer = await source('src/components/Footer.astro');
+  assert.match(footer, /SITE\.brandAr/);
+  const reels = await source('src/components/InstagramReels.astro');
+  assert.match(reels, /IG_HANDLE/);
+  assert.doesNotMatch(reels, /@pyramedia\.dxb/);
+  const contact = await source('src/components/pages/ContactPage.astro');
+  assert.match(contact, /\{t\.form\.hpLabel\}/);
+  const english = await source('src/i18n/en.ts');
+  const arabic = await source('src/i18n/ar.ts');
+  assert.match(english, /hpLabel:/);
+  assert.match(arabic, /hpLabel:/);
+});
+
+test('office address and legal name render through injection, not duplicated prose (G2-RR-004)', async () => {
+  const englishAbout = await source('src/content/pages/en/about.json');
+  const arabicAbout = await source('src/content/pages/ar/about.json');
+  assert.match(englishAbout, /\[\[ADDRESS\]\]/);
+  assert.match(arabicAbout, /\[\[ADDRESS\]\]/);
+  const aboutPage = await source('src/components/pages/AboutPage.astro');
+  assert.match(aboutPage, /replace\('\[\[ADDRESS\]\]'/);
+  const englishTerms = await source('src/content/pages/en/terms.mdx');
+  assert.doesNotMatch(englishTerms, /PYRAMEDIAX MARKETING MANAGEMENT/);
+  assert.match(englishTerms, /the company identified above/);
+});
+
+test('Instagram build-time thumbnails resolve once and are shared across locale renders (G2-RR-010)', async () => {
+  const reels = await source('src/components/InstagramReels.astro');
+  assert.match(reels, /thumbCache/);
+  assert.match(reels, /resolveThumbOnce/);
 });

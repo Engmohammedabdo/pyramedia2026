@@ -44,12 +44,13 @@ export const en = {
     errRequired: 'This field is required.',
     errPhone: 'Enter a valid phone number.',
     errEmail: 'Enter a valid email address.',
+    hpLabel: 'Website',
     successTitle: 'Thank you — we received your message.',
-    successBody: 'We will get back to you shortly. For a faster reply, message us on WhatsApp.',
+    successBody: 'Thank you for reaching out. You can also message us on WhatsApp.',
     errorTitle: 'Something went wrong.',
     errorBody: 'Please try again — or message us directly on WhatsApp.',
     retry: 'Try again',
-    disabledNotice: 'The form is being connected. Message us on WhatsApp — we reply fast.',
+    disabledNotice: 'The form is being set up. Message us on WhatsApp.',
   },
   consent: {
     text: 'We use analytics cookies to understand how visitors use this site. Nothing is tracked unless you accept.',
@@ -83,6 +84,7 @@ export const en = {
     follow: 'Follow us on Instagram',
     card: 'Instagram reel',
     play: 'Play reel',
+    player: 'Instagram player',
     hint: 'Playing a reel loads the official Instagram player.',
   },
   founder: {

@@ -58,7 +58,7 @@ const orgSchema = {
     addressLocality: SITE.addressLocality[lang],
     addressCountry: SITE.addressCountry,
   },
-  areaServed: lang === 'ar' ? 'الإمارات ودول الخليج' : 'United Arab Emirates & GCC',
+  areaServed: SITE.areaServed[lang],
   sameAs: [SITE.socials.instagram, SITE.socials.facebook, SITE.socials.linkedin, WA_BASE],
 };
 

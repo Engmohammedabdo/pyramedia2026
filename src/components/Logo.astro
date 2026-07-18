@@ -1,17 +1,22 @@
 ---
 /** PYRAMEDIA X lockup — pyramid mark + wordmark (SPEC §4). */
+import { SITE } from '@/config/site';
 import PyramidMark from './PyramidMark.astro';
 
 interface Props {
   class?: string;
 }
 const { class: className = '' } = Astro.props;
+// "PYRAMEDIA X" → base + accented last word, from the single wordmark source
+const wmParts = SITE.wordmark.split(' ');
+const wmAccent = wmParts.pop();
+const wmBase = wmParts.join(' ');
 ---
 
 <span class={`inline-flex items-center gap-2.5 ${className}`}>
   <PyramidMark variant="logo" class="h-6 w-auto shrink-0" />
   <span
     class="font-brand text-text text-lg font-bold tracking-wide whitespace-nowrap"
-    dir="ltr">PYRAMEDIA<span class="text-orange">&nbsp;X</span></span
+    dir="ltr">{wmBase}<span class="text-orange">&nbsp;{wmAccent}</span></span
   >
 </span>

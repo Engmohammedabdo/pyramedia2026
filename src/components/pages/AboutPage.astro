@@ -5,7 +5,7 @@
  */
 import { getEntry } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { licenseLine } from '@/config/site';
+import { SITE, licenseLine } from '@/config/site';
 import { useTranslations } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import FounderPanel from '@/components/FounderPanel.astro';
@@ -39,8 +39,14 @@ const c = page.data as any;
       >
         {c.hero.title}
       </h1>
-      <div class="mt-10 max-w-2xl space-y-6 text-lg leading-relaxed text-muted" data-hero-fade>
-        {c.story.map((p: string) => <p>{p}</p>)}
+      <div class="mt-10 max-w-2xl space-y-6 text-lg leading-relaxed text-muted" data-reveal>
+        {
+          /* [[ADDRESS]] in the story is injected from site.ts — the single
+             source of the office address (G2-RR-004) */
+          c.story.map((p: string) => (
+            <p>{p.replace('[[ADDRESS]]', lang === 'ar' ? SITE.addressAr : SITE.addressEn)}</p>
+          ))
+        }
       </div>
     </div>
   </section>

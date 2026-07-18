@@ -43,7 +43,7 @@ const formConfig = {
 };
 
 const inputClass =
-  'w-full rounded-xl border border-line bg-surface px-4 py-3 text-text placeholder:text-muted focus:border-orange/60 focus:outline-none';
+  'w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-text placeholder:text-muted focus:border-orange/60 focus:outline-none';
 ---
 
 <BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
@@ -57,7 +57,7 @@ const inputClass =
       >
         {c.hero.title}
       </h1>
-      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted" data-hero-fade>{c.hero.intro}</p>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted" data-reveal>{c.hero.intro}</p>
     </div>
   </section>
 
@@ -147,7 +147,7 @@ const inputClass =
 
           <!-- Honeypot (SPEC §7.4): must stay empty; hidden from humans -->
           <div class="hp-field" aria-hidden="true">
-            <label for="cf-website">Website</label>
+            <label for="cf-website">{t.form.hpLabel}</label>
             <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
           </div>
 
@@ -163,7 +163,7 @@ const inputClass =
         </form>
 
         <!-- Success state -->
-        <div id="form-success" class="mt-6 hidden rounded-xl border border-orange/30 bg-surface-2 p-8 text-center" role="status">
+        <div id="form-success" class="mt-6 hidden rounded-xl border border-orange/30 bg-surface-2 p-8 text-center" role="status" tabindex="-1">
           <span class="success-badge mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
             <Icon name="check-circle" size={28} />
           </span>
@@ -183,7 +183,7 @@ const inputClass =
         </div>
 
         <!-- Error state -->
-        <div id="form-error" class="mt-6 hidden rounded-xl border border-orange-hot/40 bg-surface-2 p-8 text-center" role="alert">
+        <div id="form-error" class="mt-6 hidden rounded-xl border border-orange-hot/40 bg-surface-2 p-8 text-center" role="alert" tabindex="-1">
           <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange-hot/50 text-orange-hot">
             <Icon name="alert-circle" size={28} />
           </span>
@@ -391,6 +391,8 @@ const inputClass =
       form.classList.add('hidden');
       errorBox.classList.add('hidden');
       successBox.classList.remove('hidden');
+      // Keyboard/AT contract (G2-RR-007): focus follows the state change
+      successBox.focus();
     }
 
     form.addEventListener('submit', async (e) => {
@@ -441,6 +443,7 @@ const inputClass =
       } catch {
         form.classList.add('hidden');
         errorBox.classList.remove('hidden');
+        errorBox.focus();
       } finally {
         submitLabel.textContent = config.msg.send;
         form.dataset.busy = '';
@@ -451,6 +454,8 @@ const inputClass =
     document.querySelector('[data-form-retry]')?.addEventListener('click', () => {
       errorBox.classList.add('hidden');
       form.classList.remove('hidden');
+      // Return the keyboard user to the form they are retrying (G2-RR-007)
+      form.querySelector<HTMLElement>('input, select, textarea')?.focus();
     });
 
     // Click-to-load map facade

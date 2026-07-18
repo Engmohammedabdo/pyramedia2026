@@ -15,14 +15,16 @@ export const ar: Dictionary = {
     langLabel: 'EN',
   },
   cta: {
-    whatsapp: 'تواصل معنا عبر واتساب',
+    // SPEC §7.1 verbatim CTA — do not "improve" into MSA (G2-RR-003)
+    whatsapp: 'كلمنا على الواتساب',
     exploreServices: 'استكشف خدماتنا',
     contactUs: 'تواصل معنا',
     aboutLink: 'تعرّف إلينا أكثر',
     whatsappFloat: 'تواصل مع بيراميديا إكس عبر واتساب',
   },
   ctaBand: {
-    title: 'نحن جاهزون عندما تكون مستعداً.',
+    // SPEC §7.1 section 7 verbatim — locked founder copy (G2-RR-003)
+    title: 'جاهزين لما تكون جاهز.',
   },
   footer: {
     navigate: 'التنقل',
@@ -46,6 +48,7 @@ export const ar: Dictionary = {
     errRequired: 'هذا الحقل مطلوب.',
     errPhone: 'أدخل رقم هاتف صحيحاً.',
     errEmail: 'أدخل بريداً إلكترونياً صحيحاً.',
+    hpLabel: 'الموقع الإلكتروني',
     successTitle: 'شكراً لك — تلقينا رسالتك.',
     successBody: 'شكراً لتواصلك. يمكنك أيضاً مراسلتنا عبر واتساب.',
     errorTitle: 'حدث خطأ أثناء الإرسال.',
@@ -85,6 +88,7 @@ export const ar: Dictionary = {
     follow: 'تابعنا على إنستجرام',
     card: 'ريل من إنستجرام',
     play: 'تشغيل الريل',
+    player: 'مشغّل إنستجرام',
     hint: 'تشغيل الريل يحمّل مشغّل إنستجرام الرسمي.',
   },
   founder: {

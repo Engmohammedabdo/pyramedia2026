@@ -124,3 +124,21 @@ the lab runs, so it remains a GATE 3 / field measurement.
 5. Real n8n, Maps, GA4, and Meta validation after owner destinations are
    supplied.
 6. Explicitly authorized Git/remote/deployment handling.
+
+---
+
+## Postscript — after the independent re-review (2026-07-18, second pass)
+
+The independent re-review `REVIEW_GATE2_REREVIEW.md` (commit `7c244df`)
+tested this report's claims and returned **FAIL**: 15 of the 18 original
+findings were confirmed FIXED; G2-001, G2-005, and G2-008 were STILL OPEN;
+and ten new findings (G2-RR-001..G2-RR-010) were recorded. The claims in
+this report that all 18 findings were fully fixed, that founder-verbatim
+Arabic was preserved, that all copy was centralized, and that Escape
+restored mobile-menu focus were contradicted by that fresh evidence.
+
+A second remediation pass in the follow-up commit addressed all 13
+re-review findings and adjusted the regression suite so it protects the
+SPEC §7.1 founder-verbatim Arabic strings instead of rewriting them. That
+second pass is itself an implementation claim until the next independent
+review.

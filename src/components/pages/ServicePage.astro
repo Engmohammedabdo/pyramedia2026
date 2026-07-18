@@ -35,7 +35,7 @@ const jsonLd = [
     description: s.oneLiner,
     url: pageUrl,
     inLanguage: lang,
-    areaServed: lang === 'ar' ? 'الإمارات ودول الخليج' : 'United Arab Emirates & GCC',
+    areaServed: SITE.areaServed[lang],
     provider: { '@id': `${SITE.url}/#organization` },
   },
   {
@@ -88,8 +88,8 @@ const jsonLd = [
           >
             {s.name}
           </h1>
-          <p class="mt-5 max-w-2xl text-lg leading-relaxed text-muted" data-hero-fade>{s.heroPromise}</p>
-          <div class="mt-8 flex flex-wrap gap-4" data-hero-fade>
+          <p class="mt-5 max-w-2xl text-lg leading-relaxed text-muted" data-reveal>{s.heroPromise}</p>
+          <div class="mt-8 flex flex-wrap gap-4" data-reveal>
             <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
               <Icon name="whatsapp" size={18} />
               {t.cta.whatsapp}

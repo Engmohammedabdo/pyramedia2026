@@ -26,12 +26,19 @@ document is evidence for a dated tree, not a substitute for verification.
 - The original independent `REVIEW_GATE2.md` verdict is **FAIL** with 18
   findings for the baseline it reviewed.
 - All 18 GATE 2 findings have been remediated locally and protected by
-  regression tests.
-- A formal independent GATE 2 re-review is still pending; do not relabel the
-  original report or claim an independent PASS before that review occurs.
-- The current production build generates 25 static pages. Fresh local mobile
-  Lighthouse scores are 100 for EN performance and 96 for AR performance, with
-  A11y/BP/SEO at 100 for both.
+  regression tests — and that claim was then independently tested: the formal
+  re-review `REVIEW_GATE2_REREVIEW.md` (commit `7c244df`) returned **FAIL**,
+  confirming 15 FIXED, finding G2-001/G2-005/G2-008 STILL OPEN, and adding
+  ten re-review findings (G2-RR-001..010).
+- All 13 re-review findings were remediated in a second local pass (the
+  commit that updated this line). Treat that as an implementation claim.
+- A fresh formal independent GATE 2 re-review is still pending for the
+  current tree; do not relabel the original reports or claim an independent
+  PASS before that review occurs.
+- The current production build generates 25 static pages. The latest
+  INDEPENDENT mobile Lighthouse evidence (re-review, commit `7c244df`) is
+  Perf 98 EN / 96 AR with A11y/BP/SEO 100 for both; earlier local builder
+  runs measured EN 100. Both sets pass every available GATE 2 budget.
 
 ## 2. Verification commands
 
@@ -176,9 +183,12 @@ independent report remains unchanged.
 
 ## 8. Git and user-owned state
 
-- Branch: local `main` at base HEAD `58fab48459b1` plus uncommitted remediation.
+- Branch: local `main`. The first (18-finding) remediation is committed as
+  `1a434e4`; the Instagram reels box as `c451e70`; the reviewed baseline of
+  the re-review is `7c244df`. The second (13-finding) re-review remediation
+  lands in the commit that contains this updated line.
 - No Git remote or upstream is configured in this checkout.
-- No commit, push, pull request, or deployment was created by this remediation.
+- No push, pull request, or deployment has been performed at any point.
 - These pre-existing untracked files are user-owned and must not be deleted,
   overwritten, staged, or committed without explicit instruction:
   - `.claude/settings.local.json`

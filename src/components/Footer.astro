@@ -34,6 +34,11 @@ const socials = [
   { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },
   { href: SITE.socials.linkedin, icon: 'linkedin', label: 'LinkedIn' },
 ] as const;
+
+// "PYRAMEDIA X" → base + accented last word, from the single wordmark source
+const wmParts = SITE.wordmark.split(' ');
+const wmAccent = wmParts.pop();
+const wmBase = wmParts.join(' ');
 ---
 
 <footer class="relative overflow-hidden border-t border-line bg-surface/40">
@@ -57,14 +62,14 @@ const socials = [
         fill="var(--color-text-faint)"
         style="font-family: 'Space Grotesk', 'Inter', sans-serif;"
       >
-        PYRAMEDIA X
+        {SITE.wordmark}
       </text>
     </svg>
 
     <div class="mt-14 grid gap-12 md:grid-cols-12">
       <div class="md:col-span-4">
         <p class="font-brand text-lg font-bold text-text" dir="ltr">
-          PYRAMEDIA<span class="text-orange">&nbsp;X</span>
+          {wmBase}<span class="text-orange">&nbsp;{wmAccent}</span>
         </p>
         <p class="font-brand mt-2 text-sm font-semibold tracking-wide text-orange" dir="ltr">
           {SITE.tagline}
@@ -152,7 +157,7 @@ const socials = [
     <div class="mt-14 border-t border-line pt-6 text-center">
       <p class="text-xs text-muted">{licenseLine(lang)}</p>
       <p class="mt-2 text-xs text-muted">
-        © <span class="ltr-isolate">{year}</span> {lang === 'ar' ? 'بيراميديا إكس' : SITE.brand} — {t.footer.rights}
+        © <span class="ltr-isolate">{year}</span> {lang === 'ar' ? SITE.brandAr : SITE.brand} — {t.footer.rights}
       </p>
     </div>
   </div>
