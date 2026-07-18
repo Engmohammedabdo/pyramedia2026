@@ -18,9 +18,9 @@ const t = useTranslations(lang);
   id="consent-banner"
   class="fixed inset-inline-0 bottom-0 z-[70] hidden translate-y-4 border-t border-line bg-surface-2/95 opacity-0 backdrop-blur-lg transition-[transform,opacity] duration-300"
   role="region"
-  aria-label={lang === 'ar' ? 'إعدادات الخصوصية' : 'Privacy choices'}
+  aria-label={t.a11y.privacyChoices}
 >
-  <div class="mx-auto flex max-w-6xl flex-col items-start gap-4 px-5 py-5 sm:flex-row sm:items-center">
+  <div class="mx-auto flex max-w-6xl flex-col items-start gap-4 px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:flex-row sm:items-center">
     <p class="flex-1 text-sm text-muted">{t.consent.text}</p>
     <div class="flex shrink-0 gap-3">
       <button type="button" class="btn-secondary !px-5 !py-2 text-sm" data-consent="declined">
@@ -36,24 +36,78 @@ const t = useTranslations(lang);
 <script>
   const KEY = 'pyx-consent';
 
+  type ConsentRuntime = {
+    banner: HTMLElement;
+    cleanup: () => void;
+  };
+  const consentWindow = window as typeof window & { __pyxConsent?: ConsentRuntime };
+
   function initConsent() {
     const banner = document.getElementById('consent-banner');
     if (!banner) return;
-    const stored = localStorage.getItem(KEY);
+    if (consentWindow.__pyxConsent?.banner === banner) return;
+    consentWindow.__pyxConsent?.cleanup();
 
-    if (!stored) {
+    const root = document.documentElement;
+    let hideTimer: number | undefined;
+    const resizeObserver = new ResizeObserver(() => {
+      if (banner.classList.contains('hidden')) return;
+      const height = banner.getBoundingClientRect().height;
+      root.style.setProperty('--consent-banner-offset', `${Math.ceil(height) + 16}px`);
+    });
+
+    const show = () => {
       banner.classList.remove('hidden');
+      root.setAttribute('data-consent-pending', '');
+      resizeObserver.observe(banner);
+      const height = banner.getBoundingClientRect().height;
+      root.style.setProperty('--consent-banner-offset', `${Math.ceil(height) + 16}px`);
       requestAnimationFrame(() =>
         requestAnimationFrame(() => banner.classList.remove('translate-y-4', 'opacity-0'))
       );
+    };
+
+    const hide = () => {
+      banner.classList.add('translate-y-4', 'opacity-0');
+      hideTimer = window.setTimeout(() => {
+        banner.classList.add('hidden');
+        resizeObserver.disconnect();
+        clearRootState();
+      }, 300);
+    };
+
+    function clearRootState() {
+      root.style.removeProperty('--consent-banner-offset');
+      root.removeAttribute('data-consent-pending');
+    }
+
+    consentWindow.__pyxConsent = {
+      banner,
+      cleanup: () => {
+        if (hideTimer) window.clearTimeout(hideTimer);
+        resizeObserver.disconnect();
+        if (!document.documentElement.contains(banner) || banner.classList.contains('hidden')) clearRootState();
+      },
+    };
+
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem(KEY);
+    } catch {
+      stored = null;
+    }
+
+    if (!stored) {
+      show();
     }
 
     banner.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const value = btn.dataset.consent as 'accepted' | 'declined';
-        localStorage.setItem(KEY, value);
-        banner.classList.add('translate-y-4', 'opacity-0');
-        setTimeout(() => banner.classList.add('hidden'), 300);
+        try {
+          localStorage.setItem(KEY, value);
+        } catch {}
+        hide();
         window.dispatchEvent(new CustomEvent('pyx:consent', { detail: value }));
       });
     });

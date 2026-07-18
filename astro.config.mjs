@@ -4,10 +4,18 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import partytown from '@astrojs/partytown';
 import tailwindcss from '@tailwindcss/vite';
+import { loadEnv } from 'vite';
+
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+const env = loadEnv(mode, process.cwd(), 'PUBLIC_');
+const partytownForwards = [
+  ...(env.PUBLIC_GA4_ID ? ['dataLayer.push'] : []),
+  ...(env.PUBLIC_META_PIXEL_ID ? ['fbq'] : []),
+];
 
 // https://astro.build/config
 export default defineConfig({
-  site: process.env.PUBLIC_SITE_URL || 'https://pyramedia.info',
+  site: env.PUBLIC_SITE_URL || 'https://pyramedia.info',
   output: 'static',
   // File output keeps extensionless Apache URLs. Preview accepts both forms so
   // the canonical Arabic root /ar/ can be exercised before deployment.
@@ -27,9 +35,7 @@ export default defineConfig({
         locales: { en: 'en', ar: 'ar' },
       },
     }),
-    partytown({
-      config: { forward: ['dataLayer.push', 'fbq'] },
-    }),
+    ...(partytownForwards.length ? [partytown({ config: { forward: partytownForwards } })] : []),
   ],
   vite: {
     plugins: [tailwindcss()],

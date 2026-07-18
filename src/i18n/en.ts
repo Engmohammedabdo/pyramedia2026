@@ -7,6 +7,8 @@ export const en = {
     contact: 'Contact',
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
+    primaryLabel: 'Primary navigation',
+    mobileLabel: 'Mobile navigation',
     langSwitch: 'التبديل إلى العربية',
     langLabel: 'ع',
   },
@@ -64,6 +66,16 @@ export const en = {
   a11y: {
     skipLink: 'Skip to content',
     breadcrumb: 'Breadcrumb',
+    privacyChoices: 'Privacy choices',
+  },
+  legal: {
+    updated: 'Last updated',
+    contactRequests: 'Contact for requests',
+    operator: 'Site operator',
+  },
+  map: {
+    load: 'Load the map',
+    frameTitle: 'Location map',
   },
   founder: {
     name: 'Mohamed Abdou',

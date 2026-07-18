@@ -30,7 +30,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
 );
 ---
 
-<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
+<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description} brandDisplay>
   <!-- ───────────────────────── 1 · Hero ───────────────────────── -->
   <section class="relative overflow-hidden">
     <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
@@ -51,17 +51,17 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
         dir="ltr"
       >
         <span class="hero-line block overflow-hidden"
-          ><span class="hero-line-inner block">{c.hero.h1Line1}</span></span
+          ><span class="hero-line-inner hero-entrance block">{c.hero.h1Line1}</span></span
         >
         <span class="hero-line block overflow-hidden"
-          ><span class="hero-line-inner block text-orange">{c.hero.h1Line2}</span></span
+          ><span class="hero-line-inner hero-entrance block text-orange">{c.hero.h1Line2}</span></span
         >
       </h1>
       <!-- Paints untouched; entrance motion is on the CTA row -->
       <p class="mt-7 max-w-2xl text-base text-muted md:text-xl">
         {c.hero.sub}
       </p>
-      <div class="mt-10 flex flex-wrap items-center gap-4" data-hero-fade>
+      <div class="hero-cta hero-entrance mt-10 flex flex-wrap items-center gap-4">
         <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement="hero">
           <Icon name="whatsapp" size={18} />
           {t.cta.whatsapp}
@@ -80,13 +80,13 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
          Until they arrive, styled text placeholders — never fake logos.
          Swap: put SVG/PNG files in src/assets/clients/ and replace the
          <span> items below with astro:assets <Image> tags. -->
-    <div class="marquee mt-6 overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div class="marquee mt-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div class="marquee-track items-center">
         {
           [false, true].map((dup) => (
-            <ul class="flex shrink-0 items-center" aria-hidden={dup ? 'true' : undefined} data-dup={dup ? 'true' : undefined}>
+            <ul class="marquee-list flex shrink-0 items-center" aria-hidden={dup ? 'true' : undefined} data-dup={dup ? 'true' : undefined}>
               {c.trustedBy.clients.map((client: string) => (
-                <li class="mx-8 whitespace-nowrap text-lg font-medium text-muted md:mx-12 md:text-xl">
+                <li class="text-lg font-medium text-muted md:text-xl">
                   {client}
                 </li>
               ))}
@@ -220,11 +220,5 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
 <style>
   :global([dir='rtl']) .method-progress {
     --flow-origin: right;
-  }
-  /* Reduced motion: duplicate marquee copy hidden, static wrapped row */
-  @media (prefers-reduced-motion: reduce) {
-    [data-dup] {
-      display: none;
-    }
   }
 </style>

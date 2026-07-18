@@ -17,7 +17,6 @@
   --color-text-faint: rgb(247 245 242 / 0.08);
   --color-orange-pulse-50: rgb(242 110 36 / 0.5);
   --color-orange-pulse-45: rgb(242 110 36 / 0.45);
-  --color-orange-clear: rgb(242 110 36 / 0);
   --color-line: rgba(255, 255, 255, 0.08);
   --color-btn-ink: #141414; /* dark text on orange buttons */
   --color-white: #ffffff;
@@ -154,6 +153,40 @@ html[lang='ar'] h4 {
   margin-inline-start: auto;
 }
 
+/* CSS-first hero motion: visible and close to rest even without JavaScript. */
+.hero-entrance {
+  opacity: 0.72;
+  transform: translateY(10%);
+  animation: hero-entrance 0.82s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-line:nth-child(2) .hero-entrance {
+  animation-delay: 0.1s;
+}
+.hero-cta {
+  animation-delay: 0.22s;
+}
+@keyframes hero-entrance {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-pyramid .pyramid-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  fill-opacity: 0;
+  animation: pyramid-draw 1.2s ease-in-out both;
+}
+.hero-pyramid .pyramid-path:nth-child(2) {
+  animation-delay: 0.18s;
+}
+@keyframes pyramid-draw {
+  to {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Texture — film grain + orange glow (SPEC §6.3)                      */
 /* ------------------------------------------------------------------ */
@@ -196,10 +229,7 @@ html[lang='ar'] .eyebrow {
   background-color: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
-  transition:
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.35s ease,
-    box-shadow 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .card:hover {
   transform: translateY(-4px);
@@ -218,10 +248,7 @@ html[lang='ar'] .eyebrow {
   font-weight: 600;
   border-radius: 999px;
   padding: 0.9rem 1.75rem;
-  transition:
-    background-color 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.25s ease;
+  transition: transform 0.25s ease;
   will-change: transform;
 }
 .btn-primary:hover {
@@ -267,7 +294,6 @@ html[lang='ar'] .eyebrow {
   font-weight: 500;
   border-radius: 999px;
   padding: 0.9rem 1.75rem;
-  transition: border-color 0.25s ease, background-color 0.25s ease;
 }
 .btn-secondary:hover {
   border-color: rgba(255, 255, 255, 0.25);
@@ -340,9 +366,6 @@ html[lang='ar'] .eyebrow {
 .card.tilt-on {
   position: relative;
   overflow: hidden;
-  transition:
-    border-color 0.35s ease,
-    box-shadow 0.35s ease;
 }
 .card.tilt-on:hover {
   transform: none; /* JS owns the transform while tilting */
@@ -411,9 +434,7 @@ html[lang='ar'] .eyebrow {
 
 /* Marquee items lift under the pointer */
 .marquee li {
-  transition:
-    color 0.3s ease,
-    transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 .marquee li:hover {
   color: var(--color-text);
@@ -463,6 +484,18 @@ footer,
   width: max-content;
   animation: marquee-scroll 36s linear infinite;
 }
+.marquee {
+  overflow: hidden;
+}
+.marquee-list > li {
+  margin-inline: 2rem;
+  white-space: nowrap;
+}
+@media (min-width: 48rem) {
+  .marquee-list > li {
+    margin-inline: 3rem;
+  }
+}
 /* Mirrored travel direction in RTL */
 [dir='rtl'] .marquee-track {
   animation-direction: reverse;
@@ -508,8 +541,38 @@ footer,
   .marquee-track {
     animation: none;
     flex-wrap: wrap;
-    width: 100%;
+    inline-size: 100%;
+    max-inline-size: 100%;
     justify-content: center;
+  }
+  .marquee {
+    overflow: visible;
+    inline-size: 100%;
+    max-inline-size: 100%;
+  }
+  .marquee-list {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 0 1 100%;
+    min-inline-size: 0;
+    justify-content: center;
+  }
+  .marquee-list[data-dup] {
+    display: none;
+  }
+  .marquee-list > li {
+    margin: 0.25rem 0.75rem;
+    white-space: normal;
+  }
+  .hero-entrance {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .hero-pyramid .pyramid-path {
+    animation: none;
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
   }
   *,
   *::before,
@@ -518,4 +581,9 @@ footer,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Static clipping keeps reveal translations tidy without animating a clip. */
+.reveal-clip {
+  overflow: clip;
 }

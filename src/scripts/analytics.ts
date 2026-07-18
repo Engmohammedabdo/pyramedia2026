@@ -8,6 +8,7 @@
  *  - `pyx:track` CustomEvents (contact form lifecycle).
  * Events are dropped unless the visitor accepted the consent banner.
  */
+import { SITE } from '@/config/site';
 
 declare global {
   interface Window {
@@ -26,12 +27,15 @@ function consented(): boolean {
 
 function send(event: string, params: Record<string, string> = {}) {
   if (!consented()) return;
-  // gtag semantics: dataLayer receives an arguments object (Partytown
-  // forwards dataLayer.push into the worker).
-  (function gtag(..._args: unknown[]) {
-    (window.dataLayer = window.dataLayer || []).push(arguments);
-  })('event', event, params);
-  if (typeof window.fbq === 'function') {
+
+  if (SITE.ga4Id) {
+    // gtag semantics: dataLayer receives an arguments object (Partytown
+    // forwards dataLayer.push into the worker).
+    (function gtag(..._args: unknown[]) {
+      (window.dataLayer = window.dataLayer || []).push(arguments);
+    })('event', event, params);
+  }
+  if (SITE.metaPixelId && typeof window.fbq === 'function') {
     window.fbq('trackCustom', event, params);
   }
 }

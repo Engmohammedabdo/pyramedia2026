@@ -77,7 +77,7 @@ const socials = [
                   href={s.href}
                   target="_blank"
                   rel="noopener"
-                  class="grid h-10 w-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-orange hover:text-orange"
+                  class="grid h-10 w-10 place-items-center rounded-full border border-line text-muted hover:border-orange hover:text-orange"
                   aria-label={s.label}
                 >
                   <Icon name={s.icon} size={18} />
@@ -94,7 +94,7 @@ const socials = [
           {
             navLinks.map((link) => (
               <li>
-                <a href={link.href} class="text-muted transition-colors hover:text-text">
+                <a href={link.href} class="text-muted hover:text-text">
                   {link.label}
                 </a>
               </li>
@@ -111,7 +111,7 @@ const socials = [
               <li>
                 <a
                   href={localizePath(`/services/${s.data.slug}`, lang)}
-                  class="text-muted transition-colors hover:text-text"
+                  class="text-muted hover:text-text"
                 >
                   {s.data.name}
                 </a>
@@ -127,7 +127,7 @@ const socials = [
           <li>
             <a
               href={TEL_LINK}
-              class="ltr-isolate text-muted transition-colors hover:text-text"
+              class="ltr-isolate text-muted hover:text-text"
               data-event="call_click"
               data-placement="footer"
             >
@@ -137,7 +137,7 @@ const socials = [
           <li>
             <a
               href={MAILTO_LINK}
-              class="ltr-isolate text-muted transition-colors hover:text-text"
+              class="ltr-isolate text-muted hover:text-text"
               data-event="email_click"
               data-placement="footer"
             >

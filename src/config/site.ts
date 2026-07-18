@@ -11,7 +11,7 @@ export const SITE = {
   wordmark: 'PYRAMEDIA X',
   tagline: 'Less Talk. More Performance.', // brand mark — stays English on both languages (SPEC §2.4)
 
-  legalNameEn: 'PYRAMEDIAX MARKETING MANAGEMENT L.L.C',
+  legalName: 'PYRAMEDIAX MARKETING MANAGEMENT L.L.C',
   // Arabic-script rendering (transliteration) of the registered English legal
   // name — see BUILD_NOTES.md; swap if the license shows a different Arabic name.
   legalNameAr: 'بيراميديا إكس ماركتينج مانجمنت ذ.م.م',
@@ -70,5 +70,5 @@ export const MAILTO_LINK = `mailto:${SITE.email}`;
 export function licenseLine(lang: Lang): string {
   return lang === 'ar'
     ? `${SITE.legalNameAr} — رخصة تجارية في دبي رقم ${SITE.license}`
-    : `${SITE.legalNameEn} — Dubai Trade License No. ${SITE.license}`;
+    : `${SITE.legalName} — Dubai Trade License No. ${SITE.license}`;
 }

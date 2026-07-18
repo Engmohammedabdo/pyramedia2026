@@ -43,7 +43,7 @@ const formConfig = {
 };
 
 const inputClass =
-  'w-full rounded-xl border border-line bg-surface px-4 py-3 text-text placeholder:text-muted/50 transition-colors focus:border-orange/60 focus:outline-none';
+  'w-full rounded-xl border border-line bg-surface px-4 py-3 text-text placeholder:text-muted focus:border-orange/60 focus:outline-none';
 ---
 
 <BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
@@ -259,9 +259,10 @@ const inputClass =
                 class="btn-secondary mt-6 w-full justify-center text-sm"
                 data-map-load
                 data-map-src={SITE.mapsEmbedUrl}
+                data-map-frame-title={t.map.frameTitle}
               >
                 <Icon name="map-pin" size={16} />
-                {lang === 'ar' ? 'اعرض الخريطة' : 'Load the map'}
+                {t.map.load}
               </button>
             ) : null
             /* TODO_MAPS_EMBED_URL: address card renders without the map block
@@ -464,7 +465,7 @@ const inputClass =
       iframe.loading = 'lazy';
       iframe.style.border = '0';
       iframe.referrerPolicy = 'no-referrer-when-downgrade';
-      iframe.title = 'Google Maps';
+      iframe.title = mapBtn.dataset.mapFrameTitle || '';
       slot.appendChild(iframe);
       slot.classList.remove('hidden');
       mapBtn.classList.add('hidden');

@@ -6,6 +6,7 @@
 import { getEntry, render } from 'astro:content';
 import type { Lang } from '@/config/site';
 import { SITE, MAILTO_LINK, licenseLine } from '@/config/site';
+import { useTranslations } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 interface Props {
@@ -13,13 +14,12 @@ interface Props {
   page: 'privacy' | 'terms';
 }
 const { lang, page } = Astro.props;
+const t = useTranslations(lang);
 
 const entry = await getEntry('legal', `${lang}/${page}`);
 if (!entry) throw new Error(`Missing legal content: ${lang}/${page}`);
 const { Content } = await render(entry);
 
-const updatedLabel = lang === 'ar' ? 'آخر تحديث' : 'Last updated';
-const contactLabel = lang === 'ar' ? 'للتواصل بخصوص هذه الصفحة' : 'Contact for requests';
 ---
 
 <BaseLayout lang={lang} title={entry.data.metaTitle} description={entry.data.metaDescription}>
@@ -31,8 +31,17 @@ const contactLabel = lang === 'ar' ? 'للتواصل بخصوص هذه الصف�
       {entry.data.title}
     </h1>
     <p class="mt-3 text-sm text-muted">
-      {updatedLabel}: <time datetime={entry.data.lastUpdated} class="ltr-isolate">{entry.data.lastUpdated}</time>
+      {t.legal.updated}: <time datetime={entry.data.lastUpdated} class="ltr-isolate">{entry.data.lastUpdated}</time>
     </p>
+
+    {
+      page === 'terms' && (
+        <div class="mt-6 text-sm text-muted">
+          <p>{t.legal.operator}</p>
+          <p class="mt-2 ltr-isolate" dir="ltr">{SITE.legalName}</p>
+        </div>
+      )
+    }
 
     <div class="legal-prose mt-10">
       <Content />
@@ -40,7 +49,7 @@ const contactLabel = lang === 'ar' ? 'للتواصل بخصوص هذه الصف�
 
     <div class="mt-12 rounded-xl border border-line bg-surface p-6">
       <p class="text-sm text-muted">
-        {contactLabel}:
+        {t.legal.contactRequests}:
         <a href={MAILTO_LINK} class="ltr-isolate font-medium text-orange hover:text-orange-hot" data-event="email_click" data-placement="legal">
           {SITE.email}
         </a>

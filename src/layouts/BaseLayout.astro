@@ -8,13 +8,12 @@ import '@fontsource/cairo/arabic-400.css';
 import '@fontsource/cairo/arabic-500.css';
 import '@fontsource/cairo/arabic-700.css';
 import '@fontsource/cairo/arabic-800.css';
-import '@fontsource/cairo/latin-400.css';
-import '@fontsource/cairo/latin-700.css';
 import '@fontsource/space-grotesk/latin-500.css';
 import '@fontsource/space-grotesk/latin-700.css';
 import '@fontsource/inter/latin-400.css';
 import '@fontsource/inter/latin-500.css';
 import cairo400Url from '@fontsource/cairo/files/cairo-arabic-400-normal.woff2?url';
+import cairo800Url from '@fontsource/cairo/files/cairo-arabic-800-normal.woff2?url';
 import spaceGrotesk700Url from '@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2?url';
 import inter400Url from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import '@/styles/global.css';
@@ -32,11 +31,13 @@ interface Props {
   lang: Lang;
   title: string;
   description: string;
+  /** Home hero uses the Space Grotesk brand display; Arabic interiors use Cairo 800. */
+  brandDisplay?: boolean;
   /** JSON-LD blocks specific to the page (Service, FAQPage, BreadcrumbList…) */
   jsonLd?: Record<string, unknown>[];
 }
 
-const { lang, title, description, jsonLd = [] } = Astro.props;
+const { lang, title, description, brandDisplay = false, jsonLd = [] } = Astro.props;
 const t = useTranslations(lang);
 const dir = dirFor(lang);
 
@@ -44,7 +45,9 @@ const dir = dirFor(lang);
 // English Space Grotesk brand H1 and uses Cairo for its Arabic body copy.
 const preloads =
   lang === 'ar'
-    ? [spaceGrotesk700Url, cairo400Url]
+    ? brandDisplay
+      ? [spaceGrotesk700Url, cairo400Url]
+      : [cairo800Url, cairo400Url]
     : [spaceGrotesk700Url, inter400Url];
 ---
 
@@ -62,7 +65,7 @@ const preloads =
   <body class="grain bg-bg">
     <a href="#main" class="skip-link">{t.a11y.skipLink}</a>
     <Nav lang={lang} />
-    <main id="main" tabindex="-1" class="pt-16 md:pt-[4.5rem]">
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <Footer lang={lang} />
@@ -71,7 +74,7 @@ const preloads =
     <Analytics />
     <slot name="scripts" />
     <script>
-      import '@/scripts/motion';
+      import '@/scripts/motion-loader';
       import '@/scripts/analytics';
     </script>
   </body>

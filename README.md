@@ -23,7 +23,9 @@ Everything degrades gracefully while unset (see BUILD_NOTES.md).
 
 ## Content editing map — which file is which section
 
-All copy lives in content files. Components never hardcode copy.
+Page copy lives in `src/content`, UI strings live in `src/i18n`, and
+company/contact data lives in `src/config/site.ts`. Components consume those
+sources instead of duplicating factual values.
 
 | You want to change… | Edit this file |
 |---|---|

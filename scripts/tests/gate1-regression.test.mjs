@@ -31,11 +31,19 @@ test('skip-link target is programmatically focusable', async () => {
   assert.match(layout, /<main\s+id="main"\s+tabindex="-1"/);
 });
 
-test('Arabic pages preload the brand H1 and Arabic body fonts', async () => {
-  const layout = await source('src/layouts/BaseLayout.astro');
+test('route-aware font preloads match Arabic home branding, Arabic interiors, and English display/body roles', async () => {
+  const [layout, home] = await Promise.all([
+    source('src/layouts/BaseLayout.astro'),
+    source('src/components/pages/HomePage.astro'),
+  ]);
 
-  assert.match(layout, /\?\s*\[spaceGrotesk700Url,\s*cairo400Url\]/);
+  assert.match(layout, /import cairo400Url from '@fontsource\/cairo\/files\/cairo-arabic-400-normal\.woff2\?url';/);
+  assert.match(layout, /import cairo800Url from '@fontsource\/cairo\/files\/cairo-arabic-800-normal\.woff2\?url';/);
+  assert.doesNotMatch(layout, /@fontsource\/cairo\/latin-/);
+  assert.match(layout, /brandDisplay\?: boolean;/);
+  assert.match(layout, /brandDisplay\s*\?\s*\[spaceGrotesk700Url,\s*cairo400Url\]\s*:\s*\[cairo800Url,\s*cairo400Url\]/);
   assert.match(layout, /:\s*\[spaceGrotesk700Url,\s*inter400Url\]/);
+  assert.match(home, /<BaseLayout\s+lang=\{lang\}\s+title=\{c\.meta\.title\}\s+description=\{c\.meta\.description\}\s+brandDisplay/);
 });
 
 test('component alpha colors come from the token file', async () => {
@@ -48,7 +56,7 @@ test('component alpha colors come from the token file', async () => {
   assert.match(css, /--color-text-faint:\s*rgb\(247 245 242 \/ 0\.08\);/);
   assert.match(css, /--color-orange-pulse-50:\s*rgb\(242 110 36 \/ 0\.5\);/);
   assert.match(css, /--color-orange-pulse-45:\s*rgb\(242 110 36 \/ 0\.45\);/);
-  assert.match(css, /--color-orange-clear:\s*rgb\(242 110 36 \/ 0\);/);
+  assert.doesNotMatch(css, /--color-orange-clear:/);
   assert.doesNotMatch(footer, /rgba\(247, 245, 242/);
   assert.doesNotMatch(whatsapp, /rgba\(242, 110, 36/);
 });

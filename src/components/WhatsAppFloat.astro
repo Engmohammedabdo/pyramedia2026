@@ -20,8 +20,7 @@ const t = useTranslations(lang);
   href={waLink(lang)}
   target="_blank"
   rel="noopener"
-  class="wa-float fixed bottom-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-orange text-btn-ink shadow-lg transition-transform hover:scale-105 hover:bg-orange-hot"
-  style="inset-inline-end: 1.25rem;"
+  class="wa-float fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-orange text-btn-ink shadow-lg transition-transform hover:bg-orange-hot"
   aria-label={t.cta.whatsappFloat}
   data-event="whatsapp_click"
   data-placement="float"
@@ -30,6 +29,19 @@ const t = useTranslations(lang);
 </a>
 
 <style>
+  .wa-float {
+    --wa-float-lift: calc(-1 * var(--consent-banner-offset, 0px));
+    inset-block-end: max(1.25rem, env(safe-area-inset-bottom));
+    inset-inline-end: max(1.25rem, env(safe-area-inset-right));
+    transform: translateY(var(--wa-float-lift));
+  }
+  :global([dir='rtl']) .wa-float {
+    inset-inline-end: max(1.25rem, env(safe-area-inset-left));
+  }
+  .wa-float:hover {
+    transform: translateY(var(--wa-float-lift)) scale(1.05);
+  }
+
   /* Ripple ring — transform/opacity only (SPEC §8 law 1): a bordered ring
      scales out and fades instead of animating box-shadow spread. */
   .wa-float::after {
