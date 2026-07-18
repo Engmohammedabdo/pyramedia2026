@@ -2,13 +2,21 @@
 
 - **Handoff date:** 2026-07-18
 - **Working branch:** local `main`
-- **Base HEAD:** `58fab48459b1a2405438900d35a8c7220bc36151`
-- **Working-tree state:** the GATE 2 remediation was verified on 2026-07-18
-  (gate1 7/7, gate2 34/34, clean 25-page build, clean diff check, preview
-  smoke on `/`, `/ar/` and interior routes) and committed on local `main` as
-  the commit following that base HEAD. The user-owned untracked files
-  (`REVIEW_GATE1.md`, `REVIEW_GATE2.md`, `.claude/settings.local.json`)
-  remain uncommitted by design.
+- **Base HEAD:** the commit containing the second re-review remediation
+  (successor of `3b3f511`; run `git rev-parse HEAD` — Git is the authority,
+  this document is not).
+- **Review state:** `REVIEW_GATE2.md` (base `58fab48`),
+  `REVIEW_GATE2_REREVIEW.md` (base `7c244df`) and
+  `REVIEW_GATE2_REREVIEW2.md` (base `3b3f511`) are all independent FAIL
+  records for the baselines they reviewed. The second re-review confirmed
+  16/18 original and 8/10 first-re-review findings FIXED; its 10 findings
+  were remediated in the current HEAD. A fresh independent pass is required
+  for any new verdict.
+- **Working-tree state:** verified with gate1 7/7, gate2 51/51, clean
+  typecheck, clean 25-page build and clean diff check. The user-owned
+  untracked files (`REVIEW_GATE1.md`, `REVIEW_GATE2.md`,
+  `REVIEW_GATE2_REREVIEW.md`, `REVIEW_GATE2_REREVIEW2.md`,
+  `.claude/settings.local.json`) remain uncommitted by design.
 - **Release state:** no remote, push, deployment, production provider, or live
   Apache verification was performed in this remediation.
 
@@ -30,15 +38,20 @@ document is evidence for a dated tree, not a substitute for verification.
   re-review `REVIEW_GATE2_REREVIEW.md` (commit `7c244df`) returned **FAIL**,
   confirming 15 FIXED, finding G2-001/G2-005/G2-008 STILL OPEN, and adding
   ten re-review findings (G2-RR-001..010).
-- All 13 re-review findings were remediated in a second local pass (the
-  commit that updated this line). Treat that as an implementation claim.
+- All 13 first-re-review findings were remediated in a second local pass
+  (commit `3b3f511`). The second independent re-review
+  (`REVIEW_GATE2_REREVIEW2.md`, base `3b3f511`, verdict FAIL) confirmed
+  16/18 original and 8/10 first-re-review findings FIXED and raised 10
+  findings; all 10 were remediated in a third local pass (the commit that
+  updated this line). Treat that as an implementation claim.
 - A fresh formal independent GATE 2 re-review is still pending for the
-  current tree; do not relabel the original reports or claim an independent
+  current tree; do not relabel the earlier reports or claim an independent
   PASS before that review occurs.
 - The current production build generates 25 static pages. The latest
-  INDEPENDENT mobile Lighthouse evidence (re-review, commit `7c244df`) is
-  Perf 98 EN / 96 AR with A11y/BP/SEO 100 for both; earlier local builder
-  runs measured EN 100. Both sets pass every available GATE 2 budget.
+  INDEPENDENT mobile Lighthouse evidence (second re-review, commit
+  `3b3f511`) is Perf 98 EN / 96 AR with A11y/BP/SEO 100 for both; earlier
+  local builder runs measured EN 100. Both sets pass every available GATE 2
+  budget.
 
 ## 2. Verification commands
 
@@ -59,7 +72,8 @@ Expected Node major: 22. The evidence recorded for this handoff is:
 
 ```text
 npm.cmd run test:gate1  -> 7/7 passed
-npm.cmd run test:gate2  -> 34/34 passed
+npm.cmd run test:gate2  -> 51/51 passed
+npm.cmd run typecheck   -> clean (astro sync && tsc --noEmit)
 npm.cmd run build       -> 25 pages; no Astro/Vite warnings or errors
 git diff --check        -> clean; Windows LF/CRLF advisories only
 ```
@@ -184,9 +198,10 @@ independent report remains unchanged.
 ## 8. Git and user-owned state
 
 - Branch: local `main`. The first (18-finding) remediation is committed as
-  `1a434e4`; the Instagram reels box as `c451e70`; the reviewed baseline of
-  the re-review is `7c244df`. The second (13-finding) re-review remediation
-  lands in the commit that contains this updated line.
+  `1a434e4`; the Instagram reels box as `c451e70`; the first re-review
+  baseline is `7c244df`; the second (13-finding) remediation as `3b3f511`,
+  which is also the second re-review baseline. The third (10-finding)
+  remediation lands in the commit that contains this updated line.
 - No Git remote or upstream is configured in this checkout.
 - No push, pull request, or deployment has been performed at any point.
 - These pre-existing untracked files are user-owned and must not be deleted,
@@ -194,9 +209,11 @@ independent report remains unchanged.
   - `.claude/settings.local.json`
   - `REVIEW_GATE1.md`
   - `REVIEW_GATE2.md`
-- `REVIEW_GATE2.md` must remain the independent record of its reviewed
-  baseline. A new review creates a new verdict/report; implementation docs do
-  not rewrite the old verdict.
+  - `REVIEW_GATE2_REREVIEW.md`
+  - `REVIEW_GATE2_REREVIEW2.md`
+- Every `REVIEW_GATE*` report must remain the independent record of its
+  reviewed baseline. A new review creates a new verdict/report;
+  implementation docs do not rewrite an old verdict.
 
 ## 9. Owner and release boundaries
 
@@ -236,7 +253,7 @@ Still required before launch approval:
 - Do not edit the independent reports to change a verdict.
 - Do not fabricate assets, translations, metrics, testimonials, integrations,
   addresses, or delivery success.
-- Do not stage the three user-owned files above.
+- Do not stage the five user-owned files listed in §8.
 - Do not push, deploy, send real leads, or configure external providers without
   explicit authorization and a named destination.
 

@@ -11,6 +11,7 @@
     "build": "astro build && node scripts/postbuild.mjs",
     "test:gate1": "node --test scripts/tests/gate1-regression.test.mjs",
     "test:gate2": "node --test scripts/tests/gate2-regression.test.mjs",
+    "typecheck": "astro sync && tsc --noEmit",
     "preview": "astro preview",
     "astro": "astro"
   },

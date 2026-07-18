@@ -21,7 +21,6 @@ let cursorListenersBound = false;
 let cachedDot: HTMLElement | null = null;
 let cachedRing: HTMLElement | null = null;
 
-let ctx: gsap.Context | null = null;
 let deferredCtx: gsap.Context | null = null;
 let runtimeAbort: AbortController | null = null;
 let booted = false;
@@ -394,8 +393,6 @@ function teardownMotion() {
   cancelDeferredBoot();
   runtimeAbort?.abort();
   runtimeAbort = null;
-  ctx?.revert();
-  ctx = null;
   deferredCtx?.revert();
   deferredCtx = null;
   stopLenis();
@@ -426,9 +423,6 @@ function boot() {
   const { signal } = runtimeAbort;
   const bootGeneration = generation;
 
-  // The hero is CSS-first. Keeping a context for future immediate motion also
-  // gives every runtime generation an explicit revert boundary.
-  ctx = gsap.context(() => {});
   const later = () => {
     laterHandle = null;
     if (signal.aborted || bootGeneration !== generation || reduced()) return;
@@ -449,9 +443,12 @@ function boot() {
     });
   };
 
-  if ('requestIdleCallback' in window) {
+  // Feature-tested via an optional-property read: the `'x' in window` form
+  // narrows the else branch to `never` under lib.dom typing (G2-RR2-005).
+  const idle = (window as { requestIdleCallback?: typeof requestIdleCallback }).requestIdleCallback;
+  if (idle) {
     laterUsedIdle = true;
-    laterHandle = window.requestIdleCallback(later, { timeout: 1000 });
+    laterHandle = idle(later, { timeout: 1000 });
   } else {
     laterUsedIdle = false;
     laterHandle = window.setTimeout(later, 250);

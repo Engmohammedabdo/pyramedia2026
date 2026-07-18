@@ -6,6 +6,8 @@ metaTitle: 'Privacy Policy — PyramediaX'
 metaDescription: 'How PyramediaX handles data shared through this website: form submissions, analytics cookies loaded only after consent, and WhatsApp contact.'
 ---
 
+import { SITE } from '@/config/site';
+
 ## What this policy covers
 
 This policy describes what data this website collects, why, and what happens to it. It covers this website only.
@@ -14,7 +16,16 @@ This policy describes what data this website collects, why, and what happens to 
 
 **Contact form.** If you submit the contact form, we receive what you type: your name, phone number, email address (if provided), company name (if provided), the service you selected, and your message. Submissions are delivered to our own customer-relationship system so we can respond to you. We also record the page you submitted from and standard campaign parameters if you arrived through an ad.
 
-**Analytics cookies.** With your consent — and only with your consent — this site loads Google Analytics 4 and the Meta Pixel to understand how visitors use the site and to measure our own advertising. If you decline, these tools are not loaded at all and no analytics cookies are set. The site works fully either way. You can change your choice by clearing this site's data in your browser.
+{/* Provider-aware disclosure (G2-RR2-002): the rendered text always matches
+    the actual analytics state of the build. */}
+
+export const analyticsTools = [SITE.ga4Id && 'Google Analytics 4', SITE.metaPixelId && 'the Meta Pixel'].filter(Boolean).join(' and ');
+
+{analyticsTools ? (
+  <p><strong>Analytics cookies.</strong> With your consent — and only with your consent — this site loads {analyticsTools} to understand how visitors use the site and to measure our own advertising. If you decline, these tools are not loaded at all and no analytics cookies are set. The site works fully either way. You can change your choice by clearing this site's data in your browser.</p>
+) : (
+  <p><strong>Analytics cookies.</strong> This website currently sets no analytics cookies and shows no cookie banner. If we enable analytics tools in the future, they will load only after your explicit consent.</p>
+)}
 
 **WhatsApp.** If you choose to contact us on WhatsApp, that conversation happens on WhatsApp and is governed by WhatsApp's own terms and privacy policy. We only receive what you send us there.
 

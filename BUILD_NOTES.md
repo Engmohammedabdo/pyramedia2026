@@ -98,10 +98,13 @@ npm.cmd run build
 git diff --check
 ```
 
-Latest completed results:
+Latest completed results (after the second re-review remediation):
 
 - GATE 1 regression suite: 7/7 passed.
-- GATE 2 regression suite: 34/34 passed, including the handoff-document guard.
+- GATE 2 regression suite: 51/51 passed (46 from the prior pass + 5 new
+  guards covering the second re-review findings).
+- `npm run typecheck` (`astro sync && tsc --noEmit`): clean — new
+  verification step added per G2-RR2-005.
 - Production build: 25 static pages, with no Astro/Vite warnings or errors.
 - `git diff --check`: clean apart from Windows LF/CRLF conversion advisories.
 
@@ -196,6 +199,39 @@ form-control boundary token, and shared Instagram build assets across locales.
 `REVIEW_GATE2.md` and `REVIEW_GATE2_REREVIEW.md` both remain FAIL verdicts for
 the baselines they reviewed; only the next independent pass can issue a new
 verdict.
+
+**Second re-review response (2026-07-18).** `REVIEW_GATE2_REREVIEW2.md`
+(FAIL, commit `3b3f511`, 3 BLOCKER / 4 MAJOR / 3 MINOR) confirmed 16 of the
+18 original findings and 8 of the 10 first-re-review findings FIXED. All 10
+of its findings were remediated in the commit containing this entry:
+unapproved timing/outcome/universal claims removed from home, About and SEO
+copy in both languages (G2-RR2-001); the branding rollout and FAQ constrained
+to the exact §7.3 scope (G2-002); consent UI now renders only when an
+analytics provider is configured and both privacy policies generate
+provider-aware analytics disclosures (G2-RR2-002); remaining Arabic
+colloquialisms/calques rewritten and the Instagram rendering standardized to
+«إنستجرام» (G2-005); footer social labels centralized in `SOCIAL_LINKS`
+(G2-008); interior heroes and legal pages joined grouped stagger reveals
+(G2-RR-005); the md-breakpoint overlay close now hands keyboard focus to a
+desktop nav target (G2-RR2-003); test fixtures excluded from Tailwind source
+scanning and the placeholder GSAP context removed (G2-RR2-004); the source is
+now `tsc --noEmit`-clean with a `typecheck` script added to verification
+(G2-RR2-005). One additional same-class claim found during this pass was also
+removed: social-media "publishing runs on schedule" / «وفق جدول ثابت» and
+"steady rhythm" / «بإيقاع منتظم» became system-framed wording, and the
+forbidden-promise scanner now covers those patterns.
+
+*Verification boundary for G2-RR2-003:* the embedded preview browser does not
+dispatch matchMedia change events on emulated resize and parks dropped focus
+on the skip link rather than `<body>`, so the fix was verified by direct
+callback invocation (menu closes, `aria-expanded` clears, handoff guard
+evaluates correctly) plus source inspection. The full resize-event path —
+including the real-Chrome focus-to-`<body>` drop that the continuous
+`focusin` tracker exists for — needs confirmation in real Chrome at the next
+independent pass. The reviewer's two Gate-3-forward `.htaccess` notes were also
+applied early: hardcoded canonical-host redirect target and year-long
+immutable caching for hashed AVIF/WebP assets. These are implementation
+claims until the next independent pass.
 
 The implementation includes:
 

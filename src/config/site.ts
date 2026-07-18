@@ -77,6 +77,16 @@ export const MAILTO_LINK = `mailto:${SITE.email}`;
 export const IG_HANDLE = SITE.socials.instagram.split('/').filter(Boolean).pop() ?? '';
 
 /**
+ * Social links with their platform display labels (proper nouns, identical
+ * in both languages) — the single source for social navigation (G2-008).
+ */
+export const SOCIAL_LINKS = [
+  { href: SITE.socials.instagram, icon: 'instagram', label: 'Instagram' },
+  { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },
+  { href: SITE.socials.linkedin, icon: 'linkedin', label: 'LinkedIn' },
+] as const;
+
+/**
  * License trust line (footer + about + legal), SPEC §6.4. On Arabic pages the
  * approved ENGLISH legal name is rendered inside Unicode LTR-isolate marks
  * (LRI…PDI) — publishing an unverified Arabic transliteration as the licensed

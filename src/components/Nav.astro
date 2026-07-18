@@ -248,8 +248,31 @@ function isActive(href: string): boolean {
       wMedia.__pyxNavMedia.removeEventListener('change', wMedia.__pyxNavMediaCb);
     }
     wMedia.__pyxNavMedia = window.matchMedia('(min-width: 48rem)');
+    // Track continuously whether focus lives in the overlay/toggle: when the
+    // breakpoint hides the overlay, the browser drops focus to <body> BEFORE
+    // the media-change callback runs, so sampling activeElement there is too
+    // late (G2-RR2-003).
+    let overlayHadFocus = false;
+    const wFocus = window as typeof window & { __pyxNavFocusin?: (e: FocusEvent) => void };
+    if (wFocus.__pyxNavFocusin) document.removeEventListener('focusin', wFocus.__pyxNavFocusin);
+    wFocus.__pyxNavFocusin = (e: FocusEvent) => {
+      const target = e.target as Node | null;
+      overlayHadFocus = !!target && (menu.contains(target) || target === toggle);
+    };
+    document.addEventListener('focusin', wFocus.__pyxNavFocusin);
+
     wMedia.__pyxNavMediaCb = () => {
-      if (wMedia.__pyxNavMedia?.matches && isOpen()) setOpen(false);
+      if (!wMedia.__pyxNavMedia?.matches || !isOpen()) return;
+      const active = document.activeElement;
+      // Hand focus to a visible desktop target when the keyboard user was in
+      // the overlay — including the case where the browser already dropped
+      // focus to <body> as the overlay became display:none.
+      const hadFocus =
+        (!!active && (menu.contains(active) || active === toggle)) ||
+        (active === document.body && overlayHadFocus);
+      setOpen(false);
+      if (hadFocus) document.querySelector<HTMLElement>('header nav a')?.focus();
+      overlayHadFocus = false;
     };
     wMedia.__pyxNavMedia.addEventListener('change', wMedia.__pyxNavMediaCb);
   }

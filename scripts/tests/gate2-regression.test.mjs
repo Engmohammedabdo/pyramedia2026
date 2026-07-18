@@ -61,6 +61,21 @@ const forbiddenPromises = [
   /everything we produce[\s\S]{0,100}remain yours/i,
   /team is trained[\s\S]{0,100}refine/i,
   /client[- ]CRM connection[\s\S]{0,100}standard scope/i,
+  // G2-RR2-001/G2-002 second re-review: timing, outcome, universal and
+  // beyond-scope commitments
+  /\bon schedule\b/i,
+  /steady rhythm/i,
+  /compounds month over month/i,
+  /measured in months, not days/i,
+  /every client the agency/i,
+  /everything after/i,
+  /في وقتها/u,
+  /وفق جدول/u,
+  /بإيقاع منتظم/u,
+  /يتراكم أثره/u,
+  /يُقاس بالشهور/u,
+  /لكل عميل تتولاه/u,
+  /وما بعدها/u,
 ];
 
 const colloquialisms = ['اللي', 'مو', 'وش', 'وين', 'تبغى', 'تبغاه', 'عشان', 'بنرد', 'بنرجع', 'خلنا'];
@@ -622,8 +637,9 @@ test('creative runtime retains its one-pin GSAP/ScrollTrigger/Lenis architecture
   assert.match(motion, /gsap\.ticker\.remove\(cursorTicker\)/);
   assert.match(motion, /lenis\?\.destroy\(\)/);
   assert.match(motion, /runtimeAbort\?\.abort\(\)/);
-  assert.match(motion, /ctx\?\.revert\(\)/);
   assert.match(motion, /deferredCtx\?\.revert\(\)/);
+  // G2-RR2-004: no empty placeholder GSAP context may exist
+  assert.doesNotMatch(motion, /gsap\.context\(\(\)\s*=>\s*\{\s*\}\)/);
   assert.match(motion, /\.pyramid-shimmer/);
   assert.match(motion, /motionPreference\.addEventListener\('change'/);
 });
@@ -787,4 +803,53 @@ test('Instagram build-time thumbnails resolve once and are shared across locale 
   const reels = await source('src/components/InstagramReels.astro');
   assert.match(reels, /thumbCache/);
   assert.match(reels, /resolveThumbOnce/);
+});
+
+test('consent UI and analytics disclosure are provider-aware (G2-RR2-002)', async () => {
+  const [layout, privacyEn, privacyAr] = await Promise.all([
+    source('src/layouts/BaseLayout.astro'),
+    source('src/content/pages/en/privacy.mdx'),
+    source('src/content/pages/ar/privacy.mdx'),
+  ]);
+  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId\) && <ConsentBanner/);
+  for (const policy of [privacyEn, privacyAr]) {
+    assert.match(policy, /SITE\.ga4Id/);
+    assert.match(policy, /SITE\.metaPixelId/);
+    assert.match(policy, /analyticsTools \?/);
+  }
+});
+
+test('social platform labels render from the central SOCIAL_LINKS source (G2-008)', async () => {
+  const [site, footer] = await Promise.all([
+    source('src/config/site.ts'),
+    source('src/components/Footer.astro'),
+  ]);
+  assert.match(site, /export const SOCIAL_LINKS/);
+  assert.match(footer, /SOCIAL_LINKS/);
+  assert.doesNotMatch(footer, /label: '(Instagram|Facebook|LinkedIn)'/);
+});
+
+test('interior heroes and the legal page participate in grouped stagger reveals (G2-RR-005)', async () => {
+  for (const page of ['AboutPage', 'ContactPage', 'ServicesHubPage', 'ServicePage', 'LegalPage']) {
+    const component = await source(`src/components/pages/${page}.astro`);
+    assert.match(component, /data-reveal-group/, `${page} must group its reveal targets`);
+    assert.doesNotMatch(component, /data-hero-fade/, `${page} must not carry dead hero-fade hooks`);
+  }
+});
+
+test('closing the overlay at the md breakpoint hands focus to a desktop target (G2-RR2-003)', async () => {
+  const nav = await source('src/components/Nav.astro');
+  assert.match(nav, /hadFocus/);
+  assert.match(nav, /querySelector<HTMLElement>\('header nav a'\)\?\.focus\(\)/);
+});
+
+test('verification includes an independent typecheck and Arabic uses one Instagram rendering', async () => {
+  const pkg = JSON.parse(await source('package.json'));
+  assert.match(pkg.scripts.typecheck ?? '', /tsc --noEmit/);
+  for (const contentPath of arabicContentPaths) {
+    const content = await source(contentPath);
+    assert.doesNotMatch(content, /إنستقرام/u, `${contentPath} must use إنستجرام`);
+  }
+  const arabicUi = await source('src/i18n/ar.ts');
+  assert.doesNotMatch(arabicUi, /إنستقرام/u);
 });

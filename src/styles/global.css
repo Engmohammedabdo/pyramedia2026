@@ -1,4 +1,14 @@
-@import 'tailwindcss';
+/* Class detection is restricted to src/ — review reports, plans and test
+   fixtures elsewhere in the repo quote forbidden class literals in prose,
+   and auto-detection would compile them into dead production CSS
+   (G2-RR2-004). The transition-* utilities are additionally excluded by
+   name: SPEC §8 bans paint/layout transitions site-wide, and the bare word
+   "transition" in src comments would otherwise regenerate the utility. */
+@import 'tailwindcss' source('../../src');
+@source not inline("transition");
+@source not inline("transition-all");
+@source not inline("transition-colors");
+@source not inline("transition-shadow");
 
 /* ------------------------------------------------------------------ */
 /* Design tokens — SPEC §6.1. The single place colors are defined.     */

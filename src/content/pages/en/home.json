@@ -40,7 +40,7 @@
       },
       {
         "name": "Execution",
-        "blurb": "Content, campaigns, and builds go live on schedule, as one coordinated system."
+        "blurb": "Content, campaigns, and builds go live as one coordinated system."
       },
       {
         "name": "Result",
@@ -76,6 +76,6 @@
   },
   "founder": {
     "eyebrow": "The founder",
-    "line": "Leads strategy across marketing and automation for every client the agency takes on."
+    "line": "Leads strategy across marketing and automation for the agency's clients."
   }
 }

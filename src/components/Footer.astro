@@ -5,7 +5,7 @@
  */
 import { getCollection } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { SITE, TEL_LINK, MAILTO_LINK, licenseLine } from '@/config/site';
+import { SITE, SOCIAL_LINKS, TEL_LINK, MAILTO_LINK, licenseLine } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
 import Icon from './Icon.astro';
 
@@ -29,11 +29,7 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
 
 const address = lang === 'ar' ? SITE.addressAr : SITE.addressEn;
 
-const socials = [
-  { href: SITE.socials.instagram, icon: 'instagram', label: 'Instagram' },
-  { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },
-  { href: SITE.socials.linkedin, icon: 'linkedin', label: 'LinkedIn' },
-] as const;
+const socials = SOCIAL_LINKS;
 
 // "PYRAMEDIA X" → base + accented last word, from the single wordmark source
 const wmParts = SITE.wordmark.split(' ');

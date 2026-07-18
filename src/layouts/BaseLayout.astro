@@ -19,6 +19,7 @@ import inter400Url from '@fontsource/inter/files/inter-latin-400-normal.woff2?ur
 import '@/styles/global.css';
 
 import type { Lang } from '@/config/site';
+import { SITE } from '@/config/site';
 import { useTranslations, dirFor } from '@/i18n';
 import Nav from '@/components/Nav.astro';
 import Footer from '@/components/Footer.astro';
@@ -70,7 +71,12 @@ const preloads =
     </main>
     <Footer lang={lang} />
     <WhatsAppFloat lang={lang} />
-    <ConsentBanner lang={lang} />
+    {
+      /* Consent UI exists only when an analytics provider is configured —
+         asking for cookie consent in a build that sets no analytics cookies
+         would itself be an untrue disclosure (G2-RR2-002). */
+      (SITE.ga4Id || SITE.metaPixelId) && <ConsentBanner lang={lang} />
+    }
     <Analytics />
     <slot name="scripts" />
     <script>

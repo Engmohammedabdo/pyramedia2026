@@ -29,14 +29,10 @@ function bindIntentListeners() {
   intentEvents.forEach((eventName) => document.addEventListener(eventName, onIntent, { passive: true }));
 }
 
-declare global {
-  interface Window {
-    __pyxMotionLoaderBound?: boolean;
-  }
-}
+const loaderWindow = window as typeof window & { __pyxMotionLoaderBound?: boolean };
 
-if (!window.__pyxMotionLoaderBound) {
-  window.__pyxMotionLoaderBound = true;
+if (!loaderWindow.__pyxMotionLoaderBound) {
+  loaderWindow.__pyxMotionLoaderBound = true;
   bindIntentListeners();
   document.addEventListener('astro:page-load', bindIntentListeners);
   motionPreference.addEventListener('change', (event) => {

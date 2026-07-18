@@ -142,3 +142,38 @@ re-review findings and adjusted the regression suite so it protects the
 SPEC §7.1 founder-verbatim Arabic strings instead of rewriting them. That
 second pass is itself an implementation claim until the next independent
 review.
+
+## Postscript 2 — response to REVIEW_GATE2_REREVIEW2.md (2026-07-18)
+
+The second independent re-review (FAIL, commit `3b3f511`, 3 BLOCKER /
+4 MAJOR / 3 MINOR) confirmed 16/18 original and 8/10 first-re-review findings
+FIXED. All ten of its findings were remediated in the commit that follows
+`3b3f511`:
+
+- **G2-RR2-001** — removed "on schedule", "compounds month over month",
+  "measured in months, not days" and the universal "every client" wording
+  from home/About/SEO copy in both languages; replacements stay inside the
+  approved qualitative scope.
+- **G2-002** — branding rollout ends at social and print; the rebrand FAQ was
+  replaced with a strategy-phase FAQ inside the §7.3 deliverables.
+- **G2-RR2-002** — the consent banner renders only when an analytics provider
+  is configured, and both privacy policies now generate provider-aware
+  analytics disclosures from the same build state.
+- **G2-005** — remaining colloquial/calqued Arabic rewritten; Instagram
+  standardized to «إنستجرام».
+- **G2-008** — social platform labels moved to `SOCIAL_LINKS` in `site.ts`.
+- **G2-RR-005** — interior heroes and the legal page now use grouped,
+  staggered reveals.
+- **G2-RR2-003** — the md-breakpoint overlay close hands focus to a visible
+  desktop nav target when the keyboard user was inside the overlay.
+- **G2-RR2-004** — regression-test fixtures are excluded from Tailwind source
+  scanning (no dead transition CSS in the build) and the placeholder GSAP
+  context was removed.
+- **G2-RR2-005** — the source tree is `tsc --noEmit`-clean and `npm run
+  typecheck` joined the verification commands.
+- Gate-3-forward `.htaccess` notes applied early: hardcoded canonical host in
+  the HTTPS/non-www redirect and year-long immutable caching for hashed
+  AVIF/WebP.
+
+Guarded by five new gate2 regression tests (51 total). This postscript is an
+implementation claim; only a fresh independent review can issue a verdict.

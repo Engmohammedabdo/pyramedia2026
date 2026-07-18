@@ -98,4 +98,9 @@ export const en = {
   },
 } as const;
 
-export type Dictionary = typeof en;
+/**
+ * Structural dictionary type: same shape as the English source, but every
+ * leaf widens to `string` so native locales type-check (G2-RR2-005).
+ */
+type DeepStrings<T> = { [K in keyof T]: T[K] extends string ? string : DeepStrings<T[K]> };
+export type Dictionary = DeepStrings<typeof en>;
