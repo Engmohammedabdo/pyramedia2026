@@ -1,0 +1,180 @@
+---
+/**
+ * Instagram reels box (SPEC Addendum A.1, founder-approved 2026-07-18).
+ * Three owner-curated reels from src/content/instagram.json rendered as
+ * on-brand facade cards. Thumbnails are fetched ONCE at build time and
+ * optimized into local assets — the page makes zero Instagram requests at
+ * load. Clicking a card swaps it for the official Instagram embed
+ * (click-to-load, same pattern as the contact-page map facade).
+ * A failed thumbnail fetch degrades to a branded panel; the section never
+ * breaks the build. Without JS, cards are plain links to the reels.
+ */
+import { Image } from 'astro:assets';
+import type { Lang } from '@/config/site';
+import { SITE } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import Icon from './Icon.astro';
+import Button from './Button.astro';
+import igContent from '@/content/instagram.json';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+/** Instagram's public media redirect → the reel's cover image URL. */
+async function resolveThumb(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${url.replace(/\/$/, '')}/media/?size=l`, {
+      redirect: 'manual',
+    });
+    const location = res.headers.get('location');
+    if (res.status >= 300 && res.status < 400 && location?.startsWith('https://')) {
+      return location;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+const reels = await Promise.all(
+  (igContent.reels as string[]).slice(0, 3).map(async (url, i) => ({
+    url,
+    thumb: await resolveThumb(url),
+    index: i + 1,
+  }))
+);
+---
+
+{
+  reels.length > 0 && (
+    <section class="cv-auto border-t border-line" aria-label={t.instagram.eyebrow} data-reveal-group>
+      <div class="mx-auto max-w-6xl px-5 py-24 md:py-32">
+        <p class="eyebrow" data-reveal>
+          {t.instagram.eyebrow}
+        </p>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-6" data-reveal>
+          <h2 class="font-display max-w-2xl font-bold text-text" style="font-size: var(--text-h2);">
+            {t.instagram.title}
+          </h2>
+          <Button href={SITE.socials.instagram} variant="secondary" external>
+            <Icon name="instagram" size={17} />
+            {t.instagram.follow}
+          </Button>
+        </div>
+
+        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {reels.map((reel) => (
+            <a
+              href={reel.url}
+              target="_blank"
+              rel="noopener"
+              class="card group relative block overflow-hidden !p-0"
+              data-ig-card
+              data-ig-url={reel.url}
+              data-reveal
+              aria-label={`${t.instagram.card} ${reel.index} — @pyramedia.dxb. ${t.instagram.play}`}
+            >
+              <span class="block aspect-[4/5]">
+                {reel.thumb ? (
+                  <Image
+                    src={reel.thumb}
+                    alt=""
+                    inferSize
+                    widths={[320, 480, 740]}
+                    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+                    class="ig-thumb h-full w-full object-cover"
+                  />
+                ) : (
+                  <span class="grid h-full w-full place-items-center bg-surface-2">
+                    <Icon name="instagram" size={44} class="text-muted" />
+                  </span>
+                )}
+              </span>
+              <span
+                class="absolute top-4 start-4 grid h-9 w-9 place-items-center rounded-full bg-bg/70 text-text"
+                aria-hidden="true"
+              >
+                <Icon name="instagram" size={17} />
+              </span>
+              <span class="ig-play absolute inset-0 grid place-items-center" aria-hidden="true">
+                <span class="grid h-16 w-16 place-items-center rounded-full bg-orange text-btn-ink">
+                  <Icon name="play" size={26} />
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+        <p class="mt-4 text-xs text-muted" data-reveal>
+          {t.instagram.hint}
+        </p>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* Facade micro-interactions — transform/opacity only (SPEC §8 law 1) */
+  .ig-thumb,
+  .ig-play > span {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .group:hover .ig-thumb {
+    transform: scale(1.04);
+  }
+  .group:hover .ig-play > span {
+    transform: scale(1.1);
+  }
+  /* Official embed slot keeps a sensible height while Instagram hydrates it */
+  :global(.ig-embed) {
+    min-block-size: 24rem;
+  }
+  :global(.ig-embed .instagram-media) {
+    margin-inline: auto !important;
+  }
+</style>
+
+<script>
+  const EMBED_JS_ID = 'ig-embed-js';
+
+  function loadOfficialEmbed(card: HTMLAnchorElement) {
+    const url = card.dataset.igUrl;
+    if (!url) return;
+    const holder = document.createElement('div');
+    holder.className = 'ig-embed';
+    const quote = document.createElement('blockquote');
+    quote.className = 'instagram-media';
+    quote.setAttribute('data-instgrm-permalink', url);
+    quote.setAttribute('data-instgrm-version', '14');
+    quote.setAttribute('data-instgrm-captioned', '');
+    holder.appendChild(quote);
+    card.replaceWith(holder);
+
+    const w = window as typeof window & {
+      instgrm?: { Embeds?: { process?: () => void } };
+    };
+    if (w.instgrm?.Embeds?.process) {
+      w.instgrm.Embeds.process();
+    } else if (!document.getElementById(EMBED_JS_ID)) {
+      const script = document.createElement('script');
+      script.id = EMBED_JS_ID;
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }
+
+  function initIgReels() {
+    document.querySelectorAll<HTMLAnchorElement>('[data-ig-card]').forEach((card) => {
+      if (card.dataset.bound === 'true') return;
+      card.dataset.bound = 'true';
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadOfficialEmbed(card);
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initIgReels);
+</script>

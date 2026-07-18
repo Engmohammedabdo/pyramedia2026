@@ -35,6 +35,7 @@ sources instead of duplicating factual values.
 | Contact page copy | `src/content/pages/{en,ar}/contact.json` |
 | A service (name, deliverables, process, tools, FAQ, meta) | `src/content/services/{en,ar}/<slug>.mdx` |
 | Privacy / Terms | `src/content/pages/{en,ar}/{privacy,terms}.mdx` |
+| The three homepage Instagram reels | `src/content/instagram.json` (paste new links, rebuild — thumbnails refresh automatically) |
 | UI strings (nav, buttons, form labels/errors, consent) | `src/i18n/en.ts` + `src/i18n/ar.ts` |
 
 Rules when editing:

@@ -77,6 +77,14 @@ export const en = {
     load: 'Load the map',
     frameTitle: 'Location map',
   },
+  instagram: {
+    eyebrow: 'From our Instagram',
+    title: 'Selected reels from our feed.',
+    follow: 'Follow us on Instagram',
+    card: 'Instagram reel',
+    play: 'Play reel',
+    hint: 'Playing a reel loads the official Instagram player.',
+  },
   founder: {
     name: 'Mohamed Abdou',
     title: 'Founder & CEO',

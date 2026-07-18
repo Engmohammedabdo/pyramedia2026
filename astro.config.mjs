@@ -26,6 +26,15 @@ export default defineConfig({
     defaultLocale: 'en',
     routing: { prefixDefaultLocale: false },
   },
+  // Instagram reel thumbnails (SPEC Addendum A.1) are fetched ONCE at build
+  // time and optimized into local assets — no Instagram request at runtime.
+  image: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'www.instagram.com' },
+      { protocol: 'https', hostname: '**.cdninstagram.com' },
+      { protocol: 'https', hostname: '**.fbcdn.net' },
+    ],
+  },
   integrations: [
     mdx(),
     sitemap({

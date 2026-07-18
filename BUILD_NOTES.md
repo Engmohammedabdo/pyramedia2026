@@ -34,6 +34,18 @@ It does not replace the independent review reports.
 - **2026-07-17 — Spam traps.** The form uses the `website` honeypot and a
   four-second minimum-time-on-page check. Bot-like submissions receive a silent
   local success state and are not forwarded.
+- **2026-07-18 — Instagram reels box (SPEC Addendum A.1; founder decision:
+  launch scope).** Muhammad approved a homepage section with three
+  owner-curated Instagram reels using the hybrid model: curated links +
+  official Instagram embeds. Links live in `src/content/instagram.json`
+  (owner sends new links → swap → rebuild). Cover images are fetched at
+  build time via Instagram's public media redirect and optimized into local
+  assets — zero Instagram requests at page load; clicking a card loads the
+  official embed (map-facade click-to-load pattern). CSP gained
+  `www.instagram.com` in script-src + frame-src; privacy pages updated in
+  both languages. A failed thumbnail fetch at build degrades to a branded
+  panel and never breaks the build. Meta's June-2026 tokenless oEmbed change
+  means no access token is needed for this feature.
 
 ## Asset arrivals
 

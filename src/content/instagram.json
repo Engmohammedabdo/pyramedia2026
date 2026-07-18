@@ -1,0 +1,8 @@
+{
+  "note": "Owner-curated Instagram reels for the homepage box (SPEC Addendum A.1). Exactly three public reel/post URLs. To change them: replace the links below and rebuild — thumbnails refresh automatically at build time.",
+  "reels": [
+    "https://www.instagram.com/p/DZ0GPdjoHLY/",
+    "https://www.instagram.com/p/DaFpP7_IDwH/",
+    "https://www.instagram.com/p/DanSi6EIjr6/"
+  ]
+}

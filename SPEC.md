@@ -792,3 +792,28 @@ Build with explicit placeholders; each must be a single-file swap, findable via 
 
 Ship it clean. The site is the case study.
 
+
+---
+
+## ADDENDUM A — FOUNDER-APPROVED SCOPE CHANGES
+
+### A.1 Instagram reels box (approved by Abdou, 18 July 2026)
+
+The homepage gains ONE additional section between the founder teaser (§7.1
+section 6) and the CTA band (section 7), in both languages:
+
+- Three **owner-curated** Instagram reels (no auto-feed). The links live in
+  `src/content/instagram.json`; the owner changes them by sending new links —
+  a rebuild refreshes everything automatically.
+- Rendered as on-brand facade cards: reel cover images are fetched once at
+  **build time** and optimized into local assets — the page makes zero
+  Instagram requests at load (§2.5 and §12 stay fully binding).
+- Clicking a card loads the **official Instagram embed** for that reel
+  (click-to-load, same pattern as the §7.4 map facade). Without JS the cards
+  are plain links to the reels.
+- No API keys or tokens in the client. No counters and no captions are
+  reproduced as site copy (§2.1 unaffected). §8 motion laws apply to the
+  facade.
+
+This addendum does not reopen §5's exclusions (no portfolio, blog,
+testimonials, or FAQ page).

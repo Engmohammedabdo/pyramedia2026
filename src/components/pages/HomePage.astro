@@ -13,6 +13,7 @@ import Button from '@/components/Button.astro';
 import Icon from '@/components/Icon.astro';
 import PyramidMark from '@/components/PyramidMark.astro';
 import FounderPanel from '@/components/FounderPanel.astro';
+import InstagramReels from '@/components/InstagramReels.astro';
 import CtaBand from '@/components/CtaBand.astro';
 
 interface Props {
@@ -212,6 +213,9 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
       </div>
     </div>
   </section>
+
+  <!-- ── 6b · Instagram reels (SPEC Addendum A.1, founder-approved) ── -->
+  <InstagramReels lang={lang} />
 
   <!-- ───────────────────── 7 · CTA band ───────────────────────── -->
   <CtaBand lang={lang} placement="home-cta-band" />
