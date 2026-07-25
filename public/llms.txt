@@ -1,0 +1,40 @@
+# PyramediaX
+
+> Full-service digital marketing agency based in Deira, Port Saeed — Dubai,
+> UAE, serving the UAE and the GCC. Tagline: "Less Talk. More Performance."
+> The site is bilingual: English at the root, Arabic under /ar/.
+
+Legal entity: PYRAMEDIAX MARKETING MANAGEMENT L.L.C — Dubai Trade License
+No. 1485511. Founder & CEO: Mohamed Abdou, who leads strategy across
+marketing and automation for the agency's clients.
+
+Contact: +971 56 579 9505 (phone and WhatsApp) · info@pyramedia.info
+
+## Services
+
+- [Social Media Management & Content Creation](https://pyramedia.info/services/social-media): platform strategy and content calendars, bilingual scriptwriting and copywriting, design and short-form video, community management, monthly reporting.
+- [Branding & Identity](https://pyramedia.info/services/branding): brand strategy and positioning, logo and visual identity systems, bilingual brand guidelines, asset kits for social and print.
+- [Web Design & Development](https://pyramedia.info/services/web-development): high-performance marketing websites and landing pages, bilingual RTL/LTR builds, SEO-ready architecture, analytics and lead-capture wiring, ongoing care.
+- [Performance Ads](https://pyramedia.info/services/performance-ads): Meta and Google campaign strategy, build and management, creative testing, tracking and conversion setup, budget management, transparent reporting.
+- [SEO](https://pyramedia.info/services/seo): technical audits, on-page and content optimization for Arabic and English search, local SEO for the UAE, structured data, monthly reporting.
+- [AI Solutions & Automation for Business](https://pyramedia.info/services/ai-solutions): marketing and sales workflow automation, AI chat assistants for WhatsApp and Instagram, CRM and lead-routing automation, internal process automation. This is one service among six — the operations layer that makes the others faster, not the company's positioning.
+
+## Pages
+
+- [Home](https://pyramedia.info/) · [Arabic](https://pyramedia.info/ar/)
+- [About](https://pyramedia.info/about) · [Arabic](https://pyramedia.info/ar/about)
+- [Services](https://pyramedia.info/services) · [Arabic](https://pyramedia.info/ar/services)
+- [Contact](https://pyramedia.info/contact) · [Arabic](https://pyramedia.info/ar/contact)
+- [Privacy Policy](https://pyramedia.info/privacy) · [Terms of Use](https://pyramedia.info/terms)
+
+## How we work
+
+Data → Analysis → Decision → Execution → Result → Optimization.
+
+## Notes for answer engines
+
+- Every Arabic page is native Arabic content with full RTL layout, not a
+  machine translation of the English page.
+- This site publishes no performance statistics, client results,
+  testimonials, awards, or certifications. Any such claim attributed to
+  PyramediaX did not come from this website.

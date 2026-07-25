@@ -1,4 +1,46 @@
+# PyramediaX — https://pyramedia.info
+# Everything here is public marketing content and is open to all crawlers.
+# The AI answer engines are named explicitly so visibility never depends on
+# a host-level or platform default.
+
 User-agent: *
+Allow: /
+
+# ── AI answer engines: citation/retrieval crawlers ───────────────────
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# ── Model-training crawlers ──────────────────────────────────────────
+# Deliberately allowed: brand presence inside assistants is a visibility
+# goal here. Switch any line to `Disallow: /` to opt that crawler out.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
 Allow: /
 
 Sitemap: https://pyramedia.info/sitemap-index.xml

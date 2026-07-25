@@ -60,6 +60,57 @@ It does not replace the independent review reports.
   remain visible inside the official Instagram player after a card is
   clicked — Instagram's UI, not site copy. §2.1 stays fully intact.
 
+## AI-search / answer-engine readiness (2026-07-18)
+
+Owner question: will the site be found by AI search (ChatGPT, Perplexity,
+Google AI Overviews / AI Mode, Copilot) as well as classic Google?
+
+Added in the commit containing this entry — all inside SPEC §2.1 (no new
+factual claims; every value traces to §4 or the §7.3 service scopes):
+
+- **Entity graph completed.** `Organization`/`LocalBusiness` now carries
+  `founder` (linked `Person` node for Mohamed Abdou — §4 role only),
+  `contactPoint` (phone/email, `availableLanguage` en+ar), `knowsAbout`
+  (the six approved service names, per language), and `hasOfferCatalog`
+  (the six services with their one-liners and URLs). This is what answer
+  engines read to state *what the agency does* and *who runs it*.
+- **`WebPage` node per route**, binding each canonical URL to the site and
+  organization entities with `inLanguage`. No `dateModified` is emitted:
+  a build timestamp is not an editorial revision date, and asserting one
+  would be exactly the kind of unverifiable claim §2.1 bans. Real dates
+  remain on the legal pages, which have genuine `lastUpdated` values.
+- **`robots.txt` names the AI crawlers explicitly** — OAI-SearchBot,
+  ChatGPT-User, PerplexityBot, Perplexity-User, Claude-SearchBot,
+  Claude-User, Google-Extended, Applebot-Extended, meta-externalagent, plus
+  the training crawlers GPTBot and ClaudeBot. `User-agent: *` already
+  allowed them; naming them removes any dependency on a host or platform
+  default, and each line is a one-word opt-out if the owner changes his
+  mind about training crawlers.
+- **`llms.txt`** published with the approved company facts, the six
+  services, the page map, and an explicit statement that this site
+  publishes no statistics, testimonials, awards, or certifications — so a
+  model quoting the domain cannot attribute invented results to it. Google
+  has stated publicly that llms.txt does not influence AI Overviews; it is
+  included because the cost is one static file, not because it is a proven
+  ranking factor.
+
+Verified: 132 JSON-LD blocks across 25 pages parse, every `@id` reference
+resolves, no empty values; gate1 7/7; gate2 51/51; mobile Lighthouse on `/`
+99/100/100/**100 SEO** with zero SEO audit failures.
+
+Also fixed here: the `gate2` transition scanner failed on the current HEAD
+because the `@source not inline("transition-colors")` exclusion directives
+added for G2-RR2-004 name the banned utilities inside `global.css`. The
+scanner now strips those exclusion directives before scanning for usage and
+separately asserts they remain present.
+
+**Not code — owner actions that dominate AI-search visibility:** a complete
+Google Business Profile, consistent NAP across directories, and third-party
+brand presence. Published research on 2026 AI search consistently finds
+brand search volume and off-site presence to be stronger citation
+predictors than on-page work; the on-page layer above is the prerequisite,
+not the whole job.
+
 ## Asset arrivals
 
 - **2026-07-17 — Official logo files received.** The authentic twin-peak mark

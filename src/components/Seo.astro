@@ -5,9 +5,10 @@
  * Site-wide Organization/LocalBusiness/WebSite schema is injected here;
  * page-specific blocks arrive via the jsonLd prop.
  */
+import { getCollection } from 'astro:content';
 import type { Lang } from '@/config/site';
 import { SITE, WA_BASE } from '@/config/site';
-import { switchLangPath } from '@/i18n';
+import { useTranslations, switchLangPath } from '@/i18n';
 
 interface Props {
   lang: Lang;
@@ -16,6 +17,13 @@ interface Props {
   jsonLd?: Record<string, unknown>[];
 }
 const { lang, title, description, jsonLd = [] } = Astro.props;
+const t = useTranslations(lang);
+
+// The six approved services (SPEC §7.3) drive the entity's topical and offer
+// graph — this is what answer engines read to enumerate what the agency does.
+const services = (await getCollection('services', (entry) => entry.data.lang === lang)).sort(
+  (a, b) => a.data.order - b.data.order
+);
 
 /** Normalizes a pathname to its canonical live URL form (SPEC §5).
  *  With build.format 'file' the build-time pathname is e.g. /about.html —
@@ -60,6 +68,42 @@ const orgSchema = {
   },
   areaServed: SITE.areaServed[lang],
   sameAs: [SITE.socials.instagram, SITE.socials.facebook, SITE.socials.linkedin, WA_BASE],
+  // Approved §4 facts only — no invented history, size, or credentials.
+  founder: { '@id': `${SITE.url}/#founder` },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: SITE.phoneE164,
+    email: SITE.email,
+    contactType: 'customer service',
+    areaServed: SITE.addressCountry,
+    availableLanguage: ['en', 'ar'],
+  },
+  // Topical entity association: exactly the six approved services (§7.3)
+  knowsAbout: services.map((service) => service.data.name),
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: t.footer.services,
+    itemListElement: services.map((service) => ({
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Service',
+        name: service.data.name,
+        description: service.data.oneLiner,
+        url: `${SITE.url}${lang === 'ar' ? '/ar' : ''}/services/${service.data.slug}`,
+      },
+    })),
+  },
+};
+
+// Founder entity (SPEC §4: name, role, and the approved strategy line only)
+const founderSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${SITE.url}/#founder`,
+  name: t.founder.name,
+  jobTitle: t.founder.title,
+  worksFor: { '@id': `${SITE.url}/#organization` },
+  url: `${SITE.url}${lang === 'ar' ? '/ar' : ''}/about`,
 };
 
 const webSiteSchema = {
@@ -72,7 +116,21 @@ const webSiteSchema = {
   publisher: { '@id': `${SITE.url}/#organization` },
 };
 
-const allJsonLd = [orgSchema, webSiteSchema, ...jsonLd];
+// Per-page node so answer engines bind this URL to the entity and language
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonical}#webpage`,
+  url: canonical,
+  name: title,
+  description,
+  inLanguage: lang,
+  isPartOf: { '@id': `${SITE.url}/#website` },
+  about: { '@id': `${SITE.url}/#organization` },
+  primaryImageOfPage: ogImage,
+};
+
+const allJsonLd = [orgSchema, founderSchema, webSiteSchema, webPageSchema, ...jsonLd];
 ---
 
 <title>{title}</title>

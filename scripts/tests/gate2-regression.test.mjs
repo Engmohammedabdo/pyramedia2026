@@ -545,9 +545,15 @@ test('source transition declarations and utilities remain transform/opacity-only
     sourceFiles('src'),
   ]);
   const fileSources = await Promise.all(files.map(source));
-  const transitionSources = `${css}\n${fileSources.join('\n')}`;
+  // `@source not inline("transition-colors")` lines NAME the banned utilities
+  // in order to exclude them from Tailwind's output (G2-RR2-004). They are
+  // exclusions, not usage, so they are stripped before the usage scan.
+  const scannableCss = css.replace(/^\s*@source not inline\([^)]*\);?\s*$/gm, '');
+  const transitionSources = `${scannableCss}\n${fileSources.join('\n')}`;
 
   assert.doesNotMatch(transitionSources, /\btransition-(?:colors|shadow|all)\b/);
+  // The exclusion directives themselves must stay present in the stylesheet
+  assert.match(css, /@source not inline\("transition-colors"\);/);
   for (const match of transitionSources.matchAll(/\btransition-\[([^\]]*)\]/g)) {
     const payload = match[1];
     assert.equal(
