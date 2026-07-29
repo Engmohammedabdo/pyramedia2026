@@ -835,3 +835,38 @@ growth, or employment claim (§2.1 unaffected); the link opens in a new tab
 with `rel="noopener"` and carries a direction-aware external-link icon. No
 careers page, job listings, or applicant content is added to this site
 (§5 exclusions intact).
+
+### A.3 Hero gateways: become a client / apply for a job (approved by Abdou, 29 July 2026)
+
+Amends §7.1 section 1 and §10.
+
+**Hero CTAs (amends §7.1 s1).** The hero carries the WhatsApp primary CTA,
+then a pair of *gateway* pills directly beneath it:
+
+- `Become our client` / `كن عميلاً لدينا` → the owner's client-intake form.
+- `Apply to jobs & internships` / `التقديم على الوظائف والتدريب` → the
+  owner's Airtable careers form (Addendum A.2).
+
+The `Explore services` secondary CTA is **removed from the hero** with founder
+approval: the services grid is the next section on the page and Services
+remains in the nav, so the link is redundant while the two gateways are not.
+The §7.1 verbatim H1, sub-line and WhatsApp CTA copy are untouched.
+
+**Gateway styling.** Gateway pills use an icon badge, a slow travelling sheen
+and a hover lift. Every animated property is `transform`/`opacity` only and
+the whole treatment is disabled under `prefers-reduced-motion` — §8 laws are
+unchanged. Gateways must stay visually below the WhatsApp primary in weight.
+
+**Analytics (amends §10).** Two non-conversion engagement events join the
+five conversion events, with the same `{placement}` payload:
+
+- `client_apply_click {placement}`
+- `careers_click {placement}`
+
+The five §10 conversion events keep their exact names and meaning; Meta
+campaign optimisation continues to use only those five.
+
+**Placeholder.** `TODO_CLIENT_FORM_URL` in `src/config/site.ts`
+(`clientFormUrl`). While empty the "become our client" gateway falls back to
+`/contact`, the approved §7.4 intake path, so the button is never dead. No
+client-intake form, page, or applicant content is added to this site.

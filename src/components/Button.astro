@@ -4,6 +4,8 @@
  * glow (magnetism added by the motion script via .magnetic). secondary:
  * 1px line border with an arrow that translates on hover (flips in RTL).
  * tertiary: borderless text action that sits below both conversion CTAs.
+ * gateway: hero "door" pill with an icon badge and a slow sheen
+ * (SPEC Addendum A.3) — transform/opacity only, per §8.
  */
 import Icon from './Icon.astro';
 
@@ -11,11 +13,12 @@ const VARIANT_CLASS = {
   primary: 'btn-primary magnetic',
   secondary: 'btn-secondary',
   tertiary: 'btn-tertiary',
+  gateway: 'btn-gateway',
 } as const;
 
 interface Props {
   href: string;
-  variant?: 'primary' | 'secondary' | 'tertiary';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'gateway';
   /** analytics event name, e.g. whatsapp_click (SPEC §10) */
   event?: string;
   /** analytics placement payload, e.g. hero / nav / cta-band */

@@ -21,6 +21,7 @@ export const ar: Dictionary = {
     contactUs: 'تواصل معنا',
     aboutLink: 'تعرّف إلينا أكثر',
     careers: 'التقديم على الوظائف والتدريب',
+    becomeClient: 'كن عميلاً لدينا',
     whatsappFloat: 'تواصل مع بيراميديا إكس عبر واتساب',
   },
   ctaBand: {

@@ -47,6 +47,12 @@ export const SITE = {
   // form. Swap this one value to change where every "apply" link points.
   careersUrl: 'https://airtable.com/appeclwXGsdT1l4jO/pagBjv8uJDJqShsji/form',
 
+  // TODO_CLIENT_FORM_URL — client-intake Airtable form (SPEC Addendum A.3).
+  // While empty, the "Become our client" gateway falls back to /contact, the
+  // existing §7.4 intake path, so the button is never dead. Paste the form
+  // URL here to switch it over.
+  clientFormUrl: '',
+
   socials: {
     instagram: 'https://instagram.com/pyramedia.dxb',
     facebook: 'https://facebook.com/pyramedia.official',

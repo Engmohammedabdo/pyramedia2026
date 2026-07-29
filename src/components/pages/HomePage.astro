@@ -29,6 +29,11 @@ const c = home.data as any;
 const services = (await getCollection('services', (e) => e.data.lang === lang)).sort(
   (a, b) => a.data.order - b.data.order
 );
+
+// TODO_CLIENT_FORM_URL (SPEC Addendum A.3): until the owner's client-intake
+// form exists, the gateway falls back to the §7.4 contact page so the door
+// always opens onto a real intake path.
+const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
 ---
 
 <BaseLayout lang={lang} title={c.meta.title} description={c.meta.description} brandDisplay>
@@ -67,14 +72,35 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
           <Icon name="whatsapp" size={18} />
           {t.cta.whatsapp}
         </Button>
-        <Button href={localizePath('/services', lang)} variant="secondary">
-          {t.cta.exploreServices}
+      </div>
+
+      <!-- Two doors (SPEC Addendum A.3): hire us, or join us. Gateway pills
+           carry their own badge + sheen so they read as a distinct pair
+           without out-shouting the WhatsApp primary above. -->
+      <div class="hero-gateways hero-entrance mt-5 flex flex-wrap items-center gap-3">
+        <Button
+          href={clientFormHref}
+          variant="gateway"
+          arrow={false}
+          event="client_apply_click"
+          placement="hero"
+          class="gateway-a"
+        >
+          <span class="gateway-badge"><Icon name="target" size={18} /></span>
+          {t.cta.becomeClient}
+          <Icon name="arrow-up-right" size={15} class="gateway-arrow" dirAware />
         </Button>
-        <!-- Careers (SPEC Addendum A.2) — tertiary so the two conversion
-             CTAs above keep their weight; opens the owner's Airtable form -->
-        <Button href={SITE.careersUrl} variant="tertiary" arrow={false}>
+        <Button
+          href={SITE.careersUrl}
+          variant="gateway"
+          arrow={false}
+          event="careers_click"
+          placement="hero"
+          class="gateway-b"
+        >
+          <span class="gateway-badge"><Icon name="send" size={17} /></span>
           {t.cta.careers}
-          <Icon name="arrow-up-right" size={16} dirAware />
+          <Icon name="arrow-up-right" size={15} class="gateway-arrow" dirAware />
         </Button>
       </div>
     </div>

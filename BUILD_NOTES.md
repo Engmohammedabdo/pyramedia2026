@@ -74,6 +74,37 @@ It does not replace the independent review reports.
   exactly, and Airtable already records submissions — say the word if a
   `careers_click` event is wanted and it will be added to §10 first.
 
+- **2026-07-29 — Hero gateways + two engagement events (SPEC Addendum A.3;
+  founder decision).** Muhammad asked for a "Become Our Client" button
+  alongside the careers one, both with a distinctive look and animation in
+  the hero, and approved removing the `Explore services` secondary CTA.
+  Implemented as a pair of **gateway pills** under the WhatsApp primary:
+  icon badge that breathes, a slow sheen that travels across the pill
+  (staggered 2.4 s apart so they never fire together), hover lift and a
+  direction-aware arrow. All of it is `transform`/`opacity` only and the
+  whole treatment is switched off under `prefers-reduced-motion`, so §8 is
+  unchanged; measured mobile Lighthouse after the change is 99 EN / 97 AR
+  with CLS 0.0002–0.0003.
+  - `Explore services` removal is a real §7.1 amendment, recorded in
+    Addendum A.3 — the services grid is the very next section and Services
+    stays in the nav, so nothing became unreachable.
+  - Tracking: `client_apply_click` and `careers_click`, both `{placement}`,
+    added as **engagement** events in Addendum A.3. The five §10 conversion
+    events keep their exact names and remain the only ones Meta optimises
+    on. The analytics module needed no change — it already dispatches any
+    `[data-event]` element — only its doc comment was updated.
+  - **`TODO_CLIENT_FORM_URL` is open.** The client-intake form does not
+    exist yet: Airtable's API can create bases and tables but not form
+    pages, so the form itself has to be created in the Airtable UI. Until
+    `clientFormUrl` is set in `site.ts`, the gateway falls back to
+    `/contact` (the approved §7.4 intake path), so the button is live and
+    useful today. The reference form the owner supplied
+    (`app9vu99FNclhXxIV/pagEYrGXpEo0ZyMzz`, "Experience The Reel Recipe")
+    collects: Business Name, Country, Your Name, Phone Number, a rich-text
+    business description, Instagram (required) / TikTok / Facebook links,
+    auto Submission Date, and "Where did you hear about us?" — the owner
+    asked for the same minus **Country**.
+
 ## AI-search / answer-engine readiness (2026-07-18)
 
 Owner question: will the site be found by AI search (ChatGPT, Perplexity,

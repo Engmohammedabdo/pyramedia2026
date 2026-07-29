@@ -18,6 +18,7 @@ export const en = {
     contactUs: 'Contact us',
     aboutLink: 'More about us',
     careers: 'Apply to jobs & internships',
+    becomeClient: 'Become our client',
     whatsappFloat: 'Chat with PyramediaX on WhatsApp',
   },
   ctaBand: {

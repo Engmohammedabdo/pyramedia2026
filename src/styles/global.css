@@ -177,6 +177,9 @@ html[lang='ar'] h4 {
 .hero-cta {
   animation-delay: 0.22s;
 }
+.hero-gateways {
+  animation-delay: 0.32s;
+}
 @keyframes hero-entrance {
   to {
     opacity: 1;
@@ -323,6 +326,132 @@ html[lang='ar'] .eyebrow {
 }
 [dir='rtl'] .btn-secondary:hover .btn-arrow {
   transform: scaleX(-1) translateX(4px);
+}
+
+/* ------------------------------------------------------------------ */
+/* Gateway pills (SPEC Addendum A.3) — the two hero doors: become a       */
+/* client, or apply for a job. Distinctive without out-shouting the       */
+/* WhatsApp primary. Every moving part is transform/opacity only (§8).    */
+/* ------------------------------------------------------------------ */
+.btn-gateway {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 500;
+  border-radius: 999px;
+  padding-block: 0.6rem;
+  padding-inline: 0.6rem 1.4rem;
+}
+.btn-gateway:hover {
+  border-color: rgba(242, 110, 36, 0.45);
+}
+/* Staggered so the two sheens never travel together */
+.btn-gateway.gateway-b {
+  --gateway-delay: 2.4s;
+}
+
+/* Leading icon badge — breathes slowly, lifts on hover */
+.btn-gateway .gateway-badge {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 999px;
+  background-color: var(--color-surface-2);
+  color: var(--color-orange);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: gateway-breathe 4.5s ease-in-out infinite;
+  animation-delay: var(--gateway-delay, 0s);
+}
+.btn-gateway:hover .gateway-badge {
+  transform: scale(1.08);
+}
+@keyframes gateway-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* Slow sheen that travels across the pill; mirrored for RTL */
+.btn-gateway::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -60%;
+  inline-size: 45%;
+  z-index: -1;
+  background: linear-gradient(90deg, transparent, rgba(242, 110, 36, 0.16), transparent);
+  transform: skewX(-18deg) translateX(0);
+  animation: gateway-sheen 7s ease-in-out infinite;
+  animation-delay: var(--gateway-delay, 0s);
+  pointer-events: none;
+}
+@keyframes gateway-sheen {
+  0%,
+  55%,
+  100% {
+    transform: skewX(-18deg) translateX(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  45% {
+    transform: skewX(-18deg) translateX(420%);
+    opacity: 0;
+  }
+}
+[dir='rtl'] .btn-gateway::before {
+  animation-name: gateway-sheen-rtl;
+}
+@keyframes gateway-sheen-rtl {
+  0%,
+  55%,
+  100% {
+    transform: skewX(-18deg) translateX(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  45% {
+    transform: skewX(-18deg) translateX(-420%);
+    opacity: 0;
+  }
+}
+
+/* Trailing arrow travels on hover, mirrored in RTL */
+.btn-gateway .gateway-arrow {
+  transition: transform 0.25s ease;
+}
+.btn-gateway:hover .gateway-arrow {
+  transform: translateX(3px);
+}
+[dir='rtl'] .btn-gateway .gateway-arrow {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .btn-gateway:hover .gateway-arrow {
+  transform: scaleX(-1) translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-gateway .gateway-badge,
+  .btn-gateway::before {
+    animation: none;
+  }
+  .btn-gateway::before {
+    opacity: 0;
+  }
 }
 
 /* Tertiary: borderless text action. Used for the careers link so it reads

@@ -859,3 +859,46 @@ test('verification includes an independent typecheck and Arabic uses one Instagr
   const arabicUi = await source('src/i18n/ar.ts');
   assert.doesNotMatch(arabicUi, /إنستقرام/u);
 });
+
+test('hero gateways expose both doors with tracked, direction-safe links (Addendum A.3)', async () => {
+  const [home, site, css, buttonComponent] = await Promise.all([
+    source('src/components/pages/HomePage.astro'),
+    source('src/config/site.ts'),
+    source('src/styles/global.css'),
+    source('src/components/Button.astro'),
+  ]);
+
+  // Both gateways exist, are tracked, and read from the central config
+  assert.match(home, /variant="gateway"[\s\S]*?event="client_apply_click"/);
+  assert.match(home, /variant="gateway"[\s\S]*?event="careers_click"/);
+  assert.match(home, /SITE\.clientFormUrl \|\| localizePath\('\/contact', lang\)/);
+  assert.match(home, /href=\{SITE\.careersUrl\}/);
+  assert.match(site, /clientFormUrl:/);
+  assert.match(buttonComponent, /gateway: 'btn-gateway'/);
+
+  // The removed §7.1 secondary must not linger in the hero
+  assert.doesNotMatch(home, /hero-cta[\s\S]{0,400}exploreServices/);
+
+  // Gateway motion animates transform/opacity only and stops on reduced motion
+  const gateway = css.slice(css.indexOf('.btn-gateway'), css.indexOf('.btn-tertiary'));
+  for (const frames of gateway.matchAll(/@keyframes gateway-[\w-]+\s*\{([\s\S]*?)\n\}/g)) {
+    for (const declaration of frames[1].matchAll(/^\s*([a-z-]+):/gm)) {
+      assert.ok(
+        ['transform', 'opacity'].includes(declaration[1]),
+        `gateway keyframes may only animate transform/opacity, found ${declaration[1]}`,
+      );
+    }
+  }
+  assert.match(css, /prefers-reduced-motion[\s\S]{0,400}\.btn-gateway[\s\S]{0,200}animation: none/);
+});
+
+test('the two engagement events are declared in SPEC and wired in the analytics doc (Addendum A.3)', async () => {
+  const [spec, analytics] = await Promise.all([
+    source('SPEC.md'),
+    source('src/scripts/analytics.ts'),
+  ]);
+  assert.match(spec, /client_apply_click \{placement\}/);
+  assert.match(spec, /careers_click \{placement\}/);
+  assert.match(analytics, /careers_click/);
+  assert.match(analytics, /client_apply_click/);
+});
