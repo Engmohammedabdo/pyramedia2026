@@ -47,13 +47,10 @@ export const SITE = {
   // form. Swap this one value to change where every "apply" link points.
   careersUrl: 'https://airtable.com/appeclwXGsdT1l4jO/pagBjv8uJDJqShsji/form',
 
-  // TODO_CLIENT_FORM_URL — client-intake Airtable form (SPEC Addendum A.3).
-  // While empty, the "Become our client" gateway falls back to /contact, the
-  // existing §7.4 intake path, so the button is never dead.
-  // The base is already prepared: "PyramediaX Clients" → table
-  // "Client Applications" (appVJGpxA8KzwVjPY). Create the form in the
-  // Airtable UI, then paste its share URL here. See BUILD_NOTES.md.
-  clientFormUrl: '',
+  // Client-intake Airtable form (SPEC Addendum A.3) — owner-supplied, backed
+  // by the "PyramediaX Clients" base. If this is ever emptied, the "become
+  // our client" gateway falls back to /contact, the §7.4 intake path.
+  clientFormUrl: 'https://airtable.com/appVJGpxA8KzwVjPY/paghHJDi2GVpoTZB0/form',
 
   socials: {
     instagram: 'https://instagram.com/pyramedia.dxb',

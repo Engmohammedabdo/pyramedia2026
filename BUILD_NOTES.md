@@ -93,11 +93,26 @@ It does not replace the independent review reports.
     events keep their exact names and remain the only ones Meta optimises
     on. The analytics module needed no change — it already dispatches any
     `[data-event]` element — only its doc comment was updated.
-  - **`TODO_CLIENT_FORM_URL` is open — one owner step remains.** Airtable's
-    API creates bases and tables but **not form pages**, so the form itself
-    must be generated in the Airtable UI. Until `clientFormUrl` is set in
-    `site.ts`, the gateway falls back to `/contact` (the approved §7.4
-    intake path), so the button is live and useful today.
+  - **`TODO_CLIENT_FORM_URL` is CLOSED (2026-07-29).** The owner created the
+    form and supplied its URL; `clientFormUrl` now points at
+    `appVJGpxA8KzwVjPY/paghHJDi2GVpoTZB0`. The `/contact` fallback remains in
+    the code for the case where the value is ever emptied. Verified against
+    the live form schema: **no Country field**; Business Name, Your Name and
+    Phone Number required; Instagram required; TikTok/Facebook and "Where
+    Did You Hear About Us" optional.
+    - **Open item for the owner:** on that form `Submission Date` is
+      currently `isRequired: true, isReadOnly: false`, so every applicant is
+      asked to type a date. The reference form had it read-only with a
+      current-date prefill. Either mirror that, or remove the field from the
+      form — Airtable stores a created time regardless.
+    - `About The Business` is optional on this form where the reference had
+      it required. Recorded as an owner choice, not a defect.
+  - **Privacy pages updated (both languages, `lastUpdated` → 2026-07-29).**
+    A new "Application forms" disclosure states that the two gateway buttons
+    open Airtable-hosted forms, that nothing reaches Airtable unless the
+    visitor opens and submits one, and that Airtable processes what they
+    enter as the forms provider. Routing personal data to a third party has
+    to be disclosed for §7.5 to stay accurate.
   - **Base prepared for the owner (2026-07-29, with his approval):**
     `PyramediaX Clients` — base `appVJGpxA8KzwVjPY`, table
     `Client Applications` (`tbldrlSDimBrgtEzE`) in workspace
