@@ -43,6 +43,10 @@ export const SITE = {
   // While empty, the contact address card renders without the map block.
   mapsEmbedUrl: '',
 
+  // Careers application form (SPEC Addendum A.2) — owner-supplied Airtable
+  // form. Swap this one value to change where every "apply" link points.
+  careersUrl: 'https://airtable.com/appeclwXGsdT1l4jO/pagBjv8uJDJqShsji/form',
+
   socials: {
     instagram: 'https://instagram.com/pyramedia.dxb',
     facebook: 'https://facebook.com/pyramedia.official',

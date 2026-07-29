@@ -101,6 +101,18 @@ const wmBase = wmParts.join(' ');
               </li>
             ))
           }
+          {/* Careers (SPEC Addendum A.2) — owner's Airtable application form */}
+          <li>
+            <a
+              href={SITE.careersUrl}
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-1.5 text-muted hover:text-text"
+            >
+              {t.cta.careers}
+              <Icon name="arrow-up-right" size={14} dirAware />
+            </a>
+          </li>
         </ul>
       </nav>
 

@@ -325,6 +325,21 @@ html[lang='ar'] .eyebrow {
   transform: scaleX(-1) translateX(4px);
 }
 
+/* Tertiary: borderless text action. Used for the careers link so it reads
+   below the two conversion CTAs instead of competing with them. */
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-muted);
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 0.9rem 0.5rem;
+}
+.btn-tertiary:hover {
+  color: var(--color-text);
+}
+
 /* Card link arrows — same travel logic as .btn-arrow, mirrored in RTL */
 .card-arrow {
   transition: transform 0.3s ease;

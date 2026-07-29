@@ -817,3 +817,21 @@ section 6) and the CTA band (section 7), in both languages:
 
 This addendum does not reopen §5's exclusions (no portfolio, blog,
 testimonials, or FAQ page).
+
+### A.2 Careers application link (approved by Abdou, 18 July 2026)
+
+The site links out to the owner's Airtable application form for jobs and
+internships, in both languages:
+
+- **Homepage hero** — a third, *tertiary* action after the WhatsApp and
+  services CTAs. Tertiary styling is required: §1 makes the homepage a B2B
+  credibility and lead-generation surface, so the careers link must not
+  compete visually with the two conversion CTAs.
+- **Footer navigation column** — site-wide on all 24 pages.
+
+Rules: the destination URL lives only in `src/config/site.ts`
+(`careersUrl`); the label is neutral and states no hiring volume, team size,
+growth, or employment claim (§2.1 unaffected); the link opens in a new tab
+with `rel="noopener"` and carries a direction-aware external-link icon. No
+careers page, job listings, or applicant content is added to this site
+(§5 exclusions intact).

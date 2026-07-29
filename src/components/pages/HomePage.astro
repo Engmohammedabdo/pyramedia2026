@@ -6,7 +6,7 @@
  */
 import { getEntry, getCollection } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { waLink } from '@/config/site';
+import { SITE, waLink } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Button from '@/components/Button.astro';
@@ -69,6 +69,12 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
         </Button>
         <Button href={localizePath('/services', lang)} variant="secondary">
           {t.cta.exploreServices}
+        </Button>
+        <!-- Careers (SPEC Addendum A.2) — tertiary so the two conversion
+             CTAs above keep their weight; opens the owner's Airtable form -->
+        <Button href={SITE.careersUrl} variant="tertiary" arrow={false}>
+          {t.cta.careers}
+          <Icon name="arrow-up-right" size={16} dirAware />
         </Button>
       </div>
     </div>

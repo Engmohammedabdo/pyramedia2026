@@ -60,6 +60,20 @@ It does not replace the independent review reports.
   remain visible inside the official Instagram player after a card is
   clicked — Instagram's UI, not site copy. §2.1 stays fully intact.
 
+- **2026-07-18 — Careers link (SPEC Addendum A.2; founder decision).**
+  Muhammad asked for an "Apply to Jobs/Internships" button and chose both
+  placements: the homepage hero and the footer. Implemented as a **tertiary**
+  action in the hero (borderless text + external-link icon) so the WhatsApp
+  and services CTAs keep their weight — the homepage's §1 job is closing a
+  B2B credibility gap for prospects, and a recruiting CTA must not compete
+  with that — plus a footer navigation entry that appears on all 24 pages.
+  The Airtable form URL lives only in `site.ts` (`careersUrl`): one edit
+  moves every link. The label states no hiring volume, team size, or growth
+  claim, so §2.1 is unaffected, and no careers page is added (§5 intact).
+  No analytics event was attached: SPEC §10 names the five conversion events
+  exactly, and Airtable already records submissions — say the word if a
+  `careers_click` event is wanted and it will be added to §10 first.
+
 ## AI-search / answer-engine readiness (2026-07-18)
 
 Owner question: will the site be found by AI search (ChatGPT, Perplexity,

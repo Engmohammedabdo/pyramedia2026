@@ -3,12 +3,19 @@
  * Buttons per SPEC §6.4 — primary: orange bg + dark text, magnetic hover +
  * glow (magnetism added by the motion script via .magnetic). secondary:
  * 1px line border with an arrow that translates on hover (flips in RTL).
+ * tertiary: borderless text action that sits below both conversion CTAs.
  */
 import Icon from './Icon.astro';
 
+const VARIANT_CLASS = {
+  primary: 'btn-primary magnetic',
+  secondary: 'btn-secondary',
+  tertiary: 'btn-tertiary',
+} as const;
+
 interface Props {
   href: string;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'tertiary';
   /** analytics event name, e.g. whatsapp_click (SPEC §10) */
   event?: string;
   /** analytics placement payload, e.g. hero / nav / cta-band */
@@ -31,7 +38,7 @@ const {
 
 <a
   href={href}
-  class={`${variant === 'primary' ? 'btn-primary magnetic' : 'btn-secondary'} ${className}`}
+  class={`${VARIANT_CLASS[variant]} ${className}`}
   data-event={event}
   data-placement={placement}
   {...external ? { target: '_blank', rel: 'noopener' } : {}}
