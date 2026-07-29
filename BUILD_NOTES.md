@@ -93,17 +93,28 @@ It does not replace the independent review reports.
     events keep their exact names and remain the only ones Meta optimises
     on. The analytics module needed no change — it already dispatches any
     `[data-event]` element — only its doc comment was updated.
-  - **`TODO_CLIENT_FORM_URL` is open.** The client-intake form does not
-    exist yet: Airtable's API can create bases and tables but not form
-    pages, so the form itself has to be created in the Airtable UI. Until
-    `clientFormUrl` is set in `site.ts`, the gateway falls back to
-    `/contact` (the approved §7.4 intake path), so the button is live and
-    useful today. The reference form the owner supplied
+  - **`TODO_CLIENT_FORM_URL` is open — one owner step remains.** Airtable's
+    API creates bases and tables but **not form pages**, so the form itself
+    must be generated in the Airtable UI. Until `clientFormUrl` is set in
+    `site.ts`, the gateway falls back to `/contact` (the approved §7.4
+    intake path), so the button is live and useful today.
+  - **Base prepared for the owner (2026-07-29, with his approval):**
+    `PyramediaX Clients` — base `appVJGpxA8KzwVjPY`, table
+    `Client Applications` (`tbldrlSDimBrgtEzE`) in workspace
+    `wspmJLu81QsjBJ5tl`. Fields mirror the owner's reference form
     (`app9vu99FNclhXxIV/pagEYrGXpEo0ZyMzz`, "Experience The Reel Recipe")
-    collects: Business Name, Country, Your Name, Phone Number, a rich-text
-    business description, Instagram (required) / TikTok / Facebook links,
-    auto Submission Date, and "Where did you hear about us?" — the owner
-    asked for the same minus **Country**.
+    **without Country**: Business Name (primary), Your Name, Phone Number,
+    About The Business (rich text), Business Instagram / TikTok / Facebook
+    Link, Where Did You Hear About Us, Submission Date (dateTime,
+    Asia/Dubai). Each field carries a description noting whether the
+    reference form marked it required. Remaining owner steps: open the
+    table → Create form → mark the required fields → set Submission Date to
+    prefill the current date and read-only → share the form → send the URL
+    for `clientFormUrl`.
+  - Field names were kept plain (no emoji) so they read as database columns;
+    the reference form's emoji live in form labels/helper text, which the
+    owner can set in the form builder. No pipeline/status field was added —
+    say the word if a `Status` single-select is wanted.
 
 ## AI-search / answer-engine readiness (2026-07-18)
 

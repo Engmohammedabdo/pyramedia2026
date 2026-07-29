@@ -49,8 +49,10 @@ export const SITE = {
 
   // TODO_CLIENT_FORM_URL — client-intake Airtable form (SPEC Addendum A.3).
   // While empty, the "Become our client" gateway falls back to /contact, the
-  // existing §7.4 intake path, so the button is never dead. Paste the form
-  // URL here to switch it over.
+  // existing §7.4 intake path, so the button is never dead.
+  // The base is already prepared: "PyramediaX Clients" → table
+  // "Client Applications" (appVJGpxA8KzwVjPY). Create the form in the
+  // Airtable UI, then paste its share URL here. See BUILD_NOTES.md.
   clientFormUrl: '',
 
   socials: {
