@@ -224,6 +224,56 @@ that hits actually arrive in GA4 DebugView, Meta Events Manager and TikTok
 Events Manager, and that the CSP permits them under real Apache. Local
 evidence proves wiring and consent behaviour only.
 
+## Contact-form n8n workflow (2026-07-30)
+
+Built and published on the owner's n8n instance at the owner's request:
+
+- **Workflow:** "PyramediaX — Website Contact Form", id `2OvsLp7YbJUsErM0`,
+  personal project, **active**.
+- **Endpoint:** `POST https://n8n.pyramedia.info/webhook/pyramediax-contact`
+  (CORS limited to `pyramedia.info`, `www.pyramedia.info` and the local
+  preview origin; `ignoreBots` on).
+- **Flow:** Webhook → *Normalize Lead* (reads the SPEC §7.4 payload with
+  `body.*` fallbacks) → *Genuine Lead?* (honeypot empty + name/phone/message
+  present) → *Save Lead to Airtable* → *Email Lead Alert* → *Respond
+  Accepted*. Rejected submissions take a second branch to *Respond Ignored*.
+- **Storage:** Airtable base `PyramediaX Clients` → new table **Website
+  Leads** (`tblTiOrwcoD4PnZMa`), one column per payload field including the
+  five UTM values and the ISO timestamp.
+- **Alert:** Gmail to `info@pyramedia.info`, with a one-tap WhatsApp reply
+  link built from the submitted phone. Set to `continueRegularOutput` so a
+  mail failure can never block the webhook response.
+- **Responses:** both branches return HTTP 200 `{"ok":true,"received":true}`
+  — the site only checks `res.ok`, and answering spam identically means bots
+  learn nothing from the response.
+
+**Verified by execution (pinned credentials, real workflow logic):**
+
+- Genuine Arabic lead → normalized correctly, took the true branch, reached
+  Airtable → Gmail → *Respond Accepted*.
+- Honeypot-filled spam → took the false branch to *Respond Ignored*;
+  Airtable and Gmail did **not** execute.
+
+**BLOCKED on the owner — the endpoint is not publicly reachable.** Live
+`curl` to the production URL returns `403` with
+`WWW-Authenticate: Basic realm="Webhook"`. Evidence that this is instance
+configuration and not the workflow: the webhook node's `authentication` is
+explicitly `none` (n8n's own trigger info prints "No credentials required
+for this webhook"); the workflow was re-published and force re-registered
+(unpublish → publish) with no change; an *unregistered* webhook path returns
+a normal `404` JSON from n8n while the *registered* path returns `403`; the
+editor root and `/healthz` both return `200` without auth.
+
+The fix is on the n8n host: remove the Basic-auth gate covering `/webhook/*`
+(reverse-proxy rule or a legacy `N8N_BASIC_AUTH_*` env). Embedding those
+credentials in the website instead is **not** an option — the site is static
+and public, so the credentials would be readable by anyone and would also
+expose every other webhook on that instance.
+
+Until then `PUBLIC_N8N_WEBHOOK_URL` stays empty by design: the contact form
+keeps its documented disabled state with the WhatsApp fallback rather than
+shipping a form that 403s.
+
 ## Asset arrivals
 
 - **2026-07-17 — Official logo files received.** The authentic twin-peak mark
