@@ -30,9 +30,9 @@ const services = (await getCollection('services', (e) => e.data.lang === lang)).
   (a, b) => a.data.order - b.data.order
 );
 
-// TODO_CLIENT_FORM_URL (SPEC Addendum A.3): until the owner's client-intake
-// form exists, the gateway falls back to the §7.4 contact page so the door
-// always opens onto a real intake path.
+// Client gateway (SPEC Addendum A.3). The owner's intake form is configured
+// in site.ts; if that value is ever emptied the door still opens onto the
+// §7.4 contact page rather than breaking.
 const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
 ---
 
