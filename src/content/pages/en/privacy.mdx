@@ -19,7 +19,8 @@ This policy describes what data this website collects, why, and what happens to 
 {/* Provider-aware disclosure (G2-RR2-002): the rendered text always matches
     the actual analytics state of the build. */}
 
-export const analyticsTools = [SITE.ga4Id && 'Google Analytics 4', SITE.metaPixelId && 'the Meta Pixel'].filter(Boolean).join(' and ');
+export const analyticsList = [SITE.ga4Id && 'Google Analytics 4', SITE.metaPixelId && 'the Meta Pixel', SITE.tiktokPixelId && 'the TikTok Pixel'].filter(Boolean);
+export const analyticsTools = analyticsList.length > 1 ? `${analyticsList.slice(0, -1).join(', ')} and ${analyticsList[analyticsList.length - 1]}` : analyticsList.join('');
 
 {analyticsTools ? (
   <p><strong>Analytics cookies.</strong> With your consent — and only with your consent — this site loads {analyticsTools} to understand how visitors use the site and to measure our own advertising. If you decline, these tools are not loaded at all and no analytics cookies are set. The site works fully either way. You can change your choice by clearing this site's data in your browser.</p>

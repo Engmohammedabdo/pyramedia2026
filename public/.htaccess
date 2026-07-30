@@ -79,9 +79,9 @@ AddDefaultCharset UTF-8
   Header set X-Frame-Options "SAMEORIGIN"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  # Conservative CSP compatible with GA4 + Meta Pixel via Partytown (same-
-  # origin worker), the n8n webhook (connect-src https:), the click-to-load
-  # Google Maps facade (frame-src) and the click-to-load official Instagram
-  # reel embeds (script-src + frame-src www.instagram.com, Addendum A.1).
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.instagram.com; worker-src 'self' blob:; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.instagram.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+  # Conservative CSP compatible with GA4 + Meta Pixel + TikTok Pixel via
+  # Partytown (same-origin worker), the n8n webhook (connect-src https:),
+  # the click-to-load Google Maps facade (frame-src) and the click-to-load
+  # official Instagram reel embeds (script-src + frame-src, Addendum A.1).
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://www.instagram.com; worker-src 'self' blob:; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.instagram.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
 </IfModule>

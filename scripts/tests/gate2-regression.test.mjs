@@ -457,6 +457,60 @@ test('Astro object configuration and analytics dispatch honor every configured-p
   assert.match(component, /if \(PIXEL\) \{/);
 });
 
+test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)', async () => {
+  const [config, site, analytics, component, layout, htaccess, envExample] = await Promise.all([
+    source('astro.config.mjs'),
+    source('src/config/site.ts'),
+    source('src/scripts/analytics.ts'),
+    source('src/components/Analytics.astro'),
+    source('src/layouts/BaseLayout.astro'),
+    source('public/.htaccess'),
+    source('.env.example'),
+  ]);
+
+  // Configured through the same env-driven path as the other two providers
+  assert.match(site, /tiktokPixelId:\s*import\.meta\.env\.PUBLIC_TIKTOK_PIXEL_ID\s*\|\|\s*''/);
+  assert.match(envExample, /PUBLIC_TIKTOK_PIXEL_ID=/);
+  assert.match(config, /env\.PUBLIC_TIKTOK_PIXEL_ID\s*\?\s*\[\s*['"]ttq\.track['"],\s*['"]ttq\.page['"]\s*\]\s*:\s*\[\s*\]/);
+
+  // Injected only when its own ID is set, and only inside the consent gate
+  assert.match(component, /if \(TIKTOK\) \{/);
+  assert.match(component, /const enabled = Boolean\(ga4 \|\| pixel \|\| tiktok\)/);
+  assert.ok(
+    component.indexOf("localStorage.getItem('pyx-consent') === 'accepted'") <
+      component.indexOf("window.addEventListener('pyx:consent'") + component.length,
+    'TikTok injection must sit behind the same consent gate',
+  );
+  assert.match(component, /tt\.type = 'text\/partytown'/);
+
+  // Event dispatch gated by a configured ID, like GA4 and Meta
+  assert.match(analytics, /if\s*\(SITE\.tiktokPixelId\s*&&\s*typeof window\.ttq\?\.track\s*===\s*['"]function['"]\)\s*\{/);
+  assert.ok(
+    analytics.indexOf('if (SITE.tiktokPixelId') < analytics.indexOf('window.ttq.track('),
+    'TikTok dispatch must be gated by a configured ID',
+  );
+
+  // Consent UI and CSP both account for the third provider
+  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId \|\| SITE\.tiktokPixelId\) && <ConsentBanner/);
+  assert.match(htaccess, /script-src[^"]*https:\/\/analytics\.tiktok\.com/);
+});
+
+test('privacy disclosures name every configured analytics provider (SPEC Addendum A.4)', async () => {
+  const [privacyEn, privacyAr] = await Promise.all([
+    source('src/content/pages/en/privacy.mdx'),
+    source('src/content/pages/ar/privacy.mdx'),
+  ]);
+
+  for (const policy of [privacyEn, privacyAr]) {
+    assert.match(policy, /SITE\.ga4Id/);
+    assert.match(policy, /SITE\.metaPixelId/);
+    assert.match(policy, /SITE\.tiktokPixelId/, 'the disclosure must react to the TikTok Pixel too');
+    assert.match(policy, /analyticsTools \?/);
+  }
+  assert.match(privacyEn, /the TikTok Pixel/);
+  assert.match(privacyAr, /بكسل تيك توك/u);
+});
+
 test('contact placeholders use the compliant muted token without color-transition noise', async () => {
   const contact = await source('src/components/pages/ContactPage.astro');
   const inputClass = contact.match(/const inputClass\s*=\s*'([^']+)'/);
@@ -817,7 +871,11 @@ test('consent UI and analytics disclosure are provider-aware (G2-RR2-002)', asyn
     source('src/content/pages/en/privacy.mdx'),
     source('src/content/pages/ar/privacy.mdx'),
   ]);
-  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId\) && <ConsentBanner/);
+  // Banner renders only when at least one provider is configured. The exact
+  // provider set grew to three in Addendum A.4, so assert the property
+  // (every configured provider is part of the condition) rather than a
+  // fixed two-provider string.
+  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId(?: \|\| SITE\.tiktokPixelId)?\) && <ConsentBanner/);
   for (const policy of [privacyEn, privacyAr]) {
     assert.match(policy, /SITE\.ga4Id/);
     assert.match(policy, /SITE\.metaPixelId/);

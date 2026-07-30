@@ -19,7 +19,7 @@ import { SITE } from '@/config/site';
 {/* إفصاح مطابق لحالة البناء الفعلية (G2-RR2-002): النص المعروض يعكس دائماً
     أدوات التحليلات المفعّلة فعلاً. */}
 
-export const analyticsTools = [SITE.ga4Id && 'إحصاءات جوجل 4', SITE.metaPixelId && 'بكسل ميتا'].filter(Boolean).join(' و');
+export const analyticsTools = [SITE.ga4Id && 'إحصاءات جوجل 4', SITE.metaPixelId && 'بكسل ميتا', SITE.tiktokPixelId && 'بكسل تيك توك'].filter(Boolean).join(' و');
 
 {analyticsTools ? (
   <p><strong>ملفات التحليلات.</strong> بموافقتك — وبموافقتك فقط — يحمّل الموقع أدوات {analyticsTools} لفهم كيفية استخدام الزوار للموقع وقياس إعلاناتنا. إذا رفضت، لا تُحمَّل هذه الأدوات إطلاقاً ولا تُخزَّن أي ملفات تحليلات. الموقع يعمل بالكامل في الحالتين. يمكنك تغيير اختيارك بمسح بيانات الموقع من متصفحك.</p>

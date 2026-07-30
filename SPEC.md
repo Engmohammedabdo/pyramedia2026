@@ -870,3 +870,19 @@ campaign optimisation continues to use only those five.
 (`clientFormUrl`). While empty the "become our client" gateway falls back to
 `/contact`, the approved §7.4 intake path, so the button is never dead. No
 client-intake form, page, or applicant content is added to this site.
+
+### A.4 TikTok Pixel as a third analytics provider (approved by Abdou, 30 July 2026)
+
+§10 named GA4 and the Meta Pixel. The owner carried three tracking IDs over
+from the previous pyramedia.info site, including a TikTok Pixel, so TikTok
+joins them as a third **independent** provider under the same rules:
+
+- It loads through Partytown and **only after the visitor accepts** the
+  consent banner. Decline ⇒ it is never injected.
+- Each provider is independent: any combination of the three IDs may be
+  configured, and only the configured ones load. With none configured, no
+  analytics code and no consent banner render at all.
+- The conversion events of §10 keep their exact names across all three
+  providers. TikTok receives them via `ttq.track`.
+- The consent banner and the privacy policies name the providers that are
+  actually configured in the build — §2.1 applies to disclosures too.

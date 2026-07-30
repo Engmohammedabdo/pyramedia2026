@@ -61,6 +61,7 @@ export const SITE = {
   // Analytics / integrations — injected only when present (SPEC §10, §14)
   ga4Id: import.meta.env.PUBLIC_GA4_ID || '',
   metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID || '',
+  tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID || '',
   n8nWebhookUrl: import.meta.env.PUBLIC_N8N_WEBHOOK_URL || '',
 } as const;
 

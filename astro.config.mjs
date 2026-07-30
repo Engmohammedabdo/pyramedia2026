@@ -11,6 +11,7 @@ const env = loadEnv(mode, process.cwd(), 'PUBLIC_');
 const partytownForwards = [
   ...(env.PUBLIC_GA4_ID ? ['dataLayer.push'] : []),
   ...(env.PUBLIC_META_PIXEL_ID ? ['fbq'] : []),
+  ...(env.PUBLIC_TIKTOK_PIXEL_ID ? ['ttq.track', 'ttq.page'] : []),
 ];
 
 // https://astro.build/config

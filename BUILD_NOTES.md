@@ -182,6 +182,48 @@ brand search volume and off-site presence to be stronger citation
 predictors than on-page work; the on-page layer above is the prerequisite,
 not the whole job.
 
+## Analytics IDs carried over from the previous site (2026-07-30)
+
+The owner asked for the GA4, Meta Pixel and TikTok Pixel IDs to be taken
+from the old `pyramedia.info`. They were read from that site's own live
+pages and cross-checked on two independent routes (`/en` and `/ar`), with
+each ID confirmed by two separate occurrences in the markup:
+
+| Provider | ID | Confirmed by |
+|---|---|---|
+| GA4 | `G-STV87CQQ5E` | `gtag('config', …)` + the `gtag/js?id=` script src |
+| Meta Pixel | `1337708084516315` | `fbq('init', …)` + the `facebook.com/tr?id=` noscript pixel |
+| TikTok Pixel | `D449T7RC77U3U3UTUOJG` | `ttq.load(…)` on both routes |
+
+They live in the untracked `.env` (git-ignored — no ID is committed). The
+deploy pipeline must receive the same three keys as repository
+secrets/variables before a production build.
+
+**TikTok required a code change (SPEC Addendum A.4).** §10 named only GA4
+and Meta, so TikTok was added as a third *independent* provider on the same
+contract: Partytown-hosted, consent-gated, injected only when its own ID is
+set, and forwarded (`ttq.track`, `ttq.page`). The consent banner condition,
+both privacy disclosures, the CSP `script-src`, `.env.example` and the
+regression suite were extended with it.
+
+**Verified locally with all three IDs configured (production preview):**
+
+- Before any choice: banner shown, **zero** vendor scripts injected.
+- After Accept: all three vendor scripts injected and consumed by Partytown
+  (`text/partytown-x`) — GA4 `gtag/js?id=G-STV87CQQ5E`, Meta
+  `connect.facebook.net/en_US/fbevents.js`, TikTok
+  `analytics.tiktok.com/i18n/pixel/events.js?sdkid=D449T7RC77U3U3UTUOJG`,
+  which then pulled its own follow-up bundle. `dataLayer.push` is a
+  Partytown proxy and `fbq` / `ttq.track` are forwarded functions.
+- After Decline (reload): **zero** vendor script tags.
+- Vendor traffic is invisible to the main thread's resource timeline
+  because Partytown runs it in the worker — expected, not a failure.
+
+**Still unverified (GATE 3, needs the live host and the real accounts):**
+that hits actually arrive in GA4 DebugView, Meta Events Manager and TikTok
+Events Manager, and that the CSP permits them under real Apache. Local
+evidence proves wiring and consent behaviour only.
+
 ## Asset arrivals
 
 - **2026-07-17 — Official logo files received.** The authentic twin-peak mark

@@ -18,6 +18,7 @@ declare global {
   interface Window {
     dataLayer?: unknown[];
     fbq?: (...args: unknown[]) => void;
+    ttq?: { track?: (...args: unknown[]) => void };
   }
 }
 
@@ -41,6 +42,9 @@ function send(event: string, params: Record<string, string> = {}) {
   }
   if (SITE.metaPixelId && typeof window.fbq === 'function') {
     window.fbq('trackCustom', event, params);
+  }
+  if (SITE.tiktokPixelId && typeof window.ttq?.track === 'function') {
+    window.ttq.track(event, params);
   }
 }
 
