@@ -960,3 +960,58 @@ test('the two engagement events are declared in SPEC and wired in the analytics 
   assert.match(analytics, /careers_click/);
   assert.match(analytics, /client_apply_click/);
 });
+
+test('work showcases are links only, config-driven and fail safe (Addendum A.5)', async () => {
+  const [site, home, servicePage, button] = await Promise.all([
+    source('src/config/site.ts'),
+    source('src/components/pages/HomePage.astro'),
+    source('src/components/pages/ServicePage.astro'),
+    source('src/components/Button.astro'),
+  ]);
+
+  // Destinations live only in site.ts, reached through one accessor.
+  assert.match(site, /SHOWCASE_URLS: Record<string, string> = \{/);
+  assert.match(site, /'web-development': 'https:\/\/card\.pyramedia\.info\/'/);
+  assert.match(site, /'social-media': 'https:\/\/card\.pyramedia\.info\/vp\/'/);
+  assert.match(site, /export function showcaseUrl\(slug: string\): string/);
+  for (const consumer of [home, servicePage]) {
+    assert.doesNotMatch(consumer, /card\.pyramedia\.info/, 'showcase URLs must not be inlined in components');
+  }
+
+  // Emptying a URL must remove the button rather than ship a dead link.
+  assert.match(home, /\]\.filter\(\(item\) => item\.href\)/);
+  assert.match(home, /showcases\.length > 0 &&/);
+  assert.match(servicePage, /\{\s*showcase &&/);
+
+  // Tracked, new-tab, and honest about the destination language.
+  const homeStrip = home.slice(home.indexOf('showcases.length > 0'));
+  const serviceButton = servicePage.slice(servicePage.indexOf('showcase && ('));
+  for (const markup of [homeStrip, serviceButton]) {
+    assert.match(markup, /variant="secondary"/);
+    assert.match(markup, /event="work_click"/);
+    assert.match(markup, /hreflang="ar"/);
+  }
+  assert.match(button, /\.\.\.rest\b/, 'Button must spread extra attributes so hreflang reaches the anchor');
+  // The Arabic-only warning is rendered on English pages only.
+  assert.match(home, /lang === 'en' && <p[^>]*>\{t\.work\.langNote\}/);
+  assert.match(servicePage, /showcase && lang === 'en' &&/);
+
+  // Only the two services with a showcase may link out.
+  const serviceSlugs = (await readdir(path.join(repositoryRoot, 'src/content/services/en')))
+    .map((file) => path.basename(file, path.extname(file)));
+  assert.equal(serviceSlugs.length, 6, 'the §4 approved service list must stay at six');
+  const linked = serviceSlugs.filter((slug) => site.includes(`'${slug}': 'https://card.pyramedia.info`));
+  assert.deepEqual(linked.sort(), ['social-media', 'web-development']);
+
+  // Labels stay neutral: no client names, counts, or result claims (§2.1).
+  for (const dictionary of ['src/i18n/en.ts', 'src/i18n/ar.ts']) {
+    const text = await source(dictionary);
+    const block = text.slice(text.indexOf('work: {'), text.indexOf('service: {'));
+    assert.ok(block.includes('viewWork'), `${dictionary} must define the work labels`);
+    assert.doesNotMatch(block, /[0-9٠-٩]/u, `${dictionary} work labels must state no numbers`);
+  }
+
+  const [spec, analytics] = await Promise.all([source('SPEC.md'), source('src/scripts/analytics.ts')]);
+  assert.match(spec, /work_click \{placement\}/);
+  assert.match(analytics, /work_click/);
+});

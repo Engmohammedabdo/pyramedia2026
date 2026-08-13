@@ -886,3 +886,43 @@ joins them as a third **independent** provider under the same rules:
   providers. TikTok receives them via `ttq.track`.
 - The consent banner and the privacy policies name the providers that are
   actually configured in the build — §2.1 applies to disclosures too.
+
+### A.5 Outbound work showcases (approved by Abdou, 13 August 2026)
+
+§5 excludes a portfolio section from launch scope, and A.5 does **not** reopen
+that exclusion. The owner separately built and published two showcase pages on
+the `card.pyramedia.info` subdomain — a website-design showcase (`/`) and a
+video-production showcase (`/vp/`). This site **links out** to them; it hosts
+no portfolio, case study, project entry, or client-work claim of its own.
+
+Placement (both languages):
+
+- **Homepage** — a bordered strip directly under the §7.1 services grid,
+  labelled with a neutral eyebrow, holding one *secondary* button per showcase.
+  Secondary styling is required for the same reason as A.2: neither button may
+  compete with the two conversion CTAs.
+- **Service pages that have a showcase** — one *secondary* button in the hero
+  action row, after the WhatsApp and contact CTAs. Only `web-development` and
+  `social-media` qualify; the other four service pages render no such button.
+
+Rules:
+
+- Destination URLs live only in `src/config/site.ts` (`SHOWCASE_URLS`, read
+  through `showcaseUrl(slug)`). Emptying a value removes every button for that
+  service with no other edit, so a link can never go dead in the build.
+- Labels are neutral and state no client name, project count, sector count,
+  revenue, result, or ranking. Claims that appear **on** the destination pages
+  are the owner's own publication and are outside this SPEC's §2.1 surface;
+  nothing from them may be restated on this site without §4 approval.
+- Links open in a new tab with `rel="noopener"` and carry `hreflang="ar"`,
+  because both destinations are Arabic-only. English pages additionally render
+  one short note stating that the showcases open in Arabic — §2.1 applies to
+  the visitor's expectations, not only to factual claims.
+**Analytics (amends §10).** A third non-conversion engagement event joins the
+two from A.3, with the same `{placement}` payload:
+
+- `work_click {placement}` — `placement` identifies the surface as
+  `home-<slug>` or `service-<slug>`.
+
+The five §10 conversion events keep their exact names and meaning; Meta
+campaign optimisation continues to use only those five.

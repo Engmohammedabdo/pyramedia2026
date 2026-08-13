@@ -274,6 +274,51 @@ Until then `PUBLIC_N8N_WEBHOOK_URL` stays empty by design: the contact form
 keeps its documented disabled state with the WhatsApp fallback rather than
 shipping a form that 403s.
 
+## Outbound work showcases (2026-08-13, SPEC Addendum A.5)
+
+The owner supplied two showcase pages he had already built and published on
+the `card.pyramedia.info` subdomain, and directed that the site **link** to
+them without building or rebuilding anything:
+
+| Showcase | URL | Linked from |
+| --- | --- | --- |
+| Website design | `https://card.pyramedia.info/` | homepage + `/services/web-development` |
+| Video production | `https://card.pyramedia.info/vp/` | homepage + `/services/social-media` |
+
+Video production maps to `social-media` because that service already lists
+"short-form video production" among its deliverables; no seventh service was
+added, and the §4 approved service list is unchanged.
+
+Implementation: `SHOWCASE_URLS` + `showcaseUrl(slug)` in `src/config/site.ts`
+are the single source. The homepage strip and the service-page hero button
+both read from it, and both disappear on their own if a URL is emptied — the
+same fail-safe pattern used for `careersUrl` and `clientFormUrl`. The other
+four service pages render no showcase button. `Button.astro` gained a `...rest`
+passthrough so `hreflang` reaches the anchor.
+
+**Two owner-facing notes, raised before implementing and left as they stand:**
+
+1. **Both destinations are Arabic-only.** Mitigated in-build with
+   `hreflang="ar"` on every link and one short note on English pages only.
+   Not fully solved — an English visitor still lands on Arabic copy. Fixing
+   that properly means the owner publishing English versions of those two
+   pages; it is not a change this site can make.
+2. **The video showcase names third-party brands** (Burger King, Rexona) and
+   a video count. Nothing from those pages is restated here: this site still
+   publishes zero client names and zero counts, per §2.1/§4. If those
+   engagements are delivered work the owner is cleared to name, they would
+   also resolve `TODO_CLIENT_LOGO_1`; that confirmation has **not** been given
+   and no client logo or name has been added.
+
+Verified locally: typecheck clean, 25-page build, GATE 1 7/7, GATE 2 55/55.
+Built HTML carries `target="_blank" rel="noopener" hreflang="ar"` and
+`data-event="work_click"` with distinct `data-placement` values; the four
+non-showcase service pages contain no `card.pyramedia.info` reference. Both
+languages confirmed in the local preview DOM (Arabic page RTL, Arabic labels,
+English-only note correctly absent). **Not** verified: on-screen layout of the
+new buttons — the preview pane reported a zero-width viewport in this session,
+so no screenshot or real measurement was possible.
+
 ## Asset arrivals
 
 - **2026-07-17 — Official logo files received.** The authentic twin-peak mark

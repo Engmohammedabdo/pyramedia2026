@@ -59,6 +59,14 @@ export const en = {
     accept: 'Accept',
     decline: 'Decline',
   },
+  work: {
+    eyebrow: 'Selected work',
+    viewWork: 'See our work',
+    web: 'Website portfolio',
+    video: 'Video production portfolio',
+    // Shown on English pages only — the showcase pages are written in Arabic.
+    langNote: 'These showcases open in Arabic.',
+  },
   service: {
     included: "What's included",
     process: 'How it runs',

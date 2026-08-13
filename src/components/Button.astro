@@ -26,6 +26,8 @@ interface Props {
   arrow?: boolean;
   external?: boolean;
   class?: string;
+  /** Any extra anchor attribute (e.g. hreflang) reaches the DOM via ...rest. */
+  [key: string]: unknown;
 }
 
 const {
@@ -36,6 +38,7 @@ const {
   arrow = variant === 'secondary',
   external = href.startsWith('http'),
   class: className = '',
+  ...rest
 } = Astro.props;
 ---
 
@@ -45,6 +48,7 @@ const {
   data-event={event}
   data-placement={placement}
   {...external ? { target: '_blank', rel: 'noopener' } : {}}
+  {...rest}
 >
   <slot />
   {arrow && <Icon name="arrow-right" size={18} class="btn-arrow" />}

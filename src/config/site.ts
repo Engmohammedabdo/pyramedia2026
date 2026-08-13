@@ -90,6 +90,23 @@ export const IG_HANDLE = SITE.socials.instagram.split('/').filter(Boolean).pop()
  * Social links with their platform display labels (proper nouns, identical
  * in both languages) — the single source for social navigation (G2-008).
  */
+/**
+ * Work showcases (SPEC Addendum A.5) — owner-built portfolio pages already
+ * live on the `card` subdomain. The site LINKS to them; it does not host a
+ * portfolio section (the §7 no-portfolio scope rule still stands).
+ * Source pages are Arabic-only, so every link carries hreflang="ar".
+ * Emptying a value removes that button everywhere, with no other edit.
+ */
+export const SHOWCASE_URLS: Record<string, string> = {
+  'web-development': 'https://card.pyramedia.info/',
+  'social-media': 'https://card.pyramedia.info/vp/',
+};
+
+/** Showcase URL for a service slug — '' when that service has none. */
+export function showcaseUrl(slug: string): string {
+  return SHOWCASE_URLS[slug] ?? '';
+}
+
 export const SOCIAL_LINKS = [
   { href: SITE.socials.instagram, icon: 'instagram', label: 'Instagram' },
   { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },

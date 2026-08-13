@@ -6,7 +6,7 @@
  */
 import { getEntry, getCollection } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { SITE, waLink } from '@/config/site';
+import { SITE, waLink, showcaseUrl } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Button from '@/components/Button.astro';
@@ -29,6 +29,13 @@ const c = home.data as any;
 const services = (await getCollection('services', (e) => e.data.lang === lang)).sort(
   (a, b) => a.data.order - b.data.order
 );
+
+// Outbound work showcases (Addendum A.5) — links only, no in-site portfolio.
+// Each entry disappears on its own if its URL is emptied in site.ts.
+const showcases = [
+  { href: showcaseUrl('web-development'), label: t.work.web, slug: 'web-development' },
+  { href: showcaseUrl('social-media'), label: t.work.video, slug: 'social-media' },
+].filter((item) => item.href);
 
 // Client gateway (SPEC Addendum A.3). The owner's intake form is configured
 // in site.ts; if that value is ever emptied the door still opens onto the
@@ -161,6 +168,28 @@ const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
         ))
       }
     </div>
+
+    {
+      showcases.length > 0 && (
+        <div class="mt-12 border-t border-line pt-10" data-reveal>
+          <p class="eyebrow">{t.work.eyebrow}</p>
+          <div class="mt-5 flex flex-wrap items-center gap-4">
+            {showcases.map((item) => (
+              <Button
+                href={item.href}
+                variant="secondary"
+                event="work_click"
+                placement={`home-${item.slug}`}
+                hreflang="ar"
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          {lang === 'en' && <p class="mt-4 text-sm text-muted">{t.work.langNote}</p>}
+        </div>
+      )
+    }
   </section>
 
   <!-- ─────────────── 4 · How we work (methodology) ────────────── -->

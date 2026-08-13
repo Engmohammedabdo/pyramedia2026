@@ -3,9 +3,9 @@
  * optimize on these: whatsapp_click {placement}, form_submit, form_success,
  * call_click, email_click.
  *
- * Plus two engagement events from SPEC Addendum A.3, same {placement}
- * payload, NOT used for campaign optimisation:
- * client_apply_click, careers_click.
+ * Plus three engagement events from SPEC Addendum A.3 and A.5, same
+ * {placement} payload, NOT used for campaign optimisation:
+ * client_apply_click, careers_click, work_click.
  *
  * Sources:
  *  - Delegated clicks on [data-event] elements (links/buttons).
