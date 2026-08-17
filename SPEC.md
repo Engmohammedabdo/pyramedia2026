@@ -186,7 +186,7 @@ These are the ONLY facts the site may state:
 
 \- Founder: \*\*Mohamed Abdou — Founder \& CEO\*\*. Leads strategy across marketing and automation. (No other biographical claims.)
 
-\- Social profiles: instagram.com/pyramedia.dxb · facebook.com/pyramedia.official · linkedin.com/company/pyramedia-dxb
+\- Social profiles: instagram.com/pyramedia.dxb · facebook.com/pyramedia.official · linkedin.com/company/pyramedia-dxb · tiktok.com/@pyramedia.dxb (TikTok added by the owner, 17 August 2026 — see Addendum A.9)
 
 \- Work methodology (§7.1 section 4): Data → Analysis → Decision → Execution → Result → Optimization.
 
@@ -1005,3 +1005,28 @@ the owner rather than resolved from the scraped listing, and he confirmed:
   but the street and building line are still not published. The listing also
   shows *Abu Baker Al Siddique Street*; that part was not confirmed, so §2.1
   keeps it off the site until it is.
+
+### A.9 TikTok added to the published profiles (owner instruction, 17 August 2026)
+
+§4 listed three social profiles. The owner spotted the missing TikTok icon in
+the footer and supplied the account: **tiktok.com/@pyramedia.dxb**. It joins
+the §4 approved facts as a fourth profile. Nothing else changes — no follower
+count, no posting-frequency claim, no TikTok content is embedded (§2.1 intact),
+and Addendum A.1's Instagram reels box is untouched.
+
+The site already loads a TikTok Pixel under A.4; that is analytics and is
+unrelated to this link, which is a plain outbound profile link.
+
+**One-edit rule.** The gap existed because a profile took three separate edits —
+the config entry, the icon glyph, and the JSON-LD `sameAs` list — and the last
+two could silently lag. Now:
+
+- `SOCIAL_LINKS` in `src/config/site.ts` is the only list. The footer already
+  read from it; `Seo.astro` now derives `sameAs` from it too instead of naming
+  each profile by hand.
+- A gate2 test walks every `SOCIAL_LINKS` entry and fails if its URL is missing
+  from `SITE.socials`, if `Icon.astro` has no matching glyph, or if `sameAs`
+  goes back to a hand-kept list. A future platform cannot ship half-added.
+
+The TikTok glyph is tabler's `brand-tiktok` (MIT), on the same 24px outline
+grid as the existing WhatsApp icon, so the footer row stays visually uniform.

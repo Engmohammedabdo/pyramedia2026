@@ -890,7 +890,26 @@ test('social platform labels render from the central SOCIAL_LINKS source (G2-008
   ]);
   assert.match(site, /export const SOCIAL_LINKS/);
   assert.match(footer, /SOCIAL_LINKS/);
-  assert.doesNotMatch(footer, /label: '(Instagram|Facebook|LinkedIn)'/);
+  assert.doesNotMatch(footer, /label: '(Instagram|Facebook|LinkedIn|TikTok)'/);
+
+  // TikTok shipped with no footer icon because the glyph, the config entry and
+  // the JSON-LD list were three separate edits (A.9). Tie them together so the
+  // next platform cannot be half-added.
+  const [icons, seo] = await Promise.all([
+    source('src/components/Icon.astro'),
+    source('src/components/Seo.astro'),
+  ]);
+  const entries = [...site.matchAll(/\{ href: SITE\.socials\.(\w+), icon: '([\w-]+)', label: '([^']+)' \}/g)];
+  assert.ok(entries.length >= 4, 'SOCIAL_LINKS must list every published profile');
+  for (const [, key, icon] of entries) {
+    assert.match(site, new RegExp(`${key}: 'https://`), `SITE.socials.${key} must hold a real URL`);
+    assert.match(icons, new RegExp(`(^|\\n)\\s*'?${icon}'?:`), `Icon.astro is missing the "${icon}" glyph`);
+  }
+  assert.ok(entries.some(([, , , label]) => label === 'TikTok'), 'TikTok must be published');
+
+  // sameAs must be derived, never a hand-kept second list that can drift.
+  assert.match(seo, /sameAs: \[\.\.\.SOCIAL_LINKS\.map\(\(s\) => s\.href\), WA_BASE\]/);
+  assert.doesNotMatch(seo, /sameAs: \[SITE\.socials\./);
 });
 
 test('interior heroes and the legal page participate in grouped stagger reveals (G2-RR-005)', async () => {

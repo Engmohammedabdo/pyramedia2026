@@ -67,6 +67,8 @@ export const SITE = {
     instagram: 'https://instagram.com/pyramedia.dxb',
     facebook: 'https://facebook.com/pyramedia.official',
     linkedin: 'https://linkedin.com/company/pyramedia-dxb',
+    // Added on owner instruction, 2026-08-17 (SPEC Addendum A.9)
+    tiktok: 'https://www.tiktok.com/@pyramedia.dxb',
   },
 
   // Analytics / integrations — injected only when present (SPEC §10, §14)
@@ -122,6 +124,7 @@ export const SOCIAL_LINKS = [
   { href: SITE.socials.instagram, icon: 'instagram', label: 'Instagram' },
   { href: SITE.socials.facebook, icon: 'facebook', label: 'Facebook' },
   { href: SITE.socials.linkedin, icon: 'linkedin', label: 'LinkedIn' },
+  { href: SITE.socials.tiktok, icon: 'tiktok', label: 'TikTok' },
 ] as const;
 
 /**

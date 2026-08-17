@@ -7,7 +7,7 @@
  */
 import { getCollection } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { SITE, WA_BASE } from '@/config/site';
+import { SITE, WA_BASE, SOCIAL_LINKS } from '@/config/site';
 import { useTranslations, switchLangPath } from '@/i18n';
 
 interface Props {
@@ -67,7 +67,10 @@ const orgSchema = {
     addressCountry: SITE.addressCountry,
   },
   areaServed: SITE.areaServed[lang],
-  sameAs: [SITE.socials.instagram, SITE.socials.facebook, SITE.socials.linkedin, WA_BASE],
+  // Derived from SOCIAL_LINKS, not listed by hand: the footer and this graph
+  // must never disagree about which profiles exist. Adding a platform to
+  // SOCIAL_LINKS is now the only edit needed (A.9).
+  sameAs: [...SOCIAL_LINKS.map((s) => s.href), WA_BASE],
   // Approved §4 facts only — no invented history, size, or credentials.
   // The founder reference is emitted only while the founder section is shown,
   // so the graph never points at a node the pages do not render.

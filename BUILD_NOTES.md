@@ -720,3 +720,32 @@ rate-limiting from rapid sequential probing; later checks were paced.
 **Still pending:** Phase 3, deleting the 44 old-site entries, has NOT been run.
 The old Laravel files are inert — `DirectoryIndex` prefers `index.html` — but
 still on disk, which is what keeps the rollback one file away.
+
+## TikTok added to the footer (2026-08-17, SPEC Addendum A.9)
+
+The owner spotted the missing TikTok icon in the live footer and supplied
+`https://www.tiktok.com/@pyramedia.dxb`. Added as a fourth §4 social profile —
+no follower count, no posting claim, no embedded TikTok content.
+
+**Root cause worth keeping.** A profile needed three separate edits: the
+`SITE.socials` entry, a glyph in `Icon.astro`, and the JSON-LD `sameAs` array,
+which was a hand-written second list naming each platform. Any one of them
+could lag and nothing would fail. That is exactly how TikTok ended up absent
+while its Pixel (A.4) was already loading.
+
+Fixed structurally, not just for TikTok:
+
+- `Seo.astro` now derives `sameAs` from `SOCIAL_LINKS` instead of listing
+  profiles by hand, so the footer and the entity graph cannot disagree.
+- The G2-008 gate2 test now walks every `SOCIAL_LINKS` entry and fails if its
+  URL is missing from `SITE.socials`, if `Icon.astro` has no matching glyph, or
+  if `sameAs` reverts to a hand-kept list. Adding a platform is one edit now.
+
+Glyph is tabler `brand-tiktok` (MIT) on the same 24px outline grid as the
+existing WhatsApp icon, so the row stays uniform: 40px hit target, 18px icon,
+1.5px stroke, identical hover.
+
+**Deployed and verified live:** 25 HTML files uploaded, 0 failures. The footer
+renders Instagram · Facebook · LinkedIn · TikTok on `/`, `/ar/`, `/contact` and
+`/about`, the link carries `target="_blank" rel="noopener"`, and the
+Organization/LocalBusiness `sameAs` array now contains the TikTok URL.
