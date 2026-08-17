@@ -23,6 +23,14 @@ SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
 
 <If "%{HTTP_HOST} =~ /^(www\.)?pyramedia\.info$/i">
   ErrorDocument 404 /404.html
+
+  # The build emits services.html BESIDE a services/ folder, in both
+  # languages. mod_dir sees the folder and 301s /services → /services/ before
+  # the rewrites below ever run — verified live, it fought the trailing-slash
+  # rule and produced a redirect loop. Off, so the .html twin wins. Real
+  # asset folders are not linked as URLs and Options -Indexes still covers
+  # them. Host-scoped: subdomains keep Apache's default behaviour.
+  DirectorySlash Off
 </If>
 
 <IfModule mod_rewrite.c>
@@ -66,12 +74,16 @@ SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
   RewriteRule ^ar/$ ar.html [L]
 
   # ── Strip trailing slashes from page URLs (canonical form, SPEC §5)
-  RewriteCond %{REQUEST_FILENAME} !-d
+  # NO !-d here. The build emits a page and a folder under the same name —
+  # services.html beside services/, in both languages. With !-d, /services/
+  # was left to mod_dir, which has no index there. The .html twin wins.
   RewriteCond %{DOCUMENT_ROOT}/$1.html -f
   RewriteRule ^(.+)/$ /$1 [R=301,L]
 
   # ── Extensionless URLs → prebuilt .html files ────────────────────
-  RewriteCond %{REQUEST_FILENAME} !-d
+  # Also no !-d, for the same collision: /services must resolve to
+  # services.html, not bounce off mod_dir's DirectorySlash into /services/.
+  # The .html existence check keeps this from touching real directories.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME}.html -f
   RewriteRule ^(.+)$ $1.html [L]

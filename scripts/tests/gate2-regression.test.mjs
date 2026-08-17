@@ -1048,12 +1048,47 @@ test('.htaccess is fenced to the canonical host so nested subdomains survive', a
 
   // ErrorDocument pointing at /404.html breaks any subdomain without that
   // file, so it lives inside a host <If> (verified supported on the host).
-  const errorDoc = htaccess.slice(htaccess.indexOf('ErrorDocument'));
-  assert.ok(
-    /<If "%\{HTTP_HOST\}[^>]*>\s*\n\s*ErrorDocument 404 \/404\.html\s*\n\s*<\/If>/.test(htaccess),
-    'ErrorDocument must be wrapped in a host-scoped <If>',
+  const ifStart = htaccess.indexOf('<If "%{HTTP_HOST}');
+  const ifEnd = htaccess.indexOf('</If>', ifStart);
+  assert.ok(ifStart >= 0 && ifEnd > ifStart, 'a host-scoped <If> block must exist');
+  assert.match(htaccess.slice(ifStart, ifEnd), /ErrorDocument 404 \/404\.html/);
+  // …and nowhere else, or the fencing is pointless.
+  assert.equal((htaccess.match(/^\s*ErrorDocument/gm) || []).length, 1);
+});
+
+test('page/folder name collisions resolve to the .html twin', async () => {
+  const htaccess = await source('public/.htaccess');
+
+  // Astro emits services.html BESIDE services/, in both languages. On the
+  // live host mod_dir won that race and 301'd /services → /services/ before
+  // the rewrites ran; with the trailing-slash rule also active that became a
+  // redirect loop. Three things together fix it, and all three must stay.
+  assert.match(htaccess, /DirectorySlash Off/, 'mod_dir must not redirect /services → /services/');
+
+  const rewrites = htaccess.slice(htaccess.indexOf('RewriteEngine On'));
+  const strip = rewrites.slice(rewrites.indexOf('RewriteRule ^(.+)/$'));
+  const extensionless = rewrites.slice(rewrites.indexOf('RewriteCond %{REQUEST_FILENAME}.html -f'));
+
+  // Neither collision rule may reintroduce a !-d guard — that guard is what
+  // handed these URLs back to mod_dir in the first place.
+  const stripBlock = rewrites.slice(
+    rewrites.lastIndexOf('RewriteCond', rewrites.indexOf('RewriteRule ^(.+)/$')) - 200,
+    rewrites.indexOf('RewriteRule ^(.+)/$'),
   );
-  assert.ok(errorDoc.length > 0);
+  assert.doesNotMatch(stripBlock, /RewriteCond %\{REQUEST_FILENAME\} !-d/);
+  assert.match(strip, /^RewriteRule \^\(\.\+\)\/\$ \/\$1 \[R=301,L\]/);
+  assert.match(extensionless, /^RewriteCond %\{REQUEST_FILENAME\}\.html -f\s*\n\s*RewriteRule \^\(\.\+\)\$ \$1\.html \[L\]/);
+
+  // DirectorySlash is host-scoped so subdomains keep Apache's default.
+  const ifBlock = htaccess.slice(htaccess.indexOf('<If "%{HTTP_HOST}'), htaccess.indexOf('</If>'));
+  assert.ok(ifBlock.includes('DirectorySlash Off'), 'DirectorySlash must sit inside the host <If>');
+
+  // The Arabic home keeps its canonical trailing slash, so its explicit rules
+  // must still come BEFORE the generic strip rule that would remove it.
+  assert.ok(
+    rewrites.indexOf('RewriteRule ^ar/$ ar.html [L]') < rewrites.indexOf('RewriteRule ^(.+)/$'),
+    '/ar/ must be claimed before the trailing-slash stripper reaches it',
+  );
 });
 
 test('the map facade loads exactly one iframe and cannot be re-triggered', async () => {

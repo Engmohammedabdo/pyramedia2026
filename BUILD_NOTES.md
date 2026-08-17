@@ -665,3 +665,58 @@ set, and was deleted — verified gone from both HTTP and the FTP listing.
 **Still unverified:** nothing has been deployed. Redirects, headers and
 subdomain behaviour under the new file are reasoned from the survey, not
 observed in production.
+
+## PHASE 1 DEPLOYED — new site is live (2026-08-17)
+
+Uploaded over FTPS to `box5557.bluehost.com` → `public_html`, alongside the old
+Laravel app rather than replacing it. **Nothing was deleted.**
+
+**Order was deliberate:** all 80 files first, `.htaccess` last. Until that final
+file landed, the old site's `.htaccess` was still routing everything to
+`index.php`, so the switch happened in one step with no window where the new
+HTML was reachable without its assets. Rollback copies of the old `.htaccess`
+and `index.php` are kept in the session scratchpad.
+
+Upload verified: 0 failures across 80 files, 14 sampled pages byte-identical to
+local, and `_astro/` diffed file-by-file against the local build — exact match,
+nothing missing, nothing extra.
+
+### Two live-only defects found and fixed after the switch
+
+**1. `/services` fought `/services/` in a redirect loop.** Astro emits
+`services.html` *beside* a `services/` folder, in both languages. mod_dir's
+`DirectorySlash` 301'd `/services` → `/services/` before mod_rewrite ran, while
+the trailing-slash rule pushed back the other way. The `!-d` guards on both
+rules were what handed these URLs to mod_dir in the first place. Fixed by
+dropping `!-d` from the two collision rules **and** setting `DirectorySlash
+Off` inside the host-scoped `<If>` — dropping `!-d` alone was not enough, as
+verified live. Locked by a gate2 test that also asserts `/ar/` is still claimed
+before the trailing-slash stripper can eat its canonical slash.
+
+This is a class of bug no local Astro preview can surface: the preview server
+does not run mod_dir.
+
+**2. `/privacy` returned ECONNRESET once.** Not reproducible — three further
+rounds returned 200 with an identical 35,404-byte body. Attributed to
+rate-limiting from rapid sequential probing; later checks were paced.
+
+### Live verification (production, not preview)
+
+- **22 pages** — all 200 across both languages after the fix.
+- **Legacy §5.1 map — 17/17** exact 301s to the expected targets.
+- **Canonicalisation** — `http://` → https, `www.` → apex, both single 301s.
+- **Security headers** — CSP, nosniff, X-Frame-Options, Referrer-Policy,
+  Permissions-Policy and HTML `no-cache` all present on the live response.
+- **404** — real 404 status serving the branded page.
+- **Subdomains — all intact.** card (+ `/vp/`), clinic, stock and aiagent all
+  200 with their own titles, none redirected to the main site. The host fence
+  held. `events` (500) and `new` (TLS altname) were already broken before this
+  work and are unchanged.
+- **New content live** — 12 client-logo images (6 marks × marquee duplicate),
+  2 showcase links, founder section absent, GA4 present, `dir="rtl"` on the
+  Arabic home, map embed and the Al Khabaisi address on `/contact`, and the
+  §2.3 banned legacy number absent.
+
+**Still pending:** Phase 3, deleting the 44 old-site entries, has NOT been run.
+The old Laravel files are inert — `DirectoryIndex` prefers `index.html` — but
+still on disk, which is what keeps the rollback one file away.
