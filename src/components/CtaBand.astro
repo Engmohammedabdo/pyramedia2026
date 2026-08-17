@@ -15,8 +15,10 @@ interface Props {
   placement?: string;
   secondaryHref?: string;
   secondaryLabel?: string;
+  /** Human-readable subject already in `lang`, e.g. the service name. */
+  context?: string;
 }
-const { lang, placement = 'cta-band' } = Astro.props;
+const { lang, placement = 'cta-band', context } = Astro.props;
 const t = useTranslations(lang);
 const secondaryHref = Astro.props.secondaryHref ?? localizePath('/contact', lang);
 const secondaryLabel = Astro.props.secondaryLabel ?? t.cta.contactUs;
@@ -38,7 +40,7 @@ const secondaryLabel = Astro.props.secondaryLabel ?? t.cta.contactUs;
       {t.ctaBand.title}
     </h2>
     <div class="mt-9 flex flex-wrap items-center justify-center gap-4" data-reveal>
-      <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={placement}>
+      <Button href={waLink(lang, context)} variant="primary" event="whatsapp_click" placement={placement}>
         <Icon name="whatsapp" size={18} />
         {t.cta.whatsapp}
       </Button>

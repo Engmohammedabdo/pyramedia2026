@@ -1292,3 +1292,23 @@ test('speed proof reports a real measurement and cannot shift layout', async () 
     assert.match(dict, /measuredNow:/);
   }
 });
+
+test('WhatsApp links carry where the visitor was (Feature 6)', async () => {
+  const [site, service, nav, float] = await Promise.all([
+    source('src/config/site.ts'),
+    source('src/components/pages/ServicePage.astro'),
+    source('src/components/Nav.astro'),
+    source('src/components/WhatsAppFloat.astro'),
+  ]);
+
+  assert.match(site, /export function waLink\(lang: Lang = 'en', context\?: string\): string/);
+  // Backwards compatible: a context-free call must still produce the plain message.
+  assert.match(site, /if \(!context\) return/);
+
+  // Service pages name the service they are on.
+  assert.match(service, /waLink\(lang, s\.name\)/);
+  // The nav is site-wide and stays generic — it has no single context.
+  assert.match(nav, /waLink\(lang\)/);
+  // The float reads its context at runtime from the section in view.
+  assert.match(float, /data-wa-float/);
+});

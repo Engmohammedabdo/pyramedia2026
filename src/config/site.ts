@@ -84,9 +84,26 @@ export const WA_MESSAGE: Record<Lang, string> = {
   ar: 'مرحباً بيراميديا إكس، حابب أستفسر عن خدماتكم.',
 };
 
-/** wa.me deep-link builder — the only allowed WhatsApp URL constructor. */
-export function waLink(lang: Lang = 'en'): string {
-  return `https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(WA_MESSAGE[lang])}`;
+/**
+ * Context-aware variant (Feature 6). `context` is a label already in the
+ * visitor's language — the service they were reading, for example — so the
+ * chat opens with the subject already stated and the first two questions of
+ * every conversation are gone.
+ */
+const WA_MESSAGE_WITH_CONTEXT: Record<Lang, (context: string) => string> = {
+  en: (context) => `Hello PyramediaX, I'd like to discuss ${context}.`,
+  ar: (context) => `مرحباً بيراميديا إكس، حابب أستفسر عن ${context}.`,
+};
+
+/**
+ * wa.me deep-link builder — the only allowed WhatsApp URL constructor.
+ * Called with one argument it is byte-identical to the previous behaviour,
+ * so no existing call site changes meaning.
+ */
+export function waLink(lang: Lang = 'en', context?: string): string {
+  if (!context) return `https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(WA_MESSAGE[lang])}`;
+  const text = WA_MESSAGE_WITH_CONTEXT[lang](context.trim());
+  return `https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
 /** Plain wa.me link without a prefilled message. */

@@ -97,7 +97,7 @@ const jsonLd = [
               contact link. The showcase sat last as a plain secondary and was
               invisible next to "Contact us" (A.10). */}
           <div class="mt-8 flex flex-wrap items-start gap-4" data-reveal>
-            <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
+            <Button href={waLink(lang, s.name)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
               <Icon name="whatsapp" size={18} />
               {t.cta.whatsapp}
             </Button>
@@ -223,5 +223,5 @@ const jsonLd = [
     </div>
   </section>
 
-  <CtaBand lang={lang} placement={`service-${s.slug}-cta`} />
+  <CtaBand lang={lang} placement={`service-${s.slug}-cta`} context={s.name} />
 </BaseLayout>
