@@ -1232,12 +1232,33 @@ test('speed proof reports a real measurement and cannot shift layout', async () 
     source('src/i18n/ar.ts'),
   ]);
 
-  // The number must come from the Navigation Timing API — never a constant.
+  // The number must come from real timing data — never a constant.
   assert.match(component, /performance\.getEntriesByType\('navigation'\)/);
   assert.doesNotMatch(component, /\b(0\.\d|[0-9]{2,4})\s*(ms|s)\b/, 'no hardcoded timing may ship (§2.1)');
 
-  // Space is reserved before the number arrives, so it cannot cause CLS (§12).
+  // ClientRouter makes soft navigation the common case: the widget must
+  // measure the transition itself, not reuse the original hard load's
+  // Navigation Timing entry for a different page.
+  assert.match(component, /astro:before-preparation/, 'soft navigation start must be observed');
+  assert.match(component, /navPrepStart\s*=\s*performance\.now\(\)/);
+  assert.match(component, /performance\.now\(\)\s*-\s*navPrepStart/, 'soft nav must measure elapsed time since preparation');
+
+  // Space is reserved before the number arrives, wide enough for the real
+  // output range (up to 999.99), so it cannot cause CLS (§12).
   assert.match(component, /min-block-size:/);
+  const reservedInlineSize = component.match(/min-inline-size:\s*(\d+)ch/);
+  assert.ok(reservedInlineSize, 'the value slot must reserve inline size');
+  assert.ok(Number(reservedInlineSize[1]) >= 6, 'reserved inline size must fit the real output range without growing');
+
+  // Timer resolution is coarsened by browsers (Spectre mitigations), so a
+  // genuinely fast page can legitimately measure 0 — that reading must be
+  // rendered, not discarded. Only a negative value is invalid.
+  assert.doesNotMatch(component, /\bms\s*<=\s*0/, 'a zero measurement must not be discarded');
+  assert.match(component, /elapsed\s*<\s*0/);
+
+  // A screen-reader user who has passed the paragraph must still hear the
+  // number when it arrives.
+  assert.match(component, /aria-live="polite"/);
 
   // Only the web-development service shows it.
   assert.match(servicePage, /s\.slug === 'web-development' && <SpeedProof/);
