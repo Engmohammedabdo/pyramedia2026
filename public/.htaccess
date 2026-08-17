@@ -32,17 +32,12 @@ SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
   # them. Host-scoped: subdomains keep Apache's default behaviour.
   DirectorySlash Off
 
-  # public/ is Laravel's own web root and carries its OWN .htaccess with
-  # RewriteEngine On, which discards every rewrite inherited from here — the
-  # same inheritance rule that protects the subdomains works against us here,
-  # so `RewriteRule ^public …` was silently ignored and /public/index.php
-  # still 302'd into the old site. mod_alias is a different module and is not
-  # overridden by the child's mod_rewrite block, so it wins.
-  RedirectMatch 403 ^/public(/|$)
-
-  # Every dotfile path, for the same reason — /.git/config survived the
-  # mod_rewrite deny and was still serving the repo URL and branch list.
-  # .well-known is excluded: AutoSSL renews the certificate through it.
+  # Deny every dotfile path. This is mod_alias, not mod_rewrite, on purpose:
+  # when the old Laravel app was still here, a nested directory with its own
+  # RewriteEngine discarded the inherited rewrites and kept serving
+  # /.git/config. mod_alias is a different module and a child's rewrite block
+  # cannot override it, so this holds no matter what lands in a subdirectory.
+  # .well-known is excluded — AutoSSL renews the certificate through it.
   RedirectMatch 403 "^/\.(?!well-known/)"
 </If>
 
@@ -55,29 +50,12 @@ SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
   RewriteCond %{HTTP_HOST} !^(www\.)?pyramedia\.info$ [NC]
   RewriteRule ^ - [L]
 
-  # ── Seal the old Laravel app (still on disk pending owner sign-off) ──
-  # DirectoryIndex hands "/" to index.html, but that only shadows the old
-  # front controller — it does not disable it. Verified live before this
-  # block existed:
-  #   /index.php          302 → /index.php/en
-  #   /index.php/en       200, 100 KB — the WHOLE old site, carrying the §2.3
-  #                       banned phone number, the §2.2 banned "AI-Powered"
-  #                       framing and testimonials, with no noindex
-  #   /storage/logs/laravel.log   200 — 10 MB of logs with stack traces
-  #   /DEPLOYMENT_INSTRUCTIONS.md 200 — deployment notes referencing creds
-  #   /artisan /composer.json /README.md /PORTFOLIO_PROJECTS_DATA.json  200
-  # Deleting those files is the owner's call; denying them is not, and it is
-  # reversible in one file. Remove this block once public_html is cleaned.
-  RewriteRule ^index\.php(/|$) - [F,L]
-  RewriteRule ^artisan$ - [F,L]
-  RewriteRule ^(app|bootstrap|config|database|lang|resources|routes|storage|vendor|docs|pyramedia_docs)(/|$) - [F,L]
-  RewriteRule ^(vite|tailwind|postcss)\.config\.js$ - [F,L]
-  RewriteRule ^\.env - [F,L]
-  RewriteRule ^\.(git|claude|gitignore) - [F,L]
-  RewriteRule ^GIT_COMMIT_MESSAGE\.txt$ - [F,L]
-  # The new build ships no .md/.sql/.log/.json/.lock at all — verified — so
-  # none of these can shadow a real page.
-  RewriteRule \.(md|sql|log|lock|json)$ - [F,L]
+  # The old Laravel app used to live beside this file and was still fully
+  # served — /index.php/en returned the whole previous site, plus public logs
+  # and deployment notes. On 2026-08-17 all 43 of its entries were moved OUT
+  # of the web root to ~/old-site-backup, so the paths simply do not exist
+  # any more and the long deny list they needed is gone with them. The
+  # dotfile rule above stays: it is ordinary hygiene, not cleanup.
 
   # ── Force HTTPS + canonical non-www (single 301) ─────────────────
   # The target host is HARDCODED — building it from HTTP_HOST would let a

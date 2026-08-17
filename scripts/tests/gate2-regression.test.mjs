@@ -1083,14 +1083,14 @@ test('.htaccess is fenced to the canonical host so nested subdomains survive', a
   // Nothing may rewrite before the fence.
   assert.doesNotMatch(rewriteBlock.slice(0, fence), /RewriteRule/);
 
-  // The old Laravel app is sealed while its files remain on disk. Losing any
-  // of these three re-exposes the previous site — including the §2.3 banned
-  // phone number — at /index.php/en. See BUILD_NOTES for the live evidence.
-  assert.match(directives, /RewriteRule \^index\\\.php\(\/\|\$\) - \[F,L\]/);
-  assert.match(directives, /RedirectMatch 403 \^\/public\(\/\|\$\)/,
-    "public/ has its own RewriteEngine and ignores inherited rewrites — it needs mod_alias");
+  // Dotfile deny. It must stay mod_alias: when the old Laravel app still sat
+  // in this directory, a nested folder with its own RewriteEngine discarded
+  // the inherited rewrites and kept serving /.git/config, and only mod_alias
+  // reached it. .well-known must stay open or AutoSSL cannot renew.
   assert.match(directives, /RedirectMatch 403 "\^\/\\\.\(\?!well-known\/\)"/,
-    'dotfiles must be denied, with .well-known left open for AutoSSL');
+    'dotfiles must be denied via mod_alias, with .well-known left open for AutoSSL');
+  assert.doesNotMatch(directives, /RewriteRule \^\\\.(env|git)/,
+    'a mod_rewrite dotfile deny is not enough — a nested RewriteEngine discards it');
 
   // The old form redirected on "host is not pyramedia.info", which caught
   // every subdomain. It must key off www / plain-HTTP instead.

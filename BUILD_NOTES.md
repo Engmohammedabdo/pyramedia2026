@@ -838,3 +838,47 @@ and all four working subdomains all 200.**
 The permanent fix is still deleting the 44 old-site entries (Phase 3), which
 remains pending the owner's sign-off. The deny block in `public/.htaccess` is
 marked for removal once that happens.
+
+## Old site moved OUT of the web root (2026-08-17) — replaces the deny block
+
+The owner proposed parking the old files in a `backup/` folder. That would
+have made things **worse**, and the reason is worth recording: everything
+inside `public_html` is web-served. Demonstrated on the live host before
+deciding — `/website_3ffc80b5/`, `/stock/index.html` and `/pyraai/index.html`
+all return 200 from the main domain. A `backup/` folder there would have
+published `https://pyramedia.info/backup/storage/logs/laravel.log` and the
+deployment notes, under one of the first names any scanner tries. Worse, the
+deny rules were **path-anchored** (`^storage`, `^app`, `^index.php`), so moving
+the files under `backup/` would have silently un-sealed them.
+
+Moved to **`/home/pyramed1/old-site-backup/`** instead — a sibling of
+`public_html`, never web-served. FTP `RNFR`/`RNTO`, so it is a rename: instant,
+no extra disk, and fully reversible by renaming back.
+
+The move list was rebuilt from the live listing at move time and cross-checked
+against `dist/`, with an explicit assertion that **nothing belonging to the new
+site was in it** — `.htaccess` in particular, which is now ours and would have
+taken the whole site down.
+
+**43 entries moved. `public_html` now holds only the new site, the subdomain
+directories and the hosting files.**
+
+Verified after the move, cache bypassed:
+
+- 16 old-app paths — all gone.
+- `/old-site-backup/` — 404 from the web; it is outside the document root.
+- New site — 15 pages/assets 200, branded 404 intact.
+- All four working subdomains 200, including `card` and `card/vp/`.
+
+**The deny block was then removed**, since the paths no longer exist and a
+long dead rule list is a liability — its blanket `\.(md|sql|log|lock|json)$`
+would have silently 403'd any JSON the site legitimately adds later. What
+stays is the one durable rule: `RedirectMatch 403 "^/\.(?!well-known/)"`.
+It stays **mod_alias on purpose** — a nested directory with its own
+`RewriteEngine On` discards inherited rewrites, which is exactly how
+`/.git/config` survived the first attempt. gate2 now asserts that rule exists
+and that a mod_rewrite dotfile deny is not substituted for it.
+
+Still outstanding: **purge the host cache** (cPanel → Cache Manager). nginx
+cached 200s for paths probed during the exposure window and can still serve
+them; origin is clean.
