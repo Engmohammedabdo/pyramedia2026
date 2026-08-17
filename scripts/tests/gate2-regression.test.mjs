@@ -1067,13 +1067,30 @@ test('.htaccess is fenced to the canonical host so nested subdomains survive', a
   // website_3ffc80b5, clinic, stock, aiagent, new), most with no .htaccess of
   // their own. They inherit this file. Unfenced, the canonical redirect would
   // 301 every one of them onto pyramedia.info.
-  const rewriteBlock = htaccess.slice(htaccess.indexOf('RewriteEngine On'));
+  // Structural checks read DIRECTIVES only. This file documents its own
+  // hard-won Apache quirks in prose, and those comments quote directive names
+  // — scanning the raw text made the fence assertion below fail on a comment.
+  const directives = htaccess
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*#/.test(line))
+    .join('\n');
+
+  const rewriteBlock = directives.slice(directives.indexOf('RewriteEngine On'));
   const fence = rewriteBlock.indexOf('RewriteCond %{HTTP_HOST} !^(www\\.)?pyramedia\\.info$ [NC]');
   assert.ok(fence >= 0, 'the rewrite section must start with a foreign-host fence');
   assert.match(rewriteBlock.slice(fence, fence + 200), /RewriteRule \^ - \[L\]/);
 
   // Nothing may rewrite before the fence.
   assert.doesNotMatch(rewriteBlock.slice(0, fence), /RewriteRule/);
+
+  // The old Laravel app is sealed while its files remain on disk. Losing any
+  // of these three re-exposes the previous site — including the §2.3 banned
+  // phone number — at /index.php/en. See BUILD_NOTES for the live evidence.
+  assert.match(directives, /RewriteRule \^index\\\.php\(\/\|\$\) - \[F,L\]/);
+  assert.match(directives, /RedirectMatch 403 \^\/public\(\/\|\$\)/,
+    "public/ has its own RewriteEngine and ignores inherited rewrites — it needs mod_alias");
+  assert.match(directives, /RedirectMatch 403 "\^\/\\\.\(\?!well-known\/\)"/,
+    'dotfiles must be denied, with .well-known left open for AutoSSL');
 
   // The old form redirected on "host is not pyramedia.info", which caught
   // every subdomain. It must key off www / plain-HTTP instead.
