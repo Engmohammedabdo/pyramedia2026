@@ -11,7 +11,7 @@ It does not replace the independent review reports.
 | `TODO_OFFICE_ADDRESS_EN` | `src/config/site.ts` → `addressEn` | Shows "Al Khabaisi, Deira — Dubai, UAE". District corrected 2026-08-17 (A.8); street/building still missing | Replace the `addressEn` string |
 | `TODO_OFFICE_ADDRESS_AR` | `src/config/site.ts` → `addressAr` | Shows «الخبيصي، ديرة — دبي، الإمارات». Same correction; street/building still missing | Replace the `addressAr` string |
 | ~~`TODO_MAPS_EMBED_URL`~~ | `src/config/site.ts` → `mapsEmbedUrl` | **Resolved 2026-08-17.** Owner's Google Business share link, resolved to coordinates and rebuilt as a keyless `output=embed` URL | Emptying the value hides the map block again |
-| `TODO_N8N_WEBHOOK` | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | Form renders a disabled state plus WhatsApp fallback | Set the production URL and rebuild |
+| ~~`TODO_N8N_WEBHOOK`~~ | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | **Closed 2026-08-17.** Form is live; verified end-to-end from a real browser through to Airtable and email | Emptying the value returns the form to its disabled + WhatsApp state |
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 is not injected | Set the production ID and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel is not injected | Set the production ID and rebuild |
 | `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | **Section hidden entirely since 2026-08-17** via `SITE.showFounder = false` (Addendum A.7); never a stock or generated face | Add the approved photo under `src/assets/founder/`, use `astro:assets`, then flip `showFounder` to `true` |
@@ -254,25 +254,48 @@ Built and published on the owner's n8n instance at the owner's request:
 - Honeypot-filled spam → took the false branch to *Respond Ignored*;
   Airtable and Gmail did **not** execute.
 
-**BLOCKED on the owner — the endpoint is not publicly reachable.** Live
-`curl` to the production URL returns `403` with
-`WWW-Authenticate: Basic realm="Webhook"`. Evidence that this is instance
-configuration and not the workflow: the webhook node's `authentication` is
-explicitly `none` (n8n's own trigger info prints "No credentials required
-for this webhook"); the workflow was re-published and force re-registered
-(unpublish → publish) with no change; an *unregistered* webhook path returns
-a normal `404` JSON from n8n while the *registered* path returns `403`; the
-editor root and `/healthz` both return `200` without auth.
+### CORRECTION 2026-08-17 — the "BLOCKED" diagnosis was wrong
 
-The fix is on the n8n host: remove the Basic-auth gate covering `/webhook/*`
-(reverse-proxy rule or a legacy `N8N_BASIC_AUTH_*` env). Embedding those
-credentials in the website instead is **not** an option — the site is static
-and public, so the credentials would be readable by anyone and would also
-expose every other webhook on that instance.
+This section previously recorded the endpoint as unreachable behind
+instance-level Basic auth, and the contact form shipped **disabled for three
+weeks** because of it. That was a misread of my own probes, not a real gate.
 
-Until then `PUBLIC_N8N_WEBHOOK_URL` stays empty by design: the contact form
-keeps its documented disabled state with the WhatsApp fallback rather than
-shipping a form that 403s.
+The webhook was reachable the entire time. The trigger node carries
+`ignoreBots: true`, and every probe I sent used a bot-shaped User-Agent
+(`pyx`, a bare `Mozilla/5.0`) with no `Origin` header. n8n rejected them and
+answered **403 with `WWW-Authenticate: Basic realm="Webhook"`** — a header
+that reads exactly like a proxy auth challenge, which is how it was
+misdiagnosed.
+
+The evidence recorded above actually pointed the right way and was not
+followed through: an *unregistered* path returning clean JSON 404 while the
+*registered* path returned 403 rules out a blanket proxy rule on
+`/webhook/*`. Only something inside n8n could treat the two differently. The
+node's own config is `authentication: "none"`, confirmed by reading the
+workflow — there was never an auth gate to remove.
+
+**Proof, 2026-08-17:**
+
+- `POST /webhook/pyramediax-contact` with a real Chrome UA and
+  `Origin: https://pyramedia.info` → **200 `{"ok":true,"received":true}`**,
+  with `Access-Control-Allow-Origin` echoed back correctly.
+- CORS preflight: `OPTIONS` → 204 for both approved origins; a foreign origin
+  is not echoed.
+- Execution `178099`: Airtable record written, Gmail sent, 200 returned, 4.2 s.
+
+**Live end-to-end test through the real site**, not a synthetic request: the
+form on `https://pyramedia.info/contact` was filled and submitted in a
+browser. The page showed *"Thank you — we received your message."*, execution
+`178119` wrote the lead to Airtable and sent the email. Both test records were
+deleted from Airtable afterwards.
+
+`PUBLIC_N8N_WEBHOOK_URL` is now set; the form ships **enabled** in both
+languages and `TODO_N8N_WEBHOOK` is closed.
+
+**Lesson worth keeping:** when a bot filter is enabled, probe the endpoint the
+way a browser does — real User-Agent plus `Origin` — or the filter's own
+rejection gets mistaken for infrastructure. And when two paths on the same
+prefix behave differently, the cause is inside the app, not in front of it.
 
 ## Outbound work showcases (2026-08-13, SPEC Addendum A.5)
 
