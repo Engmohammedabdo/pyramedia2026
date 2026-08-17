@@ -1353,3 +1353,20 @@ test('the floating WhatsApp button re-targets to the section in view', async () 
   // The href is only recomputed when the winning section actually changes.
   assert.match(float, /if\s*\(next === active\)\s*return;/);
 });
+
+test('the shared n8n client times out, never throws, and carries campaign data', async () => {
+  const client = await source('src/scripts/n8n-client.ts');
+
+  assert.match(client, /export async function postToN8n/);
+  assert.match(client, /export function collectUtm/);
+  // A hung webhook must not hang the UI.
+  assert.match(client, /AbortController/);
+  assert.match(client, /setTimeout/);
+  // Callers branch on `ok`; the client itself never throws at them.
+  assert.match(client, /catch/);
+  assert.match(client, /return \{ ok: false/);
+  // The five §10 campaign parameters.
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']) {
+    assert.match(client, new RegExp(key));
+  }
+});
