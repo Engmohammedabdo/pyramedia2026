@@ -76,6 +76,12 @@ export const SITE = {
   metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID || '',
   tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID || '',
   n8nWebhookUrl: import.meta.env.PUBLIC_N8N_WEBHOOK_URL || '',
+  // Instant audit webhook (Feature 2). Empty ⇒ the audit route renders its
+  // WhatsApp fallback instead of a form that cannot run.
+  auditWebhookUrl: import.meta.env.PUBLIC_N8N_AUDIT_URL || '',
+  // Instagram mode costs an Apify run per audit; off until the owner approves
+  // that budget. Website audits are free and always available.
+  auditInstagramEnabled: import.meta.env.PUBLIC_AUDIT_INSTAGRAM === 'true',
 } as const;
 
 /** Prefilled WhatsApp messages per language (SPEC §7.4, verbatim). */
