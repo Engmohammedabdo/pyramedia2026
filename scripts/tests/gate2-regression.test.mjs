@@ -1223,3 +1223,27 @@ test('the client strip ships owner-supplied marks with a text fallback (Addendum
   assert.match(strip, /transition:\s*opacity/);
   assert.doesNotMatch(strip, /transition:[^;]*\b(width|height|top|left|margin|box-shadow)\b/);
 });
+
+test('speed proof reports a real measurement and cannot shift layout', async () => {
+  const [component, servicePage, en, ar] = await Promise.all([
+    source('src/components/SpeedProof.astro'),
+    source('src/components/pages/ServicePage.astro'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  // The number must come from the Navigation Timing API — never a constant.
+  assert.match(component, /performance\.getEntriesByType\('navigation'\)/);
+  assert.doesNotMatch(component, /\b(0\.\d|[0-9]{2,4})\s*(ms|s)\b/, 'no hardcoded timing may ship (§2.1)');
+
+  // Space is reserved before the number arrives, so it cannot cause CLS (§12).
+  assert.match(component, /min-block-size:/);
+
+  // Only the web-development service shows it.
+  assert.match(servicePage, /s\.slug === 'web-development' && <SpeedProof/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /speed: \{/, 'both dictionaries need the speed block');
+    assert.match(dict, /measuredNow:/);
+  }
+});

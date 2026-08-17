@@ -1,0 +1,58 @@
+---
+/**
+ * Live page-load proof (Feature 9). The number is read from this visitor's
+ * own Navigation Timing entry — it is a measurement, never a stored claim,
+ * so §2.1 is satisfied by construction.
+ *
+ * The slot is sized before the number exists, so filling it cannot shift
+ * layout (§12). No motion is used: a number appearing is enough.
+ */
+import type { Lang } from '@/config/site';
+import { useTranslations } from '@/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<aside class="mt-10 rounded-2xl border border-line bg-surface/40 p-6" data-speed-proof>
+  <p class="eyebrow">{t.speed.eyebrow}</p>
+  <p class="mt-3 text-lg text-text/90">
+    {t.speed.label}
+    <span
+      class="font-display mx-2 font-bold text-orange"
+      style="min-block-size: 1.6em; display: inline-block; min-inline-size: 3.5ch;"
+      data-speed-value
+      dir="ltr">—</span
+    >
+    {t.speed.unit}
+  </p>
+  <p class="mt-2 text-sm text-muted">{t.speed.measuredNow}</p>
+  <p class="mt-1 text-sm font-semibold text-text/80">{t.speed.prompt}</p>
+</aside>
+
+<script>
+  function paintSpeed() {
+    const slot = document.querySelector<HTMLElement>('[data-speed-value]');
+    if (!slot || slot.dataset.filled === 'true') return;
+
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (!nav) return;
+
+    // loadEventEnd is 0 until the load event has actually fired.
+    const finish = () => {
+      const ms = nav.loadEventEnd - nav.startTime;
+      if (ms <= 0) return;
+      slot.textContent = (ms / 1000).toFixed(2);
+      slot.dataset.filled = 'true';
+    };
+
+    if (document.readyState === 'complete') finish();
+    else window.addEventListener('load', () => requestAnimationFrame(finish), { once: true });
+  }
+
+  paintSpeed();
+  document.addEventListener('astro:page-load', paintSpeed);
+</script>

@@ -67,6 +67,13 @@ export const en = {
     // Shown on English pages only — the showcase pages are written in Arabic.
     langNote: 'These showcases open in Arabic.',
   },
+  speed: {
+    eyebrow: 'Measured, not claimed',
+    label: 'This page finished loading in',
+    unit: 'seconds',
+    measuredNow: 'Measured in your browser, on this visit.',
+    prompt: 'How long does yours take?',
+  },
   service: {
     included: "What's included",
     process: 'How it runs',
