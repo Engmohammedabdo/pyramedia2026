@@ -11,6 +11,15 @@
  *   - Hard load: Navigation Timing's loadEventEnd.
  *   - Soft navigation: elapsed time between astro:before-preparation (start
  *     of the transition) and astro:page-load (the new page is ready).
+ * The astro:before-preparation timestamp is captured by a site-wide script
+ * (src/scripts/nav-timing.ts, registered from BaseLayout.astro on every
+ * page, not just this one) rather than by this component. This component's
+ * own script does not exist until the destination page has been swapped in,
+ * which happens after astro:before-preparation has already fired — so a
+ * listener registered here would always miss the very navigation that
+ * first mounts this widget. Reading a value captured site-wide instead
+ * closes that gap while this component keeps full ownership of turning it
+ * into a displayed measurement.
  * When neither source can be trusted, the widget hides itself rather than
  * show a broken or misattributed number.
  *
@@ -45,22 +54,21 @@ const t = useTranslations(lang);
 </aside>
 
 <script>
-  // Timestamp captured when a soft (client-side) navigation begins, so the
-  // widget can measure the transition itself instead of reusing the
-  // original hard load's Navigation Timing entry, which would describe the
-  // wrong page.
-  let navPrepStart: number | null = null;
-  document.addEventListener('astro:before-preparation', () => {
-    navPrepStart = performance.now();
-  });
+  // A soft navigation's start time is captured site-wide by
+  // src/scripts/nav-timing.ts (imported from BaseLayout.astro, so it is
+  // already listening before this navigation — or any navigation this
+  // session — begins). Read that shared value rather than listening for
+  // astro:before-preparation locally: by the time this component's own
+  // script runs, that event for the current navigation has already fired.
+  const timingWindow = window as typeof window & { __pyxNavPrepStart?: number };
 
   // Set while the initial hard load's window "load" listener is still
   // pending. Astro also fires astro:page-load once for the initial load
   // itself, and on a fast page that can happen *after* window "load" has
   // already completed — without this flag, that second call would see
-  // readyState 'complete' and navPrepStart still null and wrongly treat it
-  // as the soft-nav "missed the start event" case, hiding a page that
-  // actually has a real hard-load measurement in flight.
+  // readyState 'complete' and no captured navPrepStart and wrongly treat
+  // it as the "no honest measurement available" case below, hiding a page
+  // that actually has a real hard-load measurement in flight.
   let awaitingHardLoad = false;
 
   function paintSpeed() {
@@ -78,11 +86,15 @@ const t = useTranslations(lang);
     };
     const hide = () => proof?.remove();
 
-    if (navPrepStart !== null) {
+    const navPrepStart = timingWindow.__pyxNavPrepStart;
+    if (navPrepStart !== undefined) {
       // Soft navigation: the time since astro:before-preparation is a true
       // measurement of how long this page took to appear for this visitor.
+      // Consume the shared value so a later, unrelated astro:page-load (this
+      // same listener also fires for every other page's navigations) can
+      // never reuse a stale timestamp from a different page.
+      timingWindow.__pyxNavPrepStart = undefined;
       const elapsed = performance.now() - navPrepStart;
-      navPrepStart = null;
       awaitingHardLoad = false;
       if (elapsed < 0) hide();
       else render(elapsed);
@@ -121,9 +133,11 @@ const t = useTranslations(lang);
       return;
     }
 
-    // readyState is already 'complete' but astro:before-preparation was
-    // never observed: the widget mounted for the first time via a soft
-    // navigation that started before this script existed to listen for it.
+    // readyState is already 'complete' — this session's original hard load
+    // finished long ago; readyState does not reset on a soft navigation —
+    // but no soft-navigation start was captured for this navigation. The
+    // site-wide capture in src/scripts/nav-timing.ts should always have
+    // set one before this component's script runs; if it somehow did not,
     // Navigation Timing would describe a different page here, so there is
     // no honest number to show — hide rather than display one.
     hide();

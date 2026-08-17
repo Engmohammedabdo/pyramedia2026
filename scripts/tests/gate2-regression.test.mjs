@@ -1225,9 +1225,11 @@ test('the client strip ships owner-supplied marks with a text fallback (Addendum
 });
 
 test('speed proof reports a real measurement and cannot shift layout', async () => {
-  const [component, servicePage, en, ar] = await Promise.all([
+  const [component, servicePage, layout, navTiming, en, ar] = await Promise.all([
     source('src/components/SpeedProof.astro'),
     source('src/components/pages/ServicePage.astro'),
+    source('src/layouts/BaseLayout.astro'),
+    source('src/scripts/nav-timing.ts'),
     source('src/i18n/en.ts'),
     source('src/i18n/ar.ts'),
   ]);
@@ -1236,11 +1238,33 @@ test('speed proof reports a real measurement and cannot shift layout', async () 
   assert.match(component, /performance\.getEntriesByType\('navigation'\)/);
   assert.doesNotMatch(component, /\b(0\.\d|[0-9]{2,4})\s*(ms|s)\b/, 'no hardcoded timing may ship (§2.1)');
 
-  // ClientRouter makes soft navigation the common case: the widget must
-  // measure the transition itself, not reuse the original hard load's
-  // Navigation Timing entry for a different page.
-  assert.match(component, /astro:before-preparation/, 'soft navigation start must be observed');
-  assert.match(component, /navPrepStart\s*=\s*performance\.now\(\)/);
+  // ClientRouter makes soft navigation the common case, and a page's own
+  // widget script cannot observe astro:before-preparation for the very
+  // navigation that first mounts it (that event fires before the
+  // destination page's script exists to hear it). The capture must
+  // therefore live in a site-wide script registered from BaseLayout.astro
+  // — present from the first page of the session onward — not in the
+  // component itself.
+  assert.match(layout, /import ['"]@\/scripts\/nav-timing['"]/, 'the capture must be registered from the layout so it is listening before any navigation, including the first');
+  assert.doesNotMatch(
+    component,
+    /addEventListener\(\s*['"]astro:before-preparation['"]/,
+    'the component must not itself listen for navigation start — that would reintroduce the first-soft-nav gap',
+  );
+  assert.match(navTiming, /astro:before-preparation/, 'soft navigation start must be observed site-wide');
+  assert.match(navTiming, /__pyxNavPrepStart\s*=\s*performance\.now\(\)/);
+
+  // The capture must be tiny and unconditional: record a timestamp, nothing
+  // else. Measuring, formatting, and display stay owned by the widget.
+  assert.doesNotMatch(
+    navTiming,
+    /performance\.now\(\)\s*-|querySelector|textContent|toFixed|data-speed-proof/,
+    'the site-wide capture must not measure or touch the widget\'s display — only record a timestamp',
+  );
+
+  // The widget keeps full ownership of reading that shared capture and
+  // turning it into a displayed measurement.
+  assert.match(component, /__pyxNavPrepStart/, 'the widget must read the site-wide capture');
   assert.match(component, /performance\.now\(\)\s*-\s*navPrepStart/, 'soft nav must measure elapsed time since preparation');
 
   // Space is reserved before the number arrives, wide enough for the real
