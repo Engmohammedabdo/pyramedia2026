@@ -19,6 +19,8 @@ const t = useTranslations(lang);
 <a
   href={waLink(lang)}
   data-wa-float
+  data-wa-base={waLink(lang)}
+  data-wa-lang={lang}
   target="_blank"
   rel="noopener"
   class="wa-float fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-orange text-btn-ink shadow-lg transition-transform hover:bg-orange-hot"
@@ -74,3 +76,73 @@ const t = useTranslations(lang);
     }
   }
 </style>
+
+<script>
+  import { waLink } from '@/config/site';
+
+  /**
+   * Re-targets the floating WhatsApp button to whichever labelled section is
+   * currently in view, so a chat opened from halfway down the page arrives
+   * with that subject already stated. Sections opt in with data-wa-context;
+   * nothing is scraped from headings, so a copy change can never leak an
+   * unapproved string into the message (§2.1). If no labelled section is in
+   * view (above the first one, or the page has none), the link stays on the
+   * plain data-wa-base value.
+   *
+   * The message text is built by the same waLink() every other WhatsApp
+   * link on the site uses (src/config/site.ts), not re-implemented here, so
+   * the phrasing can never drift between the two. site.ts is already part
+   * of the client bundle (src/scripts/analytics.ts imports SITE from it on
+   * every page), so this import adds no additional module to ship.
+   *
+   * `<ClientRouter />` soft-swaps most navigations (BaseLayout.astro), so
+   * this component's script runs once but astro:page-load fires on every
+   * navigation thereafter (plus once more for the initial load — hence the
+   * dataset.bound guard, matching the pattern used by InstagramReels.astro,
+   * ContactPage.astro and Nav.astro). Each swap renders a brand new anchor,
+   * so the guard alone would not stop the *previous* page's observer from
+   * lingering on now-detached elements — the observer is disconnected
+   * explicitly before a fresh one is created.
+   */
+  let currentObserver: IntersectionObserver | null = null;
+
+  function bindWhatsAppContext() {
+    const float = document.querySelector<HTMLAnchorElement>('[data-wa-float]');
+    if (!float || float.dataset.bound === 'true') return;
+
+    const sections = document.querySelectorAll<HTMLElement>('[data-wa-context]');
+    currentObserver?.disconnect();
+    currentObserver = null;
+    if (!sections.length) return;
+    float.dataset.bound = 'true';
+
+    const base = float.dataset.waBase!;
+    const lang = float.dataset.waLang === 'ar' ? 'ar' : 'en';
+    let active = '';
+
+    currentObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const context = (entry.target as HTMLElement).dataset.waContext ?? '';
+          if (!context) continue;
+          if (entry.isIntersecting) {
+            if (context === active) continue;
+            active = context;
+            float.href = waLink(lang, context);
+          } else if (context === active) {
+            // Left the last active section with nothing else in view yet —
+            // the base link stays the honest default (§2.1).
+            active = '';
+            float.href = base;
+          }
+        }
+      },
+      { rootMargin: '-45% 0px -45% 0px' },
+    );
+
+    sections.forEach((section) => currentObserver!.observe(section));
+  }
+
+  bindWhatsAppContext();
+  document.addEventListener('astro:page-load', bindWhatsAppContext);
+</script>

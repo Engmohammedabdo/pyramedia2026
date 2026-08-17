@@ -1312,3 +1312,12 @@ test('WhatsApp links carry where the visitor was (Feature 6)', async () => {
   // The float reads its context at runtime from the section in view.
   assert.match(float, /data-wa-float/);
 });
+
+test('the floating WhatsApp button re-targets to the section in view', async () => {
+  const float = await source('src/components/WhatsAppFloat.astro');
+  assert.match(float, /IntersectionObserver/);
+  // Sections opt in by declaring their own label — no scraping of headings.
+  assert.match(float, /data-wa-context/);
+  // The base link must stay valid if no section is in view.
+  assert.match(float, /dataset\.waBase/);
+});
