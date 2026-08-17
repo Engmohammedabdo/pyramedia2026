@@ -7,7 +7,7 @@
  */
 import type { CollectionEntry } from 'astro:content';
 import type { Lang } from '@/config/site';
-import { SITE, waLink, showcaseUrl } from '@/config/site';
+import { SITE, waLink, showcaseUrl, showcaseIcon } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Button from '@/components/Button.astro';
@@ -92,33 +92,36 @@ const jsonLd = [
             {s.name}
           </h1>
           <p class="mt-5 max-w-2xl text-lg leading-relaxed text-muted" data-reveal>{s.heroPromise}</p>
-          <div class="mt-8 flex flex-wrap gap-4" data-reveal>
+          {/* Order is the hierarchy: convert, then prove, then the neutral
+              contact link. The showcase sat last as a plain secondary and was
+              invisible next to "Contact us" (A.10). */}
+          <div class="mt-8 flex flex-wrap items-start gap-4" data-reveal>
             <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
               <Icon name="whatsapp" size={18} />
               {t.cta.whatsapp}
             </Button>
-            <Button href={localizePath('/contact', lang)} variant="secondary">{t.cta.contactUs}</Button>
             {
               showcase && (
-                <Button
-                  href={showcase}
-                  variant="secondary"
-                  event="work_click"
-                  placement={`service-${s.slug}`}
-                  hreflang="ar"
-                >
-                  {t.work.viewWork}
-                </Button>
+                <div class="flex flex-col gap-1.5">
+                  <Button
+                    href={showcase}
+                    variant="showcase"
+                    event="work_click"
+                    placement={`service-${s.slug}`}
+                    hreflang="ar"
+                  >
+                    <span class="showcase-badge">
+                      <Icon name={showcaseIcon(s.slug) as any} size={17} />
+                    </span>
+                    {t.work.viewWork}
+                  </Button>
+                  {/* Sits under the button it describes, not orphaned under the row */}
+                  {lang === 'en' && <span class="text-xs text-muted ps-2">{t.work.langNote}</span>}
+                </div>
               )
             }
+            <Button href={localizePath('/contact', lang)} variant="secondary">{t.cta.contactUs}</Button>
           </div>
-          {
-            showcase && lang === 'en' && (
-              <p class="mt-3 text-sm text-muted" data-reveal>
-                {t.work.langNote}
-              </p>
-            )
-          }
         </div>
       </div>
     </div>

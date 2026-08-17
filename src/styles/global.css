@@ -454,6 +454,81 @@ html[lang='ar'] .eyebrow {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Showcase pill (Addendum A.5, reworked A.10). "See our work" first     */
+/* shipped as a third plain .btn-secondary and vanished beside "Contact  */
+/* us" — the owner missed it on his own live site. On a service page,    */
+/* proof of work persuades harder than a generic contact link, so it now */
+/* outranks that link: orange-tinted border and wash, a badge, heavier   */
+/* label. It stays an OUTLINE, never filled, so the WhatsApp primary     */
+/* keeps the top of the hierarchy. Hover animates transform only (§8).   */
+.btn-showcase {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 126, 51, 0.45);
+  background-color: rgba(255, 126, 51, 0.08);
+  color: var(--color-text);
+  font-weight: 600;
+  border-radius: 999px;
+  /* Tuned so the pill matches .btn-secondary's 58px height exactly: the
+     2.15rem badge plus this padding plus the border. Measured, not guessed. */
+  padding-block: 0.675rem;
+  padding-inline: 0.6rem 1.5rem;
+  /* transform only — colour swaps below are instant, exactly like
+     .btn-primary's hover glow. Transitioning border/background would animate
+     non-composited properties and breaks §8 law 1. */
+  transition: transform 0.25s ease;
+  will-change: transform;
+}
+.btn-showcase:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-orange);
+  background-color: rgba(255, 126, 51, 0.14);
+}
+.btn-showcase .showcase-badge {
+  display: grid;
+  place-items: center;
+  inline-size: 2.15rem;
+  block-size: 2.15rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background-color: rgba(255, 126, 51, 0.18);
+  color: var(--color-orange);
+  transition: transform 0.3s ease;
+}
+.btn-showcase:hover .showcase-badge {
+  transform: scale(1.08);
+}
+.btn-showcase .btn-arrow {
+  color: var(--color-orange);
+  transition: transform 0.25s ease;
+}
+.btn-showcase:hover .btn-arrow {
+  transform: translateX(4px);
+}
+[dir='rtl'] .btn-showcase .btn-arrow {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .btn-showcase:hover .btn-arrow {
+  transform: scaleX(-1) translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-showcase,
+  .btn-showcase:hover,
+  .btn-showcase .showcase-badge,
+  .btn-showcase:hover .showcase-badge,
+  .btn-showcase:hover .btn-arrow {
+    transform: none;
+    transition: none;
+  }
+  [dir='rtl'] .btn-showcase .btn-arrow,
+  [dir='rtl'] .btn-showcase:hover .btn-arrow {
+    transform: scaleX(-1);
+  }
+}
+
 /* Tertiary: borderless text action. Used for the careers link so it reads
    below the two conversion CTAs instead of competing with them. */
 .btn-tertiary {

@@ -11,12 +11,46 @@
   "trustedBy": {
     "eyebrow": "Trusted by businesses in the UAE",
     "clients": [
-      { "id": "injazat-group", "name": "Injazat Group" },
-      { "id": "etmam", "name": "Etmam Center for Judicial Services" },
-      { "id": "aown", "name": "Aown Domestic Workers Services" },
-      { "id": "al-alson", "name": "Al Alson Typing & Legal Translation" },
-      { "id": "bella-dente", "name": "BellaDente Dental Studio" },
-      { "id": "maken-properties", "name": "Maken Properties" }
+      {
+        "id": "injazat-group",
+        "name": "Injazat Group"
+      },
+      {
+        "id": "etmam",
+        "name": "Etmam Center for Judicial Services"
+      },
+      {
+        "id": "aown",
+        "name": "Aown Domestic Workers Services"
+      },
+      {
+        "id": "al-alson",
+        "name": "Al Alson Typing & Legal Translation"
+      },
+      {
+        "id": "bella-dente",
+        "name": "BellaDente Dental Studio"
+      },
+      {
+        "id": "maken-properties",
+        "name": "Maken Properties"
+      },
+      {
+        "id": "timi-properties",
+        "name": "Timi Property"
+      },
+      {
+        "id": "ontime-businessmen",
+        "name": "OnTime Businessmen Services"
+      },
+      {
+        "id": "sobha-realty",
+        "name": "Sobha Realty"
+      },
+      {
+        "id": "azizi-developments",
+        "name": "Azizi Developments"
+      }
     ]
   },
   "services": {

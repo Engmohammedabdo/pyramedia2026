@@ -1003,17 +1003,42 @@ test('work showcases are links only, config-driven and fail safe (Addendum A.5)'
   assert.match(servicePage, /\{\s*showcase &&/);
 
   // Tracked, new-tab, and honest about the destination language.
-  const homeStrip = home.slice(home.indexOf('showcases.length > 0'));
-  const serviceButton = servicePage.slice(servicePage.indexOf('showcase && ('));
+  // Bound both slices to the block itself — an open-ended slice runs on into
+  // the neighbouring "Contact us" secondary and reads as a false positive.
+  const homeStripStart = home.indexOf('showcases.length > 0');
+  const homeStrip = home.slice(homeStripStart, home.indexOf('</section>', homeStripStart));
+  const serviceStart = servicePage.indexOf('showcase && (');
+  const serviceButton = servicePage.slice(
+    serviceStart,
+    servicePage.indexOf("<Button href={localizePath('/contact', lang)}", serviceStart),
+  );
+  assert.ok(homeStrip.length > 100 && serviceButton.length > 100, 'showcase blocks must be locatable');
   for (const markup of [homeStrip, serviceButton]) {
-    assert.match(markup, /variant="secondary"/);
+    // NOT "secondary". Shipped that way it was indistinguishable from the
+    // neutral "Contact us" link and the owner missed it on his own live site
+    // (A.10). The dedicated variant is what makes it readable as proof.
+    assert.match(markup, /variant="showcase"/);
+    assert.doesNotMatch(markup, /variant="secondary"/);
+    assert.match(markup, /showcase-badge/, 'the pill needs its icon badge to stand apart');
     assert.match(markup, /event="work_click"/);
     assert.match(markup, /hreflang="ar"/);
   }
   assert.match(button, /\.\.\.rest\b/, 'Button must spread extra attributes so hreflang reaches the anchor');
+  assert.match(button, /showcase: 'btn-showcase'/);
+
+  // On a service page the showcase must outrank the plain contact link.
+  const heroStart = servicePage.indexOf('event="whatsapp_click"');
+  const showcaseAt = servicePage.indexOf('variant="showcase"', heroStart);
+  const contactAt = servicePage.indexOf("localizePath('/contact', lang)", heroStart);
+  assert.ok(heroStart > 0 && showcaseAt > 0 && contactAt > 0, 'hero CTA row must be locatable');
+  assert.ok(
+    showcaseAt < contactAt,
+    'the showcase pill must come before "Contact us" in the hero row',
+  );
+
   // The Arabic-only warning is rendered on English pages only.
   assert.match(home, /lang === 'en' && <p[^>]*>\{t\.work\.langNote\}/);
-  assert.match(servicePage, /showcase && lang === 'en' &&/);
+  assert.match(serviceButton, /lang === 'en' && <span[^>]*>\{t\.work\.langNote\}/);
 
   // Only the two services with a showcase may link out.
   const serviceSlugs = (await readdir(path.join(repositoryRoot, 'src/content/services/en')))

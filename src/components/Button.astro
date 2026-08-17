@@ -14,11 +14,12 @@ const VARIANT_CLASS = {
   secondary: 'btn-secondary',
   tertiary: 'btn-tertiary',
   gateway: 'btn-gateway',
+  showcase: 'btn-showcase',
 } as const;
 
 interface Props {
   href: string;
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'gateway';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'gateway' | 'showcase';
   /** analytics event name, e.g. whatsapp_click (SPEC §10) */
   event?: string;
   /** analytics placement payload, e.g. hero / nav / cta-band */
@@ -35,7 +36,7 @@ const {
   variant = 'primary',
   event,
   placement,
-  arrow = variant === 'secondary',
+  arrow = variant === 'secondary' || variant === 'showcase',
   external = href.startsWith('http'),
   class: className = '',
   ...rest

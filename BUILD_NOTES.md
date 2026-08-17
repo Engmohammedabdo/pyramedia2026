@@ -749,3 +749,44 @@ existing WhatsApp icon, so the row stays uniform: 40px hit target, 18px icon,
 renders Instagram · Facebook · LinkedIn · TikTok on `/`, `/ar/`, `/contact` and
 `/about`, the link carries `target="_blank" rel="noopener"`, and the
 Organization/LocalBusiness `sameAs` array now contains the TikTok URL.
+
+## Client strip grew to ten logos (2026-08-17, Addendum A.6 continued)
+
+Owner supplied four more marks after the first six: Timi Property, OnTime
+Businessmen Services, Sobha Realty, Azizi Developments. All ten now ship as
+images; **zero text fallbacks remain** in either language.
+
+Each addition re-ran the whole normaliser rather than being processed alone —
+the optical sizing is relative to the set median, so appending one file without
+re-running would leave it mis-weighted against the others.
+
+Per-file handling, since none arrived alike:
+
+| Mark | Supplied as | Treatment |
+| --- | --- | --- |
+| Timi Property | 447px JPEG, navy field + woven pattern | luminance histogram is bimodal with an empty 60–150 gap; threshold sits in the void so the pattern never survives |
+| OnTime | **photo of a printed card**, 465×230, grey uneven background (lum 161–177) | cropped to the OnTIME lockup only — the card's red Arabic and English lines below it are card copy, not logo; threshold in the empty 80–150 gap survives the lighting gradient |
+| Sobha Realty | 2001×2000 PNG, gold on baked white | single ink tone, tight ramp |
+| Azizi Developments | 349×200, **two** ink tones on white — navy type (~70) and pale blue bars (~200) | a wide ramp would key the bars to ~24% and erase them, so the window is deliberately narrow and high (195→248): navy clamps solid, bars land near full |
+
+**OnTime is the weakest file in the set** — it is a photograph, so its edges are
+softer than the nine vector-or-clean-raster marks beside it. It reads correctly
+at the strip's 56px height; swap it the day a real logo file arrives.
+
+Names are taken verbatim from each supplied wordmark. Two consequences worth
+recording:
+
+- The Timi file is named `timi-properties` (plural) and the owner said «تيمي
+  بروبيرتيز», but the wordmark itself reads **TIMI PROPERTY** (singular), so
+  that is what is published. Flagged to the owner.
+- Sobha's file carries no Arabic lockup, so the Arabic page keeps the Latin
+  form — the same rule already applied to BellaDente and Maken. Azizi's file
+  does carry «عزيزي للتطوير العقاري», so Arabic uses it.
+
+**Sobha Realty and Azizi Developments are major Dubai developers.** They are
+published on the owner's instruction as approved §4 facts, as a name-and-logo
+strip with zero claims about scope, results or duration attached — which is
+what §4 permits. Flagged to the owner once, at the time of adding.
+
+Deployed and verified live: 20 logo slots on `/` and `/ar/` (10 clients × the
+marquee duplicate), 0 text fallbacks, and all 10 distinct image URLs return 200.

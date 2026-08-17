@@ -11,12 +11,46 @@
   "trustedBy": {
     "eyebrow": "عملاء وثقوا فينا",
     "clients": [
-      { "id": "injazat-group", "name": "مجموعة إنجازات" },
-      { "id": "etmam", "name": "مركز إتمام للخدمات القضائية" },
-      { "id": "aown", "name": "مركز عون لخدمات العمالة المساعدة" },
-      { "id": "al-alson", "name": "الألسن للطباعة والترجمة القانونية" },
-      { "id": "bella-dente", "name": "BellaDente Dental Studio" },
-      { "id": "maken-properties", "name": "Maken Properties" }
+      {
+        "id": "injazat-group",
+        "name": "مجموعة إنجازات"
+      },
+      {
+        "id": "etmam",
+        "name": "مركز إتمام للخدمات القضائية"
+      },
+      {
+        "id": "aown",
+        "name": "مركز عون لخدمات العمالة المساعدة"
+      },
+      {
+        "id": "al-alson",
+        "name": "الألسن للطباعة والترجمة القانونية"
+      },
+      {
+        "id": "bella-dente",
+        "name": "BellaDente Dental Studio"
+      },
+      {
+        "id": "maken-properties",
+        "name": "Maken Properties"
+      },
+      {
+        "id": "timi-properties",
+        "name": "Timi Property"
+      },
+      {
+        "id": "ontime-businessmen",
+        "name": "اون تايم لخدمات رجال الأعمال"
+      },
+      {
+        "id": "sobha-realty",
+        "name": "Sobha Realty"
+      },
+      {
+        "id": "azizi-developments",
+        "name": "عزيزي للتطوير العقاري"
+      }
     ]
   },
   "services": {

@@ -115,9 +115,24 @@ export const SHOWCASE_URLS: Record<string, string> = {
   'social-media': 'https://card.pyramedia.info/vp/',
 };
 
+/**
+ * Mark shown in the showcase pill's badge. Websites get the gallery grid,
+ * video gets the play triangle, so the two are told apart before the label
+ * is read. Anything unlisted falls back to the grid.
+ */
+export const SHOWCASE_ICONS: Record<string, string> = {
+  'web-development': 'layout-grid',
+  'social-media': 'play',
+};
+
 /** Showcase URL for a service slug — '' when that service has none. */
 export function showcaseUrl(slug: string): string {
   return SHOWCASE_URLS[slug] ?? '';
+}
+
+/** Badge icon for a service slug's showcase. */
+export function showcaseIcon(slug: string): string {
+  return SHOWCASE_ICONS[slug] ?? 'layout-grid';
 }
 
 export const SOCIAL_LINKS = [

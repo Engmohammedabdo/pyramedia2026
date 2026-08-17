@@ -12,8 +12,12 @@ import aownLogo from '@/assets/clients/aown.png';
 import alAlsonLogo from '@/assets/clients/al-alson.png';
 import bellaDenteLogo from '@/assets/clients/bella-dente.png';
 import makenLogo from '@/assets/clients/maken-properties.png';
+import timiLogo from '@/assets/clients/timi-properties.png';
+import onTimeLogo from '@/assets/clients/ontime-businessmen.png';
+import sobhaLogo from '@/assets/clients/sobha-realty.png';
+import aziziLogo from '@/assets/clients/azizi-developments.png';
 import type { Lang } from '@/config/site';
-import { SITE, waLink, showcaseUrl } from '@/config/site';
+import { SITE, waLink, showcaseUrl, showcaseIcon } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Button from '@/components/Button.astro';
@@ -48,6 +52,10 @@ const CLIENT_LOGOS: Record<string, ImageMetadata> = {
   'al-alson': alAlsonLogo,
   'bella-dente': bellaDenteLogo,
   'maken-properties': makenLogo,
+  'timi-properties': timiLogo,
+  'ontime-businessmen': onTimeLogo,
+  'sobha-realty': sobhaLogo,
+  'azizi-developments': aziziLogo,
 };
 
 // Outbound work showcases (Addendum A.5) — links only, no in-site portfolio.
@@ -204,11 +212,14 @@ const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
             {showcases.map((item) => (
               <Button
                 href={item.href}
-                variant="secondary"
+                variant="showcase"
                 event="work_click"
                 placement={`home-${item.slug}`}
                 hreflang="ar"
               >
+                <span class="showcase-badge">
+                  <Icon name={showcaseIcon(item.slug) as any} size={17} />
+                </span>
                 {item.label}
               </Button>
             ))}
