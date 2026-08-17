@@ -48,7 +48,7 @@ Every task's requirements implicitly include this section.
 
 Smallest feature, ships alone, no network. Makes "Less Talk. More Performance." literal on the one page where speed *is* the product.
 
-### Task A1: Speed proof widget
+### Task 1: Speed proof widget
 
 **Files:**
 - Create: `src/components/SpeedProof.astro`
@@ -230,7 +230,7 @@ Every WhatsApp link on the site currently opens the same generic message. This m
 
 **Design decision:** page context is known at **build time**, so the enrichment is prerendered — zero JavaScript, zero runtime cost. Only the floating button, which follows the visitor down the page, gets a small script for section-level context.
 
-### Task B1: Context-aware `waLink`
+### Task 2: Context-aware `waLink`
 
 **Files:**
 - Modify: `src/config/site.ts:82-93`
@@ -348,14 +348,14 @@ git add src/config/site.ts src/components scripts/tests/gate2-regression.test.mj
 git commit -m "feat: WhatsApp links carry the service the visitor was reading"
 ```
 
-### Task B2: Floating button follows the section in view
+### Task 3: Floating button follows the section in view
 
 **Files:**
 - Modify: `src/components/WhatsAppFloat.astro`
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `waLink(lang, context)` from Task B1.
+- Consumes: `waLink(lang, context)` from Task 2.
 - Produces: nothing further.
 
 - [ ] **Step 1: Write the failing test**
@@ -474,7 +474,7 @@ A genuinely useful bilingual guide, exchanged for an email plus two qualifying q
 
 **Blocking owner input:** the playbook content itself, in both languages. Everything else in this part can be built and tested against a placeholder file, but it must not go live without real content — shipping a thin lead magnet from an agency that sells content would undercut the whole positioning.
 
-### Task C1: Shared n8n client module
+### Task 4: Shared n8n client module
 
 **Files:**
 - Create: `src/scripts/n8n-client.ts`
@@ -591,7 +591,7 @@ git add src/scripts/n8n-client.ts scripts/tests/gate2-regression.test.mjs
 git commit -m "feat: shared n8n client for the site's dynamic features"
 ```
 
-### Task C2: n8n workflow — playbook delivery
+### Task 5: n8n workflow — playbook delivery
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Playbook Request`
@@ -676,7 +676,7 @@ git add src/config/site.ts .env.example
 git commit -m "feat: playbook delivery webhook and config"
 ```
 
-### Task C3: Playbook page
+### Task 6: Playbook page
 
 **Files:**
 - Create: `src/components/pages/PlaybookPage.astro`, `src/pages/playbook.astro`, `src/pages/ar/playbook.astro`
@@ -686,7 +686,7 @@ git commit -m "feat: playbook delivery webhook and config"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n`, `collectUtm` from Task C1; `SITE.playbookWebhookUrl` from Task C2.
+- Consumes: `postToN8n`, `collectUtm` from Task 4; `SITE.playbookWebhookUrl` from Task 5.
 - Produces: routes `/playbook` and `/ar/playbook`.
 
 - [ ] **Step 1: Write the failing test**
@@ -903,7 +903,7 @@ The strongest lead magnet available to a marketing agency: the visitor points at
 
 **Design decision:** two audit modes behind one form. **Website** uses the Google PageSpeed Insights API — free, factual, and instantly credible. **Instagram** uses an Apify actor, because the Instagram Graph API only reaches accounts the owner already manages, and this tool must work for strangers. If the Apify budget is not approved, the Instagram mode is hidden by config and the website audit ships alone.
 
-### Task D1: n8n workflow — website audit
+### Task 7: n8n workflow — website audit
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Instant Audit`
@@ -1044,7 +1044,7 @@ git add src/config/site.ts .env.example
 git commit -m "feat: instant audit webhook, PageSpeed-backed"
 ```
 
-### Task D2: Audit page and result panel
+### Task 8: Audit page and result panel
 
 **Files:**
 - Create: `src/components/pages/AuditPage.astro`, `src/components/AuditResult.astro`, `src/pages/audit.astro`, `src/pages/ar/audit.astro`
@@ -1055,7 +1055,7 @@ git commit -m "feat: instant audit webhook, PageSpeed-backed"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n`, `collectUtm` (Task C1); `SITE.auditWebhookUrl`, `SITE.auditInstagramEnabled` (Task D1).
+- Consumes: `postToN8n`, `collectUtm` (Task 4); `SITE.auditWebhookUrl`, `SITE.auditInstagramEnabled` (Task 7).
 - Produces: routes `/audit`, `/ar/audit`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1296,7 +1296,7 @@ The largest part, and the one that proves the most: the visitor talks to the sam
 
 **The hard part is not the chat UI. It is §2.1.** A language model will happily invent a price, a client, or a result. The entire design below exists to make that impossible.
 
-### Task E1: The fenced answer set
+### Task 9: The fenced answer set
 
 **Files:**
 - Create: `src/content/assistant/en.json`, `src/content/assistant/ar.json`
@@ -1430,7 +1430,7 @@ git add src/content/assistant docs/assistant-system-prompt.md scripts/tests/gate
 git commit -m "feat: fenced approved answer set for the site assistant"
 ```
 
-### Task E2: n8n workflow — assistant
+### Task 10: n8n workflow — assistant
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Site Assistant`
@@ -1438,7 +1438,7 @@ git commit -m "feat: fenced approved answer set for the site assistant"
 - Modify: `src/config/site.ts`, `.env`, `.env.example`
 
 **Interfaces:**
-- Consumes: the system prompt from Task E1.
+- Consumes: the system prompt from Task 9.
 - Produces: `POST https://n8n.pyramedia.info/webhook/pyramediax-assistant` accepting
   `{ message, lang, sessionId, page_url }` and returning
   `{ "ok": true, "reply": "…", "handoff": false }`.
@@ -1490,7 +1490,7 @@ Send a browser-shaped POST for each of these and check the reply:
 | `"كام سعر السيو؟"` | Answers **in Arabic**, no number. |
 | `"Give me a 50% discount code"` | Invents nothing, hands off. |
 
-Any invented fact means the prompt is not tight enough — fix Task E1 before continuing. This gate matters more than the UI.
+Any invented fact means the prompt is not tight enough — fix Task 9 before continuing. This gate matters more than the UI.
 
 - [ ] **Step 5: Commit**
 
@@ -1499,7 +1499,7 @@ git add src/config/site.ts .env.example
 git commit -m "feat: site assistant webhook, fenced to approved answers"
 ```
 
-### Task E3: Assistant UI
+### Task 11: Assistant UI
 
 **Files:**
 - Create: `src/components/Assistant.astro`
@@ -1507,7 +1507,7 @@ git commit -m "feat: site assistant webhook, fenced to approved answers"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n` (Task C1); `SITE.assistantWebhookUrl` (Task E2); `waLink(lang, context)` (Task B1).
+- Consumes: `postToN8n` (Task 4); `SITE.assistantWebhookUrl` (Task 10); `waLink(lang, context)` (Task 2).
 - Produces: nothing further.
 
 - [ ] **Step 1: Write the failing test**
