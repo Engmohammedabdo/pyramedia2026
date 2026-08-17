@@ -609,3 +609,59 @@ The detailed finding ledger, commands, and review boundary are in
   after owner IDs/URLs are supplied.
 - Authorized remote configuration, push, and deployment. None was performed in
   this remediation.
+
+## Live host survey before deployment (2026-08-17)
+
+Read-only FTPS survey of the Bluehost account, run before touching anything.
+
+**Connection.** `ftp.pyramedia.info` presents a `*.bluehost.com` certificate, so
+FTPS to that name fails the hostname check. Rather than disable verification,
+the IP was reverse-resolved to **`box5557.bluehost.com`**, which the certificate
+does cover — full TLS verification works against that host. Use it for deploys.
+
+**public_html is NOT a clean site root.** It holds the old Laravel app *and*
+about twenty unrelated project folders, several of which are live subdomain
+document roots:
+
+| Subdomain | Document root | Own `.htaccess` | Own rewrites |
+| --- | --- | --- | --- |
+| card.pyramedia.info | `public_html/website_3ffc80b5` | yes | **no** |
+| clinic.pyramedia.info | `public_html/clinic` | **no** | — |
+| stock.pyramedia.info | `public_html/stock` | **no** | — |
+| aiagent.pyramedia.info | `public_html/aiagent` | **no** | — |
+| new.pyramedia.info | `public_html/new` | **no** | — |
+| events.pyramedia.info | `public_html/events` | yes | yes |
+
+`card` was identified positively: its `index.html` `<title>` is *Pyramedia X —
+معرض أعمال تصميم المواقع* and it carries the `/vp/` subfolder. These are the two
+showcases Addendum A.5 links to. `shop.pyramedia.info` resolves to Shopify and
+is not on this server. `events` already returns 500 and `new` does not respond —
+both pre-existing, neither caused by this work.
+
+**Blocker found: `.htaccess` inheritance.** Apache merges `public_html/.htaccess`
+into every one of those nested roots. Deployed unchanged, this project's file
+would have:
+
+1. **301-redirected every subdomain to pyramedia.info** — the canonical rule
+   fired on "host is not pyramedia.info", which is true for all of them. That
+   alone kills both card showcases and the site's own links to them.
+2. Broken the PHP homepages via `DirectoryIndex index.html`.
+3. Applied this site's strict CSP to other people's apps.
+4. Risked 500s from `ErrorDocument 404 /404.html` where no `404.html` exists.
+
+Five of the six roots have no rewrite directives of their own, so nothing
+shielded them.
+
+**Fix.** `public/.htaccess` is now host-fenced: a foreign-host `RewriteRule ^ -
+[L]` exits before any rule runs, every `Header` carries `env=MAINSITE`,
+`ErrorDocument` sits in a host-scoped `<If>`, and `DirectoryIndex` keeps
+`index.php` as a fallback. The canonical redirect now keys off www/plain-HTTP
+instead of "not pyramedia.info". Locked by a gate2 test.
+
+`<If>` support was confirmed empirically, not assumed: a throwaway
+`public_html/_pyx_iftest/` was uploaded, returned HTTP 200 with the test header
+set, and was deleted — verified gone from both HTTP and the FTP listing.
+
+**Still unverified:** nothing has been deployed. Redirects, headers and
+subdomain behaviour under the new file are reasoned from the survey, not
+observed in production.

@@ -1016,6 +1016,46 @@ test('work showcases are links only, config-driven and fail safe (Addendum A.5)'
   assert.match(analytics, /work_click/);
 });
 
+test('.htaccess is fenced to the canonical host so nested subdomains survive', async () => {
+  const htaccess = await source('public/.htaccess');
+
+  // The live public_html holds several subdomain document roots (card →
+  // website_3ffc80b5, clinic, stock, aiagent, new), most with no .htaccess of
+  // their own. They inherit this file. Unfenced, the canonical redirect would
+  // 301 every one of them onto pyramedia.info.
+  const rewriteBlock = htaccess.slice(htaccess.indexOf('RewriteEngine On'));
+  const fence = rewriteBlock.indexOf('RewriteCond %{HTTP_HOST} !^(www\\.)?pyramedia\\.info$ [NC]');
+  assert.ok(fence >= 0, 'the rewrite section must start with a foreign-host fence');
+  assert.match(rewriteBlock.slice(fence, fence + 200), /RewriteRule \^ - \[L\]/);
+
+  // Nothing may rewrite before the fence.
+  assert.doesNotMatch(rewriteBlock.slice(0, fence), /RewriteRule/);
+
+  // The old form redirected on "host is not pyramedia.info", which caught
+  // every subdomain. It must key off www / plain-HTTP instead.
+  assert.doesNotMatch(htaccess, /RewriteCond %\{HTTP_HOST\} !\^pyramedia\\\.info\$/);
+
+  // A nested PHP app must still resolve its homepage.
+  assert.match(htaccess, /DirectoryIndex index\.html index\.php/);
+
+  // Every Header must be gated, or subdomains inherit this site's CSP.
+  for (const line of htaccess.split(/\r?\n/)) {
+    if (/^\s*Header (set|always set|append)/.test(line)) {
+      assert.match(line, /env=MAINSITE\s*$/, `unfenced header leaks to subdomains: ${line.trim()}`);
+    }
+  }
+  assert.match(htaccess, /SetEnvIf Host "\^\(www\\\.\)\?pyramedia\\\.info\$" MAINSITE/);
+
+  // ErrorDocument pointing at /404.html breaks any subdomain without that
+  // file, so it lives inside a host <If> (verified supported on the host).
+  const errorDoc = htaccess.slice(htaccess.indexOf('ErrorDocument'));
+  assert.ok(
+    /<If "%\{HTTP_HOST\}[^>]*>\s*\n\s*ErrorDocument 404 \/404\.html\s*\n\s*<\/If>/.test(htaccess),
+    'ErrorDocument must be wrapped in a host-scoped <If>',
+  );
+  assert.ok(errorDoc.length > 0);
+});
+
 test('the map facade loads exactly one iframe and cannot be re-triggered', async () => {
   const [contact, site] = await Promise.all([
     source('src/components/pages/ContactPage.astro'),

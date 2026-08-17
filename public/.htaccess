@@ -1,20 +1,45 @@
 # ────────────────────────────────────────────────────────────────────
 # PyramediaX — Apache config (SPEC §13.2)
 # Deployed to the site root together with the static build.
+#
+# ⚠ THIS FILE IS INHERITED BY NESTED SUBDOMAINS.
+# The live host keeps several subdomain document roots INSIDE public_html
+# (card → website_3ffc80b5, clinic, stock, aiagent, new …), and most of them
+# ship no .htaccess of their own. Anything left unscoped here is applied to
+# them too. Unscoped, this file would have 301-redirected every one of those
+# hosts to pyramedia.info — including the card showcases the site links to —
+# and would have broken their PHP index pages via DirectoryIndex.
+#
+# So: everything host-specific is fenced. Rewrites exit early for foreign
+# hosts; headers are gated on the MAINSITE env; ErrorDocument sits inside an
+# <If> (verified supported on this server). DirectoryIndex deliberately keeps
+# index.php as a fallback so nested PHP apps still resolve their homepage.
 # ────────────────────────────────────────────────────────────────────
 Options -Indexes -MultiViews
-DirectoryIndex index.html
-ErrorDocument 404 /404.html
+DirectoryIndex index.html index.php
 AddDefaultCharset UTF-8
+
+SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
+
+<If "%{HTTP_HOST} =~ /^(www\.)?pyramedia\.info$/i">
+  ErrorDocument 404 /404.html
+</If>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # ── Host fence ────────────────────────────────────────────────────
+  # Nested subdomain roots inherit these rules. Stop before any of them
+  # run for a host that is not the canonical site.
+  RewriteCond %{HTTP_HOST} !^(www\.)?pyramedia\.info$ [NC]
+  RewriteRule ^ - [L]
+
   # ── Force HTTPS + canonical non-www (single 301) ─────────────────
   # The target host is HARDCODED — building it from HTTP_HOST would let a
-  # hostile Host header steer the redirect (flagged pre-GATE 3).
+  # hostile Host header steer the redirect (flagged pre-GATE 3). Only www
+  # and plain-HTTP reach this now; every other host left above.
   RewriteCond %{HTTPS} off [OR]
-  RewriteCond %{HTTP_HOST} !^pyramedia\.info$ [NC]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
   RewriteRule ^ https://pyramedia.info%{REQUEST_URI} [R=301,L]
 
   # ── Legacy URL map (SPEC §5.1) — old indexed URLs must not 404 ───
@@ -60,28 +85,31 @@ AddDefaultCharset UTF-8
 </IfModule>
 
 # ── Caching: hashed /_astro/* assets are immutable; HTML stays fresh
+# Every Header below is gated on env=MAINSITE. Without it a nested subdomain
+# would inherit this site's cache policy and, far worse, its CSP — which is
+# tight enough to break someone else's app.
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|css|woff2|avif|webp)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
+    Header set Cache-Control "public, max-age=31536000, immutable" env=MAINSITE
   </FilesMatch>
   <FilesMatch "\.(png|svg|jpe?g|ico)$">
-    Header set Cache-Control "public, max-age=604800"
+    Header set Cache-Control "public, max-age=604800" env=MAINSITE
   </FilesMatch>
   <FilesMatch "\.html$">
-    Header set Cache-Control "no-cache, must-revalidate"
+    Header set Cache-Control "no-cache, must-revalidate" env=MAINSITE
   </FilesMatch>
   <FilesMatch "\.(xml|txt)$">
-    Header set Cache-Control "public, max-age=3600"
+    Header set Cache-Control "public, max-age=3600" env=MAINSITE
   </FilesMatch>
 
   # ── Security headers (SPEC §13.2) ────────────────────────────────
-  Header set X-Content-Type-Options "nosniff"
-  Header set X-Frame-Options "SAMEORIGIN"
-  Header set Referrer-Policy "strict-origin-when-cross-origin"
-  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header set X-Content-Type-Options "nosniff" env=MAINSITE
+  Header set X-Frame-Options "SAMEORIGIN" env=MAINSITE
+  Header set Referrer-Policy "strict-origin-when-cross-origin" env=MAINSITE
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()" env=MAINSITE
   # Conservative CSP compatible with GA4 + Meta Pixel + TikTok Pixel via
   # Partytown (same-origin worker), the n8n webhook (connect-src https:),
   # the click-to-load Google Maps facade (frame-src) and the click-to-load
   # official Instagram reel embeds (script-src + frame-src, Addendum A.1).
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://www.instagram.com; worker-src 'self' blob:; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.instagram.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://www.instagram.com; worker-src 'self' blob:; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.instagram.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" env=MAINSITE
 </IfModule>
