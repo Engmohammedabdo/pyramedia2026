@@ -15,7 +15,7 @@ It does not replace the independent review reports.
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 is not injected | Set the production ID and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel is not injected | Set the production ID and rebuild |
 | `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | On-brand placeholder panel; never a stock or generated face | Add the approved photo under `src/assets/founder/` and use `astro:assets` |
-| `TODO_CLIENT_LOGO_1..5` | `src/components/pages/HomePage.astro` | Styled client names; never fabricated logos | Add approved files under `src/assets/clients/` and replace text with `<Image>` |
+| ~~`TODO_CLIENT_LOGO_1..5`~~ | — | **Resolved 2026-08-17.** Six owner-supplied logos now ship (Addendum A.6). The text fallback stays in `HomePage.astro` for any client id without a file | Drop a file in `src/assets/clients/`, import it into `CLIENT_LOGOS`, add the id to both `home.json` files |
 | FTP secrets | GitHub secrets `FTP_SERVER` / `FTP_USERNAME` / `FTP_PASSWORD` and optional `BLUEHOST_SITE_ROOT` | CI keeps the build artifact and skips FTPS when secrets are absent | Configure the real repository only after authorization |
 
 ## Decisions log
@@ -305,10 +305,9 @@ passthrough so `hreflang` reaches the anchor.
    pages; it is not a change this site can make.
 2. **The video showcase names third-party brands** (Burger King, Rexona) and
    a video count. Nothing from those pages is restated here: this site still
-   publishes zero client names and zero counts, per §2.1/§4. If those
-   engagements are delivered work the owner is cleared to name, they would
-   also resolve `TODO_CLIENT_LOGO_1`; that confirmation has **not** been given
-   and no client logo or name has been added.
+   publishes zero counts and no client the owner has not supplied, per
+   §2.1/§4. That confirmation has never been given, and neither brand appears
+   in the client strip resolved separately under Addendum A.6.
 
 Verified locally: typecheck clean, 25-page build, GATE 1 7/7, GATE 2 55/55.
 Built HTML carries `target="_blank" rel="noopener" hreflang="ar"` and
@@ -318,6 +317,58 @@ languages confirmed in the local preview DOM (Arabic page RTL, Arabic labels,
 English-only note correctly absent). **Not** verified: on-screen layout of the
 new buttons — the preview pane reported a zero-width viewport in this session,
 so no screenshot or real measurement was possible.
+
+## Client logos (2026-08-17, SPEC Addendum A.6)
+
+The owner supplied seven logo files and approved a **logos-only** strip. Six
+ship; one does not.
+
+**Roster change.** Mazaya Platinum, Bashayer and SynthCity DXB left the strip
+(no logo files available, owner-confirmed). Aown, Al Alson, BellaDente and
+Maken Properties joined it. §4's roster was rewritten accordingly in A.6.
+
+**What each file needed.** Every one arrived in a different state, so a single
+recipe was impossible:
+
+| Client | As supplied | Treatment |
+| --- | --- | --- |
+| Injazat | `.pdf`, pure Illustrator vector | Converted to SVG, rasterised at 600 dpi |
+| Etmam | 1080×1920 PNG, real alpha, navy + gold | Alpha kept, trimmed out of a mostly-empty canvas |
+| Aown | 384×265 WebP, real alpha, already white | Alpha kept as-is |
+| Al Alson | 262×348 PNG, white baked in, dark maroon mark | Keyed off luminance (dark-on-light) |
+| BellaDente | 4000×2250 PNG, flat taupe baked in | Keyed off luminance (light-on-dark) |
+| Maken | 800×800 JPEG, black field inside a gold frame | Frame cropped at 6% inset, then keyed |
+
+The PDF needed rendering and this machine has ImageMagick without Ghostscript,
+so no PDF delegate. Rendered instead with `pdfjs-dist@2` + `@xmldom/xmldom` in
+the scratchpad — pure JS, no native module, and it produced a clean SVG. The
+converted vector is kept at `src/assets/clients/source/injazat-group-vector.svg`
+as the best available master for any future re-export.
+
+**Normalisation.** All six are reduced to one light tone with their own alpha,
+then sized by the geometric mean of two medians — ink coverage and bounding-box
+area. Ink alone oversizes thin line marks (BellaDente); box area alone ignores
+stroke weight. The set is then scaled by ONE factor and exported on a shared
+180px canvas height with each mark centred at its computed size, so the single
+CSS height in `.client-logo img` reproduces the balance. Setting a width there,
+or exporting at differing canvas heights, destroys it.
+
+**Not shipped — Elite Track Cars Rental.** Its only file is a 3D wall-mockup
+render (gold letters on a spotlit office wall), not a logo. Two extraction
+routes were tried and both failed on evidence: luminance thresholding punches
+holes through the glyphs because the bevel shading sits *inside* them, and
+morphological closing at every radius tested dissolved into the lit wall.
+Recorded here so nobody retries it — it needs the real file.
+
+Originals are preserved untouched in `src/assets/clients/source/`.
+
+Verified locally: typecheck clean, 25-page build, GATE 1 7/7, GATE 2 57/57.
+Built HTML emits 12 `.client-logo` images (six marks × the marquee duplicate)
+as WebP at 1x/2x with intrinsic `width`/`height` set, Arabic alt text on the
+Arabic page, and `alt=""` on the aria-hidden duplicate. Rendering was checked
+by compositing the built WebP files at the real CSS height against the section
+background. **Not** verified on screen in a live browser: the preview pane
+reported a zero-width viewport again this session, so no screenshot.
 
 ## Asset arrivals
 

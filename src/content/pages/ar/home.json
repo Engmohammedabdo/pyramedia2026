@@ -11,11 +11,12 @@
   "trustedBy": {
     "eyebrow": "عملاء وثقوا فينا",
     "clients": [
-      "مجموعة إنجازات",
-      "مركز إتمام للخدمات القضائية",
-      "Mazaya Platinum Real Estate",
-      "Bashayer Real Estate",
-      "SynthCity DXB"
+      { "id": "injazat-group", "name": "مجموعة إنجازات" },
+      { "id": "etmam", "name": "مركز إتمام للخدمات القضائية" },
+      { "id": "aown", "name": "مركز عون لخدمات العمالة المساعدة" },
+      { "id": "al-alson", "name": "الألسن للطباعة والترجمة القانونية" },
+      { "id": "bella-dente", "name": "BellaDente Dental Studio" },
+      { "id": "maken-properties", "name": "Maken Properties" }
     ]
   },
   "services": {

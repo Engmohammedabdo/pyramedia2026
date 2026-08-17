@@ -11,11 +11,12 @@
   "trustedBy": {
     "eyebrow": "Trusted by businesses in the UAE",
     "clients": [
-      "Injazat Services Group",
-      "Etmam Center for Judicial Services",
-      "Mazaya Platinum Real Estate",
-      "Bashayer Real Estate",
-      "SynthCity DXB"
+      { "id": "injazat-group", "name": "Injazat Group" },
+      { "id": "etmam", "name": "Etmam Center for Judicial Services" },
+      { "id": "aown", "name": "Aown Domestic Workers Services" },
+      { "id": "al-alson", "name": "Al Alson Typing & Legal Translation" },
+      { "id": "bella-dente", "name": "BellaDente Dental Studio" },
+      { "id": "maken-properties", "name": "Maken Properties" }
     ]
   },
   "services": {

@@ -926,3 +926,44 @@ two from A.3, with the same `{placement}` payload:
 
 The five §10 conversion events keep their exact names and meaning; Meta
 campaign optimisation continues to use only those five.
+
+### A.6 Client logo strip — revised roster (approved by Abdou, 17 August 2026)
+
+§4 approved five client names for the §7.1 logo strip, and no logo files
+existed, so the strip shipped as the approved text-name treatment. The owner
+supplied real logo files and directed that the strip become **logos only**.
+
+**Revised §4 client roster.** The five names in §4 are replaced by the six
+clients whose logo files the owner supplied:
+
+1. Injazat Group (مجموعة إنجازات)
+2. Etmam Center for Judicial Services (مركز إتمام للخدمات القضائية)
+3. Aown Domestic Workers Services (مركز عون لخدمات العمالة المساعدة)
+4. Al Alson Typing & Legal Translation (الألسن للطباعة والترجمة القانونية)
+5. BellaDente Dental Studio
+6. Maken Properties
+
+Mazaya Platinum Real Estate, Bashayer Real Estate and SynthCity DXB leave the
+strip: the owner confirmed no logo files are available for them, and a strip
+that mixes marks with bare names reads as unfinished. Their removal is a
+presentation decision, not a statement about the relationship. Elite Track
+Cars Rental was supplied but is **not** published — see the note below.
+
+Rules, unchanged from §4: the strip carries names and marks only, and states
+zero results, spend, duration, ranking or testimonial. Every mark must come
+from an owner-supplied file. §2.1 continues to forbid reconstructing,
+redrawing or generating a logo that was not supplied.
+
+**Rendering.** Each supplied file is reduced to a single light tone with its
+own alpha and exported on a shared canvas height, with per-mark size set by
+optical weight rather than bounding box. One CSS height therefore renders the
+whole set in balance; setting a width, or exporting the marks at differing
+canvas heights, would flatten that balance and must not be done. Marks sit at
+60% opacity and reach full opacity on hover — opacity only, so §8 holds.
+
+**Not published: Elite Track Cars Rental.** The only supplied file is a 3D
+wall-mockup render. Its letterforms carry dark bevel shading inside the
+glyphs, so thresholding punches holes through them and morphological closing
+dissolves into the spotlit wall. Both were attempted and rejected. It joins
+the strip if and only if the owner supplies a real logo file; it is never to
+be traced, redrawn or approximated (§2.1).

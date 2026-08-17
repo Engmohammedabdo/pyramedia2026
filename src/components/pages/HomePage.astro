@@ -4,7 +4,14 @@
  * Copy comes from src/content/pages/{lang}/home.json; the services grid
  * comes from the services collection.
  */
+import { Image } from 'astro:assets';
 import { getEntry, getCollection } from 'astro:content';
+import injazatLogo from '@/assets/clients/injazat-group.png';
+import etmamLogo from '@/assets/clients/etmam.png';
+import aownLogo from '@/assets/clients/aown.png';
+import alAlsonLogo from '@/assets/clients/al-alson.png';
+import bellaDenteLogo from '@/assets/clients/bella-dente.png';
+import makenLogo from '@/assets/clients/maken-properties.png';
 import type { Lang } from '@/config/site';
 import { SITE, waLink, showcaseUrl } from '@/config/site';
 import { useTranslations, localizePath } from '@/i18n';
@@ -29,6 +36,19 @@ const c = home.data as any;
 const services = (await getCollection('services', (e) => e.data.lang === lang)).sort(
   (a, b) => a.data.order - b.data.order
 );
+
+// Client logos (Addendum A.6). Owner-supplied files only — each was reduced
+// to a single light tone on a shared canvas height so one CSS height renders
+// the set at the optical weights baked into the files. A client whose id has
+// no logo here still renders, as its approved text name.
+const CLIENT_LOGOS: Record<string, ImageMetadata> = {
+  'injazat-group': injazatLogo,
+  etmam: etmamLogo,
+  aown: aownLogo,
+  'al-alson': alAlsonLogo,
+  'bella-dente': bellaDenteLogo,
+  'maken-properties': makenLogo,
+};
 
 // Outbound work showcases (Addendum A.5) — links only, no in-site portfolio.
 // Each entry disappears on its own if its URL is emptied in site.ts.
@@ -116,18 +136,25 @@ const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
   <!-- ─────────────────── 2 · Trusted-by strip ─────────────────── -->
   <section class="border-y border-line bg-surface/30 py-10" aria-label={c.trustedBy.eyebrow}>
     <p class="eyebrow text-center">{c.trustedBy.eyebrow}</p>
-    <!-- TODO_CLIENT_LOGO_1..5: real client logo files pending (SPEC §14).
-         Until they arrive, styled text placeholders — never fake logos.
-         Swap: put SVG/PNG files in src/assets/clients/ and replace the
-         <span> items below with astro:assets <Image> tags. -->
     <div class="marquee mt-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div class="marquee-track items-center">
         {
           [false, true].map((dup) => (
             <ul class="marquee-list flex shrink-0 items-center" aria-hidden={dup ? 'true' : undefined} data-dup={dup ? 'true' : undefined}>
-              {c.trustedBy.clients.map((client: string) => (
-                <li class="text-lg font-medium text-muted md:text-xl">
-                  {client}
+              {c.trustedBy.clients.map((client: { id: string; name: string }) => (
+                <li class="client-logo">
+                  {CLIENT_LOGOS[client.id] ? (
+                    <Image
+                      src={CLIENT_LOGOS[client.id]}
+                      alt={dup ? '' : client.name}
+                      height={90}
+                      densities={[1, 2]}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <span class="text-lg font-medium text-muted md:text-xl">{client.name}</span>
+                  )}
                 </li>
               ))}
             </ul>

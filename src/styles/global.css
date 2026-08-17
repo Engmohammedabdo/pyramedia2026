@@ -597,6 +597,25 @@ html[lang='ar'] .eyebrow {
   transform: translateY(-2px);
 }
 
+/* Client logo strip (§7.1 section 2). The supplied marks arrived in seven
+   different palettes and backgrounds; each is exported as one light tone on a
+   SHARED canvas height, so this single height reproduces the optical weights
+   computed per mark. Never set a width here — that would flatten them back. */
+.client-logo img {
+  height: 2.9rem;
+  width: auto;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+@media (min-width: 48rem) {
+  .client-logo img {
+    height: 3.5rem;
+  }
+}
+.client-logo:hover img {
+  opacity: 1;
+}
+
 /* Below-the-fold layout containment — these regions are never in the first
    viewport; skipping their layout/shaping work speeds first paint. The
    pinned methodology section is excluded (ScrollTrigger measures it). */

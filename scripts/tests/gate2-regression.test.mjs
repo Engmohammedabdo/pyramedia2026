@@ -1015,3 +1015,51 @@ test('work showcases are links only, config-driven and fail safe (Addendum A.5)'
   assert.match(spec, /work_click \{placement\}/);
   assert.match(analytics, /work_click/);
 });
+
+test('the client strip ships owner-supplied marks with a text fallback (Addendum A.6)', async () => {
+  const [home, css] = await Promise.all([
+    source('src/components/pages/HomePage.astro'),
+    source('src/styles/global.css'),
+  ]);
+
+  // Every id published in either language must resolve to an imported file,
+  // and every imported file must exist — a typo would silently fall back to
+  // text and nobody would notice.
+  const imported = [...home.matchAll(/from '@\/assets\/clients\/([\w-]+)\.png'/g)].map((m) => m[1]);
+  assert.ok(imported.length >= 6, 'expected the owner-supplied client marks to be imported');
+  const files = await readdir(path.join(repositoryRoot, 'src/assets/clients'));
+  for (const name of imported) {
+    assert.ok(files.includes(`${name}.png`), `missing logo file ${name}.png`);
+  }
+  const mapKeys = [...home.matchAll(/^\s+'?([\w-]+)'?:\s*\w+Logo,$/gm)].map((m) => m[1]);
+  for (const lang of ['en', 'ar']) {
+    const content = JSON.parse(await source(`src/content/pages/${lang}/home.json`));
+    const ids = content.trustedBy.clients.map((client) => client.id);
+    assert.deepEqual(ids, mapKeys, `${lang} home.json client ids must match CLIENT_LOGOS`);
+    for (const client of content.trustedBy.clients) {
+      assert.ok(client.name && client.name.trim(), `${lang}: every client needs a name for alt text`);
+      // §4: the strip carries names only — no results, spend or rankings.
+      assert.doesNotMatch(client.name, /[0-9٠-٩%]/u, `${lang}: "${client.name}" must state no figures`);
+    }
+  }
+
+  // Both languages must ship an equal-length roster (same clients, own script)
+  const en = JSON.parse(await source('src/content/pages/en/home.json'));
+  const ar = JSON.parse(await source('src/content/pages/ar/home.json'));
+  assert.equal(en.trustedBy.clients.length, ar.trustedBy.clients.length);
+
+  // A client id with no imported file must degrade to its text name.
+  assert.match(home, /CLIENT_LOGOS\[client\.id\] \? \(/);
+  assert.match(home, /\) : \(\s*<span[^>]*>\{client\.name\}<\/span>/);
+  // The aria-hidden marquee duplicate must not repeat the alt text.
+  assert.match(home, /alt=\{dup \? '' : client\.name\}/);
+
+  // The shared-canvas contract: one height, never a width, opacity-only hover.
+  const strip = css.slice(css.indexOf('.client-logo img'), css.indexOf('.client-logo img') + 600);
+  assert.match(strip, /height:\s*[\d.]+rem/);
+  assert.match(strip, /width:\s*auto/);
+  // lookbehind so the `min-width` breakpoint does not read as a fixed width
+  assert.doesNotMatch(strip, /(?<![-\w])width:\s*[\d.]+(rem|px|%)/, 'a fixed width would flatten the optical balance');
+  assert.match(strip, /transition:\s*opacity/);
+  assert.doesNotMatch(strip, /transition:[^;]*\b(width|height|top|left|margin|box-shadow)\b/);
+});
