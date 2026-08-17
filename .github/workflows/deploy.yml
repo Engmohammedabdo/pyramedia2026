@@ -18,6 +18,12 @@ jobs:
 
       - run: npm ci
 
+      - name: GATE 1 regression suite
+        run: npm run test:gate1
+
+      - name: GATE 2 regression suite
+        run: npm run test:gate2
+
       - name: Build
         run: npm run build
         env:

@@ -905,3 +905,15 @@ and that a mod_rewrite dotfile deny is not substituted for it.
 Still outstanding: **purge the host cache** (cPanel → Cache Manager). nginx
 cached 200s for paths probed during the exposure window and can still serve
 them; origin is clean.
+
+## Node engine floor for GATE 2 (2026-08-17)
+
+`test:gate2` runs Node with `--experimental-strip-types` so
+`scripts/tests/n8n-client.behavior.test.mjs` can import a `.ts` module
+directly without a build step. That flag does not exist before Node
+**22.6.0** — on 22.0.0–22.5.x the script hard-fails with `node: bad option`,
+not a warning. `engines.node` only said `">=22"`, which does not floor the
+patch version, so a contributor on an early 22.x could pass every other check
+and still be unable to run GATE 2. Raised to `">=22.6.0"` in `package.json`.
+`.nvmrc` stays `22` on purpose — nvm always resolves a bare `22` to the
+latest installed 22.x, which already satisfies the new floor.
