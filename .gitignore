@@ -13,9 +13,12 @@ node_modules/
 npm-debug.log*
 pnpm-debug.log*
 
-# environment variables
+# environment variables — deny every .env* by default, then re-allow the
+# committed template. `.env` alone would NOT have covered `.env.deploy`, which
+# holds live FTP credentials.
 .env
-.env.production
+.env.*
+!.env.example
 
 # macOS-specific files
 .DS_Store
