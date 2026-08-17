@@ -790,3 +790,51 @@ what §4 permits. Flagged to the owner once, at the time of adding.
 
 Deployed and verified live: 20 logo slots on `/` and `/ar/` (10 clients × the
 marquee duplicate), 0 text fallbacks, and all 10 distinct image URLs return 200.
+
+## SECURITY: the old Laravel app was still fully live (2026-08-17)
+
+Found while auditing the launched site. `DirectoryIndex index.html index.php`
+made the new homepage win at `/`, but that only **shadows** the old front
+controller — it never disabled it. Verified live, before any fix:
+
+| Path | Was | What it exposed |
+| --- | --- | --- |
+| `/index.php` → `/index.php/en` | **200, 100 KB** | the entire old site, indexable, carrying the **§2.3 banned legacy phone number**, the **§2.2 banned "AI-Powered" framing**, and testimonials |
+| `/storage/logs/laravel.log` | **200** | ~10 MB of application logs including stack traces |
+| `/DEPLOYMENT_INSTRUCTIONS.md` | **200** | deployment notes referencing credentials |
+| `/artisan`, `/composer.json`, `/README.md`, `/PORTFOLIO_PROJECTS_DATA.json` | **200** | app internals |
+| `/.git/config`, `/.git/HEAD` | **200** | repository URL and branch list |
+
+Deleting the files is the owner's call and was not taken. Denying access is
+not, and is reversible in one file, so the old app was sealed immediately.
+
+**Three separate mechanisms were needed, each for a reason:**
+
+1. **mod_rewrite `[F]`** for the app's own paths — the ordinary case.
+2. **`RedirectMatch 403 ^/public(/|$)`** — Laravel's `public/` carries its own
+   `.htaccess` with `RewriteEngine On`, which discards every inherited
+   rewrite. The same inheritance rule that protects the subdomains works
+   against us here, so the rewrite deny was silently ignored and
+   `/public/index.php` kept 302-ing into the old site. mod_alias is a
+   different module and the child's rewrite block cannot override it.
+3. **A `Require all denied` `.htaccess` placed inside `.git/`** — that
+   directory slipped past both of the above.
+
+`.well-known` is deliberately excluded from the dotfile deny so AutoSSL can
+still renew the certificate; verified still reachable.
+
+**A caching layer sits in front of the origin.** After sealing, `/.git/config`
+still returned 200 with `x-cache: HIT` while `/.git/index` — never requested
+before — correctly returned 403. Re-requesting with a cache-buster or
+`Cache-Control: no-cache` returned 403 for both. The server is `nginx/1.29.8`.
+Every verification in this section was therefore re-run with the cache
+bypassed. **The owner should purge the host cache from cPanel**, since stale
+200s for those paths may still be served to anyone who requested them during
+the exposure window.
+
+**Final state, cache bypassed: 43 old-app paths all 403/404/406; the live site
+and all four working subdomains all 200.**
+
+The permanent fix is still deleting the 44 old-site entries (Phase 3), which
+remains pending the owner's sign-off. The deny block in `public/.htaccess` is
+marked for removal once that happens.
