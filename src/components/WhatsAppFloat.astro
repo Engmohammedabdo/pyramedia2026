@@ -102,40 +102,68 @@ const t = useTranslations(lang);
    * ContactPage.astro and Nav.astro). Each swap renders a brand new anchor,
    * so the guard alone would not stop the *previous* page's observer from
    * lingering on now-detached elements — the observer is disconnected
-   * explicitly before a fresh one is created.
+   * unconditionally, before any early return, so a future page that omits
+   * this component entirely still tears down the previous page's observer.
+   *
+   * When more than one labelled section is in view at once, the winner is
+   * whichever has the greatest intersection ratio, ties breaking by
+   * document order — never whichever IntersectionObserver entry happens to
+   * be delivered last in a batch, which is not a meaningful ordering.
    */
   let currentObserver: IntersectionObserver | null = null;
 
   function bindWhatsAppContext() {
+    currentObserver?.disconnect();
+    currentObserver = null;
+
     const float = document.querySelector<HTMLAnchorElement>('[data-wa-float]');
     if (!float || float.dataset.bound === 'true') return;
 
-    const sections = document.querySelectorAll<HTMLElement>('[data-wa-context]');
-    currentObserver?.disconnect();
-    currentObserver = null;
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-wa-context]'));
     if (!sections.length) return;
     float.dataset.bound = 'true';
 
     const base = float.dataset.waBase!;
     const lang = float.dataset.waLang === 'ar' ? 'ar' : 'en';
+    // Document order of each section, used only to break a ratio tie below.
+    const order = new Map(sections.map((section, index) => [section, index]));
+    // Ratios of the labelled sections currently intersecting, rebuilt from
+    // the batch instead of trusting whichever entry is processed last.
+    const ratios = new Map<HTMLElement, number>();
     let active = '';
 
     currentObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const context = (entry.target as HTMLElement).dataset.waContext ?? '';
+          const target = entry.target as HTMLElement;
+          const context = target.dataset.waContext ?? '';
           if (!context) continue;
           if (entry.isIntersecting) {
-            if (context === active) continue;
-            active = context;
-            float.href = waLink(lang, context);
-          } else if (context === active) {
-            // Left the last active section with nothing else in view yet —
-            // the base link stays the honest default (§2.1).
-            active = '';
-            float.href = base;
+            ratios.set(target, entry.intersectionRatio);
+          } else {
+            ratios.delete(target);
           }
         }
+
+        // Deterministic winner: greatest intersection ratio; a tie falls
+        // back to document order (earlier section wins).
+        let winner: HTMLElement | null = null;
+        for (const section of ratios.keys()) {
+          if (
+            !winner ||
+            ratios.get(section)! > ratios.get(winner)! ||
+            (ratios.get(section) === ratios.get(winner) && order.get(section)! < order.get(winner)!)
+          ) {
+            winner = section;
+          }
+        }
+
+        const next = winner ? winner.dataset.waContext! : '';
+        if (next === active) return;
+        active = next;
+        // No labelled section in view — the base link stays the honest
+        // default (§2.1).
+        float.href = next ? waLink(lang, next) : base;
       },
       { rootMargin: '-45% 0px -45% 0px' },
     );

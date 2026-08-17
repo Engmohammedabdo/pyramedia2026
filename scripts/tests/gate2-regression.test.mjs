@@ -1320,4 +1320,36 @@ test('the floating WhatsApp button re-targets to the section in view', async () 
   assert.match(float, /data-wa-context/);
   // The base link must stay valid if no section is in view.
   assert.match(float, /dataset\.waBase/);
+
+  // Tie-break: when two labelled sections intersect in the same batch, the
+  // winner must not be whichever IntersectionObserver entry the callback
+  // happens to process last — that pattern (set `active` straight from the
+  // per-entry loop on every isIntersecting entry) must be gone.
+  assert.doesNotMatch(
+    float,
+    /if\s*\(entry\.isIntersecting\)\s*\{\s*if\s*\(context === active\) continue;\s*active\s*=\s*context;/,
+    'the callback must not let whichever entry is processed last silently set the active context',
+  );
+  // The winner must be picked from real intersection ratios of every
+  // currently-intersecting section, not just the most recent entry.
+  assert.match(float, /entry\.intersectionRatio/, 'the winner must be chosen from real intersection ratios');
+  assert.match(
+    float,
+    /ratios\.get\(section\)!\s*>\s*ratios\.get\(winner\)!/,
+    'the winner must be the greatest intersection ratio among currently-intersecting sections',
+  );
+  // A ratio tie must fall back to a stable document order, not observer
+  // batch order.
+  assert.match(
+    float,
+    /sections\.map\(\(section,\s*index\)\s*=>\s*\[section,\s*index\]\)/,
+    'document order must be captured once so a ratio tie can be broken deterministically',
+  );
+  assert.match(
+    float,
+    /order\.get\(section\)!\s*<\s*order\.get\(winner\)!/,
+    'a ratio tie must fall back to document order',
+  );
+  // The href is only recomputed when the winning section actually changes.
+  assert.match(float, /if\s*\(next === active\)\s*return;/);
 });
