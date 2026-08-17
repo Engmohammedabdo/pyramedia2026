@@ -281,26 +281,29 @@ const clientFormHref = SITE.clientFormUrl || localizePath('/contact', lang);
     </div>
   </section>
 
-  <!-- ──────────────────── 6 · Founder teaser ──────────────────── -->
-  <section class="cv-auto border-t border-line bg-surface/30">
-    <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-24 md:grid-cols-2 md:py-32" data-reveal-group>
-      <FounderPanel lang={lang} class="max-w-md" data-reveal />
-      <div data-reveal>
-        <p class="eyebrow">{c.founder.eyebrow}</p>
-        <h2
-          class="font-display mt-3 font-bold text-text"
-          style="font-size: var(--text-h2);"
-        >
-          {t.founder.name}
-        </h2>
-        <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
-        <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.line}</p>
-        <div class="mt-8">
-          <Button href={localizePath('/about', lang)} variant="secondary">{t.cta.aboutLink}</Button>
+  <!-- ──────── 6 · Founder teaser (hidden while SITE.showFounder is off) ──── -->
+  {
+    SITE.showFounder && (
+      <section class="cv-auto border-t border-line bg-surface/30">
+        <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-24 md:grid-cols-2 md:py-32" data-reveal-group>
+          <FounderPanel lang={lang} class="max-w-md" data-reveal />
+          <div data-reveal>
+            <p class="eyebrow">{c.founder.eyebrow}</p>
+            <h2 class="font-display mt-3 font-bold text-text" style="font-size: var(--text-h2);">
+              {t.founder.name}
+            </h2>
+            <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
+            <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.line}</p>
+            <div class="mt-8">
+              <Button href={localizePath('/about', lang)} variant="secondary">
+                {t.cta.aboutLink}
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
+    )
+  }
 
   <!-- ── 6b · Instagram reels (SPEC Addendum A.1, founder-approved) ── -->
   <InstagramReels lang={lang} />

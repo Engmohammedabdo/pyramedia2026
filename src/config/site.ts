@@ -39,9 +39,18 @@ export const SITE = {
   // SPEC §4 approved service area — consumed by all JSON-LD emitters
   areaServed: { en: 'United Arab Emirates & GCC', ar: 'الإمارات ودول الخليج' },
 
-  // TODO_MAPS_EMBED_URL — Google Maps embed/share URL pending from owner (SPEC §14).
-  // While empty, the contact address card renders without the map block.
-  mapsEmbedUrl: '',
+  // Built from the owner's Google Business location (share link resolved to
+  // 25.2666595, 55.3306708 on 2026-08-17). The classic `output=embed` form is
+  // used deliberately: it needs no Maps API key and its host is already in the
+  // §13.2 CSP frame-src allowlist. Emptying it hides the map block again.
+  mapsEmbedUrl: 'https://maps.google.com/maps?q=25.2666595,55.3306708&z=16&output=embed',
+
+  // Founder section (§7.1 section 6 + the About page block). Hidden at the
+  // owner's request on 2026-08-17 while the real photo is outstanding. Setting
+  // this to true restores both sections AND the Person node in the JSON-LD
+  // graph — they are deliberately tied so the graph never describes someone
+  // the site does not show. The §6.4 licence trust line is NOT gated by it.
+  showFounder: false,
 
   // Careers application form (SPEC Addendum A.2) — owner-supplied Airtable
   // form. Swap this one value to change where every "apply" link points.

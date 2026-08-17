@@ -106,27 +106,35 @@ const c = page.data as any;
     </ol>
   </section>
 
-  <!-- Founder -->
-  <section class="border-t border-line bg-surface/30">
-    <div
-      class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:py-28"
-      data-reveal-group
-    >
-      <FounderPanel lang={lang} class="max-w-md" data-reveal />
-      <div data-reveal>
-        <p class="eyebrow">{c.founder.eyebrow}</p>
-        <h2
-          class="font-display mt-3 font-bold text-text"
-          style="font-size: var(--text-h2);"
+  <!-- Founder (hidden while SITE.showFounder is off) -->
+  {
+    SITE.showFounder ? (
+      <section class="border-t border-line bg-surface/30">
+        <div
+          class="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-2 md:py-28"
+          data-reveal-group
         >
-          {t.founder.name}
-        </h2>
-        <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
-        <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.bio}</p>
-        <p class="mt-8 border-t border-line pt-5 text-xs text-muted">{licenseLine(lang)}</p>
-      </div>
-    </div>
-  </section>
+          <FounderPanel lang={lang} class="max-w-md" data-reveal />
+          <div data-reveal>
+            <p class="eyebrow">{c.founder.eyebrow}</p>
+            <h2 class="font-display mt-3 font-bold text-text" style="font-size: var(--text-h2);">
+              {t.founder.name}
+            </h2>
+            <p class="mt-2 text-lg font-semibold text-orange">{t.founder.title}</p>
+            <p class="mt-5 max-w-md text-lg leading-relaxed text-muted">{c.founder.bio}</p>
+            <p class="mt-8 border-t border-line pt-5 text-xs text-muted">{licenseLine(lang)}</p>
+          </div>
+        </div>
+      </section>
+    ) : (
+      /* The §6.4 licence trust line lives inside the founder block, so it gets
+         its own band while that block is hidden — it is a standing trust
+         element, not part of the founder content. */
+      <section class="border-t border-line bg-surface/30">
+        <p class="mx-auto max-w-6xl px-5 py-8 text-xs text-muted">{licenseLine(lang)}</p>
+      </section>
+    )
+  }
 
   <CtaBand lang={lang} placement="about-cta-band" />
 </BaseLayout>

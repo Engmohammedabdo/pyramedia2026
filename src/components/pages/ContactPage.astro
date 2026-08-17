@@ -460,21 +460,29 @@ const inputClass =
 
     // Click-to-load map facade
     const mapBtn = document.querySelector<HTMLButtonElement>('[data-map-load]');
-    mapBtn?.addEventListener('click', () => {
-      const slot = document.querySelector<HTMLElement>('[data-map-slot]');
-      if (!slot) return;
-      const iframe = document.createElement('iframe');
-      iframe.src = mapBtn.dataset.mapSrc || '';
-      iframe.width = '100%';
-      iframe.height = '300';
-      iframe.loading = 'lazy';
-      iframe.style.border = '0';
-      iframe.referrerPolicy = 'no-referrer-when-downgrade';
-      iframe.title = mapBtn.dataset.mapFrameTitle || '';
-      slot.appendChild(iframe);
-      slot.classList.remove('hidden');
-      mapBtn.classList.add('hidden');
-    });
+    mapBtn?.addEventListener(
+      'click',
+      () => {
+        const slot = document.querySelector<HTMLElement>('[data-map-slot]');
+        if (!slot) return;
+        const iframe = document.createElement('iframe');
+        iframe.src = mapBtn.dataset.mapSrc || '';
+        iframe.width = '100%';
+        iframe.height = '300';
+        iframe.loading = 'lazy';
+        iframe.style.border = '0';
+        iframe.referrerPolicy = 'no-referrer-when-downgrade';
+        iframe.title = mapBtn.dataset.mapFrameTitle || '';
+        // replaceChildren + remove() + once: the facade may load exactly one
+        // map. Adding a `hidden` class to the button is not enough — the
+        // .btn-secondary display rule outranks it, so the button stayed
+        // clickable and every further click appended another Google iframe.
+        slot.replaceChildren(iframe);
+        slot.classList.remove('hidden');
+        mapBtn.remove();
+      },
+      { once: true },
+    );
   }
   document.addEventListener('astro:page-load', initContactForm);
 </script>

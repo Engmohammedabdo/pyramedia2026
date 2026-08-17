@@ -967,3 +967,20 @@ glyphs, so thresholding punches holes through them and morphological closing
 dissolves into the spotlit wall. Both were attempted and rejected. It joins
 the strip if and only if the owner supplies a real logo file; it is never to
 be traced, redrawn or approximated (§2.1).
+
+### A.7 Founder section temporarily hidden (approved by Abdou, 17 August 2026)
+
+§7.1 section 6 and the About page both carry a founder block. The owner asked
+for it to be hidden **temporarily**, while the real photo is outstanding.
+
+- One switch controls it: `showFounder` in `src/config/site.ts`. Setting it to
+  `true` restores both sections with no other edit.
+- The Person node and the Organization `founder` reference in the JSON-LD graph
+  are gated by the **same** switch. An entity graph that describes a founder
+  the pages never mention would be asserting a fact the site does not show.
+- The §6.4 licence trust line is **not** gated. It lives inside the About
+  founder block, so while that block is hidden it renders in its own band. It
+  is a standing trust element, not founder content.
+- Nothing in §4 changes. Mohamed Abdou remains the approved founder fact; the
+  site simply does not display it for now. `TODO_FOUNDER_PHOTO` stays open, and
+  the §2.1 ban on stock or generated faces is untouched.

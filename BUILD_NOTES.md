@@ -10,11 +10,11 @@ It does not replace the independent review reports.
 |---|---|---|---|
 | `TODO_OFFICE_ADDRESS_EN` | `src/config/site.ts` → `addressEn` | Shows "Deira, Port Saeed — Dubai, UAE" | Replace the `addressEn` string |
 | `TODO_OFFICE_ADDRESS_AR` | `src/config/site.ts` → `addressAr` | Shows «ديرة، بور سعيد — دبي، الإمارات» | Replace the `addressAr` string |
-| `TODO_MAPS_EMBED_URL` | `src/config/site.ts` → `mapsEmbedUrl` | Empty → contact address card renders without the map block | Paste the approved Google Maps embed URL |
+| ~~`TODO_MAPS_EMBED_URL`~~ | `src/config/site.ts` → `mapsEmbedUrl` | **Resolved 2026-08-17.** Owner's Google Business share link, resolved to coordinates and rebuilt as a keyless `output=embed` URL | Emptying the value hides the map block again |
 | `TODO_N8N_WEBHOOK` | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | Form renders a disabled state plus WhatsApp fallback | Set the production URL and rebuild |
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 is not injected | Set the production ID and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel is not injected | Set the production ID and rebuild |
-| `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | On-brand placeholder panel; never a stock or generated face | Add the approved photo under `src/assets/founder/` and use `astro:assets` |
+| `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | **Section hidden entirely since 2026-08-17** via `SITE.showFounder = false` (Addendum A.7); never a stock or generated face | Add the approved photo under `src/assets/founder/`, use `astro:assets`, then flip `showFounder` to `true` |
 | ~~`TODO_CLIENT_LOGO_1..5`~~ | — | **Resolved 2026-08-17.** Six owner-supplied logos now ship (Addendum A.6). The text fallback stays in `HomePage.astro` for any client id without a file | Drop a file in `src/assets/clients/`, import it into `CLIENT_LOGOS`, add the id to both `home.json` files |
 | FTP secrets | GitHub secrets `FTP_SERVER` / `FTP_USERNAME` / `FTP_PASSWORD` and optional `BLUEHOST_SITE_ROOT` | CI keeps the build artifact and skips FTPS when secrets are absent | Configure the real repository only after authorization |
 
@@ -369,6 +369,42 @@ Arabic page, and `alt=""` on the aria-hidden duplicate. Rendering was checked
 by compositing the built WebP files at the real CSS height against the section
 background. **Not** verified on screen in a live browser: the preview pane
 reported a zero-width viewport again this session, so no screenshot.
+
+## Office location, founder visibility, map fix (2026-08-17)
+
+**Map (`TODO_MAPS_EMBED_URL` closed).** The owner supplied a Google Maps share
+link, `https://maps.app.goo.gl/obvaNZy7w2YmAWrA8`. A short link cannot go in an
+iframe, so it was resolved to the place — *Pyramediax for marketing
+management*, 25.2666595, 55.3306708 — and rebuilt as
+`https://maps.google.com/maps?q=<lat>,<lng>&z=16&output=embed`. That classic
+form was chosen deliberately over the Maps Embed API: no API key, and its host
+is already in the §13.2 CSP `frame-src` allowlist. A gate2 test now asserts any
+configured embed sits on a CSP-allowed origin.
+
+**Bug found and fixed while wiring it.** The click-to-load facade hid its
+button with `classList.add('hidden')`, but `.btn-secondary` sets
+`display: inline-flex` and outranks Tailwind's `.hidden` — so the button stayed
+visible and clickable and **every extra click appended another Google Maps
+iframe**. Latent until now only because `mapsEmbedUrl` was empty and the button
+never rendered. Now `{ once: true }` + `mapBtn.remove()` +
+`slot.replaceChildren(iframe)`, verified in the Arabic preview: one iframe,
+button gone. Locked by a gate2 test.
+
+**⚠️ Address discrepancy, owner decision pending.** The Google Business listing
+reads **شارع أبو بكر الصديق - الخبيصي - ديرة - دبي** (Abu Baker Al Siddique
+Street, Al Khabaisi, Deira). The site publishes «ديرة، بور سعيد» / "Deira, Port
+Saeed" from §4. Al Khabaisi and Port Saeed are different Deira sub-areas, so
+one of the two is wrong. `TODO_OFFICE_ADDRESS_EN` / `_AR` stay open and the
+published address is unchanged — §2.1 does not allow swapping an approved fact
+for a scraped one without the owner confirming which is correct. The map pin
+and the address line therefore point at slightly different places until then.
+
+**Founder section hidden (Addendum A.7).** `SITE.showFounder = false` removes
+the homepage teaser and the About block. The JSON-LD Person node and the
+Organization `founder` reference are gated by the same flag — verified absent
+from all four affected pages in the build. The §6.4 licence line is not gated;
+on About it moves to its own band, confirmed still present twice (band +
+footer) on both language versions.
 
 ## Asset arrivals
 

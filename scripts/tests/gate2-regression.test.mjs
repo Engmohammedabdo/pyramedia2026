@@ -1016,6 +1016,30 @@ test('work showcases are links only, config-driven and fail safe (Addendum A.5)'
   assert.match(analytics, /work_click/);
 });
 
+test('the map facade loads exactly one iframe and cannot be re-triggered', async () => {
+  const [contact, site] = await Promise.all([
+    source('src/components/pages/ContactPage.astro'),
+    source('src/config/site.ts'),
+  ]);
+  const handler = contact.slice(contact.indexOf("querySelector<HTMLButtonElement>('[data-map-load]')"));
+
+  // A `hidden` class is NOT enough: .btn-secondary's display rule outranks it,
+  // so the button stayed clickable and each click appended another iframe.
+  assert.match(handler, /\{ once: true \}/);
+  assert.match(handler, /mapBtn\.remove\(\)/);
+  assert.match(handler, /slot\.replaceChildren\(iframe\)/);
+  assert.doesNotMatch(handler.slice(0, 1400), /mapBtn\.classList\.add\('hidden'\)/);
+
+  // Any configured embed must sit on a host the §13.2 CSP frame-src allows.
+  const embed = (site.match(/mapsEmbedUrl:\s*'([^']*)'/) || [])[1] ?? '';
+  if (embed) {
+    assert.match(embed, /^https:\/\/(www\.google\.com|maps\.google\.com)\//);
+    const htaccess = await source('public/.htaccess');
+    const frameSrc = (htaccess.match(/frame-src ([^;]*);/) || [])[1] ?? '';
+    assert.ok(frameSrc.includes(new URL(embed).origin), `CSP frame-src must allow ${new URL(embed).origin}`);
+  }
+});
+
 test('the client strip ships owner-supplied marks with a text fallback (Addendum A.6)', async () => {
   const [home, css] = await Promise.all([
     source('src/components/pages/HomePage.astro'),

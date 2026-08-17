@@ -69,7 +69,9 @@ const orgSchema = {
   areaServed: SITE.areaServed[lang],
   sameAs: [SITE.socials.instagram, SITE.socials.facebook, SITE.socials.linkedin, WA_BASE],
   // Approved §4 facts only — no invented history, size, or credentials.
-  founder: { '@id': `${SITE.url}/#founder` },
+  // The founder reference is emitted only while the founder section is shown,
+  // so the graph never points at a node the pages do not render.
+  ...(SITE.showFounder ? { founder: { '@id': `${SITE.url}/#founder` } } : {}),
   contactPoint: {
     '@type': 'ContactPoint',
     telephone: SITE.phoneE164,
@@ -130,7 +132,13 @@ const webPageSchema = {
   primaryImageOfPage: ogImage,
 };
 
-const allJsonLd = [orgSchema, founderSchema, webSiteSchema, webPageSchema, ...jsonLd];
+const allJsonLd = [
+  orgSchema,
+  ...(SITE.showFounder ? [founderSchema] : []),
+  webSiteSchema,
+  webPageSchema,
+  ...jsonLd,
+];
 ---
 
 <title>{title}</title>
