@@ -30,10 +30,12 @@ export const SITE = {
   whatsappNumber: '971565799505',
   email: 'info@pyramedia.info',
 
-  // TODO_OFFICE_ADDRESS_EN — exact office address line pending from owner (SPEC §14)
-  addressEn: 'Deira, Port Saeed — Dubai, UAE',
-  // TODO_OFFICE_ADDRESS_AR — exact office address line pending from owner (SPEC §14)
-  addressAr: 'ديرة، بور سعيد — دبي، الإمارات',
+  // District corrected from Port Saeed to Al Khabaisi by the owner on
+  // 2026-08-17 (SPEC Addendum A.8), matching the Google Business listing the
+  // map pin is built from. Consumed by the footer, contact card, About copy
+  // and the JSON-LD streetAddress — change it here only.
+  addressEn: 'Al Khabaisi, Deira — Dubai, UAE',
+  addressAr: 'الخبيصي، ديرة — دبي، الإمارات',
   addressLocality: { en: 'Dubai', ar: 'دبي' },
   addressCountry: 'AE',
   // SPEC §4 approved service area — consumed by all JSON-LD emitters

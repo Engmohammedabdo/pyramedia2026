@@ -8,8 +8,8 @@ It does not replace the independent review reports.
 
 | Key | Where it lives | Current placeholder behavior | Swap procedure |
 |---|---|---|---|
-| `TODO_OFFICE_ADDRESS_EN` | `src/config/site.ts` → `addressEn` | Shows "Deira, Port Saeed — Dubai, UAE" | Replace the `addressEn` string |
-| `TODO_OFFICE_ADDRESS_AR` | `src/config/site.ts` → `addressAr` | Shows «ديرة، بور سعيد — دبي، الإمارات» | Replace the `addressAr` string |
+| `TODO_OFFICE_ADDRESS_EN` | `src/config/site.ts` → `addressEn` | Shows "Al Khabaisi, Deira — Dubai, UAE". District corrected 2026-08-17 (A.8); street/building still missing | Replace the `addressEn` string |
+| `TODO_OFFICE_ADDRESS_AR` | `src/config/site.ts` → `addressAr` | Shows «الخبيصي، ديرة — دبي، الإمارات». Same correction; street/building still missing | Replace the `addressAr` string |
 | ~~`TODO_MAPS_EMBED_URL`~~ | `src/config/site.ts` → `mapsEmbedUrl` | **Resolved 2026-08-17.** Owner's Google Business share link, resolved to coordinates and rebuilt as a keyless `output=embed` URL | Emptying the value hides the map block again |
 | `TODO_N8N_WEBHOOK` | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | Form renders a disabled state plus WhatsApp fallback | Set the production URL and rebuild |
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 is not injected | Set the production ID and rebuild |
@@ -390,14 +390,18 @@ never rendered. Now `{ once: true }` + `mapBtn.remove()` +
 `slot.replaceChildren(iframe)`, verified in the Arabic preview: one iframe,
 button gone. Locked by a gate2 test.
 
-**⚠️ Address discrepancy, owner decision pending.** The Google Business listing
-reads **شارع أبو بكر الصديق - الخبيصي - ديرة - دبي** (Abu Baker Al Siddique
-Street, Al Khabaisi, Deira). The site publishes «ديرة، بور سعيد» / "Deira, Port
-Saeed" from §4. Al Khabaisi and Port Saeed are different Deira sub-areas, so
-one of the two is wrong. `TODO_OFFICE_ADDRESS_EN` / `_AR` stay open and the
-published address is unchanged — §2.1 does not allow swapping an approved fact
-for a scraped one without the owner confirming which is correct. The map pin
-and the address line therefore point at slightly different places until then.
+**Address discrepancy — raised, then resolved the same day (Addendum A.8).**
+The Google Business listing reads **شارع أبو بكر الصديق - الخبيصي - ديرة -
+دبي**, while §4 approved «ديرة، بور سعيد» / "Deira, Port Saeed". Al Khabaisi
+and Port Saeed are different Deira sub-areas, so one had to be wrong. It was
+put to the owner rather than resolved from the scraped listing; he confirmed
+**Al Khabaisi**. §1, §4, `site.ts` and `public/llms.txt` were updated — the
+llms.txt copy is hand-written prose, not generated from the config, so it is a
+second place that must be changed by hand whenever the location changes.
+
+`TODO_OFFICE_ADDRESS_EN` / `_AR` stay **open**: the district is right now, but
+the street and building line are still unpublished. The listing's *Abu Baker Al
+Siddique Street* was **not** confirmed, so §2.1 keeps it off the site.
 
 **Founder section hidden (Addendum A.7).** `SITE.showFounder = false` removes
 the homepage teaser and the About block. The JSON-LD Person node and the

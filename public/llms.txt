@@ -1,6 +1,6 @@
 # PyramediaX
 
-> Full-service digital marketing agency based in Deira, Port Saeed — Dubai,
+> Full-service digital marketing agency based in Al Khabaisi, Deira — Dubai,
 > UAE, serving the UAE and the GCC. Tagline: "Less Talk. More Performance."
 > The site is bilingual: English at the root, Arabic under /ar/.
 

@@ -14,7 +14,7 @@
 
 
 
-You are the lead engineer and designer building the new official website for \*\*PyramediaX\*\* (legal name: PYRAMEDIAX MARKETING MANAGEMENT L.L.C S.O.C), a Dubai-licensed \*\*full-service digital marketing agency\*\* based in Deira, Port Saeed, Dubai.
+You are the lead engineer and designer building the new official website for \*\*PyramediaX\*\* (legal name: PYRAMEDIAX MARKETING MANAGEMENT L.L.C S.O.C), a Dubai-licensed \*\*full-service digital marketing agency\*\* based in Al Khabaisi, Deira, Dubai. (See Addendum A.8.)
 
 
 
@@ -164,7 +164,7 @@ These are the ONLY facts the site may state:
 
 \- Brand name: \*\*PyramediaX\*\* (logo lockup: PYRAMEDIA X). Tagline: \*\*"Less Talk. More Performance."\*\*
 
-\- Full-service digital marketing agency based in \*\*Deira, Port Saeed, Dubai, UAE\*\*, serving the UAE \& GCC.
+\- Full-service digital marketing agency based in \*\*Al Khabaisi, Deira, Dubai, UAE\*\*, serving the UAE \& GCC. (District corrected from Port Saeed by the owner, 17 August 2026 — see Addendum A.8.)
 
 \- Services: the six services in §7.3, exactly as scoped there.
 
@@ -722,7 +722,7 @@ Build with explicit placeholders; each must be a single-file swap, findable via 
 
 | `TODO\_CLIENT\_LOGO\_1..5` | 5 client logo files (SVG/PNG) | Styled text of client name in muted color inside the marquee. |
 
-| `TODO\_OFFICE\_ADDRESS\_EN/AR` | Exact office address lines | Show "Deira, Port Saeed — Dubai, UAE" / «ديرة، بور سعيد — دبي، الإمارات» until exact line arrives. |
+| `TODO\_OFFICE\_ADDRESS\_EN/AR` | Exact office address lines | Show "Al Khabaisi, Deira — Dubai, UAE" / «الخبيصي، ديرة — دبي، الإمارات» until the exact street/building line arrives (Addendum A.8). |
 
 | `TODO\_MAPS\_EMBED\_URL` | Google Maps embed/share URL | Address card renders without the map block. |
 
@@ -984,3 +984,24 @@ for it to be hidden **temporarily**, while the real photo is outstanding.
 - Nothing in §4 changes. Mohamed Abdou remains the approved founder fact; the
   site simply does not display it for now. `TODO_FOUNDER_PHOTO` stays open, and
   the §2.1 ban on stock or generated faces is untouched.
+
+### A.8 Office district corrected: Al Khabaisi (confirmed by Abdou, 17 August 2026)
+
+§1 and §4 stated the office district as **Port Saeed**. While wiring the map
+(A.7 work), the owner's own Google Business listing was found to read *شارع أبو
+بكر الصديق - الخبيصي - ديرة - دبي*. Al Khabaisi and Port Saeed are different
+Deira sub-areas, so the two could not both be right. The discrepancy was put to
+the owner rather than resolved from the scraped listing, and he confirmed:
+**Al Khabaisi is correct.**
+
+- §1 and §4 now read Al Khabaisi, Deira, Dubai, UAE.
+- Published strings, both languages: "Al Khabaisi, Deira — Dubai, UAE" /
+  «الخبيصي، ديرة — دبي، الإمارات». They live only in `src/config/site.ts`
+  (`addressEn` / `addressAr`) and feed the footer, the contact info card, the
+  About copy and the JSON-LD `streetAddress`.
+- `public/llms.txt` carries its own prose copy of the location and was updated
+  in step; it is not generated from the config.
+- `TODO_OFFICE_ADDRESS_EN` / `_AR` stay **open**. The district is now right,
+  but the street and building line are still not published. The listing also
+  shows *Abu Baker Al Siddique Street*; that part was not confirmed, so §2.1
+  keeps it off the site until it is.
