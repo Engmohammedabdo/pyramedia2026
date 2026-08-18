@@ -115,6 +115,7 @@ export const en = {
     back: 'Back to homepage',
   },
   audit: {
+    modeLabel: 'What to check',
     modeWebsite: 'My website',
     modeInstagram: 'My Instagram',
     targetWebsite: 'Your website address',

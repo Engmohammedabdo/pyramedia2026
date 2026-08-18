@@ -4,12 +4,25 @@
  * count, and one headline title. No per-finding detail and no fixes — those
  * are what the visitor comes to us for, and they go to the team instead.
  *
- * Renders empty and hidden with its height reserved, so filling it from the
- * API cannot shift the page (§12). No score appears in this markup — every
- * number is Google's measurement of the visitor's own site (§2.1). The
- * response may also be served from a 7-day cache of an earlier scan of the
- * same address — the shape is identical either way, so this panel needs no
- * special handling for that case.
+ * Renders hidden. AuditPage.astro's submit handler reveals this section at
+ * the moment the visitor submits — not before, and not only on success — in
+ * a placeholder ("loading") state that already occupies its full final
+ * height, so filling it in once the response arrives changes text only,
+ * never geometry (§12). There is no single reserved block-size on the
+ * section itself; instead every element whose content is dynamic carries
+ * its own fixed-size reservation:
+ *   - each score digit (`min-block-size`/`min-inline-size` on the span),
+ *   - the issue count (`min-inline-size` on the span),
+ *   - the one-line result message (`min-block-size` + `line-clamp-2` on
+ *     the shared lead/title paragraph — a long PageSpeed finding title is
+ *     external, unbounded text, so it is clamped rather than allowed to
+ *     wrap and grow the panel).
+ * Static text (labels, the heading, the disclaimer) never changes, so it
+ * needs no reservation. No score appears in this markup — every number is
+ * Google's measurement of the visitor's own site (§2.1). The response may
+ * also be served from a 7-day cache of an earlier scan of the same address
+ * — the shape is identical either way, so this panel needs no special
+ * handling for that case.
  */
 import type { Lang } from '@/config/site';
 import { useTranslations } from '@/i18n';
@@ -26,12 +39,20 @@ const SCORES = [
   { key: 'accessibility', label: t.audit.accessibility },
   { key: 'bestPractices', label: t.audit.bestPractices },
 ] as const;
+
+// Two lines of this paragraph's own inherited line-height, exactly — `lh`
+// is the deterministic, font-agnostic way to say that and self-adjusts for
+// Arabic's taller line-height (body line-height 1.9 vs 1.7, SPEC §6.2)
+// without knowing either number. The rem figure alongside it is a fallback
+// for browsers that predate the `lh` unit, computed from those same two
+// line-heights (1rem font-size × line-height × 2 lines) so it is never
+// short even where the modern value cannot be used.
+const messageReservedHeight = lang === 'ar' ? '3.9rem' : '3.5rem';
 ---
 
 <section
   id="audit-result"
   class="mt-10 hidden rounded-2xl border border-line bg-surface/40 p-6 md:p-8"
-  style="min-block-size: 18rem;"
   aria-live="polite"
 >
   <h2 class="font-display text-xl font-bold text-text">{t.audit.scores}</h2>
@@ -55,15 +76,31 @@ const SCORES = [
   </ul>
 
   <p class="mt-8 text-lg text-text/90">
-    <span class="font-display font-bold text-orange" data-issue-count dir="ltr">—</span>
+    <span
+      class="font-display font-bold text-orange"
+      style="min-inline-size: 2ch;"
+      data-issue-count
+      dir="ltr"
+    >
+      —
+    </span>
     <span> {t.audit.issuesFound}</span>
   </p>
 
-  <p class="mt-3 hidden text-text/90" data-teaser>
-    <span class="text-muted">{t.audit.teaserLead}</span>{' '}
-    <span class="font-semibold" data-teaser-title></span>
+  <!-- One shared, always-present message line for both outcomes (a finding
+       teaser or the "nothing significant" case) — never toggled between two
+       separately-hidden elements, so there is nothing left to reveal once
+       the panel itself is already showing (§12). line-clamp-2 plus the
+       min-block-size below cap it at exactly the height reserved while
+       loading, even for an unusually long finding title. -->
+  <p
+    class="mt-3 line-clamp-2 text-text/90"
+    style={`min-block-size: ${messageReservedHeight}; min-block-size: 2lh;`}
+    data-result-message
+  >
+    <span class="text-muted" data-result-lead></span>{' '}
+    <span class="font-semibold" data-result-title></span>
   </p>
 
-  <p class="mt-3 hidden text-text/90" data-clean>{t.audit.clean}</p>
   <p class="mt-6 text-sm text-muted">{t.audit.disclaimer}</p>
 </section>

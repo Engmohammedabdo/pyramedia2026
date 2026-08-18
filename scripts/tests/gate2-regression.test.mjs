@@ -1400,15 +1400,93 @@ test('the audit is a two-step funnel that withholds the fixes (Feature 2)', asyn
   // The result panel must not render per-finding detail — that is the hook.
   assert.doesNotMatch(result, /data-finding-detail/);
 
+  // The panel's reservation must not depend on being unhidden: a
+  // `min-block-size` sitting on a `display:none` (`.hidden`) element has
+  // zero effect until it is unhidden, which was the Critical 2 bug — the
+  // section's own opening tag must carry no such style, only its dynamic
+  // children (score digits, issue count, result message) may.
+  const resultSectionOpenTag = result.slice(
+    result.indexOf('<section'),
+    result.indexOf('>', result.indexOf('<section')) + 1,
+  );
+  assert.match(resultSectionOpenTag, /\bhidden\b/, 'the panel must start hidden — revealed by script at submit time');
+  assert.doesNotMatch(
+    resultSectionOpenTag,
+    /min-block-size/,
+    'a min-block-size on the hidden section itself has no effect — reserve per dynamic element instead',
+  );
+  // The teaser/"clean" message is one always-present element, not two
+  // separately `hidden`-toggled ones — nothing left to reveal once the
+  // panel itself is already showing, and a long external finding title is
+  // clamped rather than allowed to wrap and grow the panel.
+  assert.doesNotMatch(result, /data-teaser\b/);
+  assert.doesNotMatch(result, /data-clean\b/);
+  assert.match(result, /data-result-lead/);
+  assert.match(result, /data-result-title/);
+  assert.match(result, /line-clamp/);
+
   // Empty config renders a fallback, not a dead form.
   assert.match(page, /SITE\.auditWebhookUrl/);
   assert.match(page, /SITE\.auditInstagramEnabled/);
   // Shared client, not a second fetch implementation.
   assert.match(page, /from '@\/scripts\/n8n-client'/);
 
+  // Critical fix: every submit resets scanId, the panel, the claim form and
+  // its confirmation, every score slot and the result message — before the
+  // request goes out — so a second scan can never leave the first one's
+  // data, or its still-submittable claim form, on screen or bound to the
+  // wrong scanId.
+  const submitHandlerStart = page.indexOf("form.addEventListener('submit'");
+  const claimHandlerStart = page.indexOf("claim.addEventListener('submit'", submitHandlerStart);
+  assert.ok(submitHandlerStart > 0 && claimHandlerStart > submitHandlerStart, 'expected a scan submit handler before the claim submit handler');
+  const submitHandler = page.slice(submitHandlerStart, claimHandlerStart);
+
+  const resetFnStart = page.indexOf('function resetResult()');
+  assert.ok(resetFnStart > 0 && resetFnStart < submitHandlerStart, 'expected a dedicated reset function ahead of the submit handler');
+  const resetFn = page.slice(resetFnStart, submitHandlerStart);
+  assert.match(resetFn, /scanId = ''/);
+  assert.match(resetFn, /claim\?\.classList\.add\('hidden'\)/);
+  assert.match(resetFn, /claimed\?\.classList\.add\('hidden'\)/);
+  assert.match(resetFn, /panel\.classList\.add\('hidden'\)/);
+
+  const resetCallAt = submitHandler.indexOf('resetResult()');
+  const scanRequestAt = submitHandler.indexOf("action: 'scan'");
+  assert.ok(resetCallAt > 0 && scanRequestAt > resetCallAt, 'resetResult() must run before the scan request goes out');
+
+  // Layout-shift fix (§12): the panel is revealed in a loading (placeholder)
+  // state at submit time, before the response resolves — not gated behind
+  // success — so arriving data changes text only, never geometry.
+  const revealAt = submitHandler.indexOf("panel.classList.remove('hidden')");
+  assert.ok(revealAt > 0 && revealAt < scanRequestAt, 'the panel must be revealed before the scan request, not only after it succeeds');
+
+  // A failed scan must not leave a revealed panel or claim form on screen.
+  const failureBranchStart = submitHandler.indexOf('!result.ok || !data?.ok');
+  const successAt = submitHandler.indexOf('scanId = data.scanId');
+  assert.ok(failureBranchStart > scanRequestAt && successAt > failureBranchStart);
+  const failureBranch = submitHandler.slice(failureBranchStart, successAt);
+  assert.match(failureBranch, /panel\.classList\.add\('hidden'\)/);
+
+  // Important fix: colour classes must not accumulate across scans — all
+  // three are removed before the verdict colour is added.
+  assert.match(page, /classList\.remove\(\.\.\.SCORE_COLOR_CLASSES\)/);
+
+  // Minor fix: an absent issueCount must read as unknown, never a
+  // fabricated zero (§2.1).
+  assert.doesNotMatch(page, /issueCount \?\? 0/);
+
+  // Minor fix: the mode radiogroup describes the choice, not the submit button.
+  assert.doesNotMatch(page, /role="radiogroup" aria-label=\{t\.audit\.run\}/);
+  assert.match(page, /role="radiogroup" aria-label=\{t\.audit\.modeLabel\}/);
+
+  // Minor fix: honeypot + minimum-time-on-page trap, matching ContactPage.astro.
+  assert.match(page, /minSeconds/);
+  assert.match(page, /loadedAt = Date\.now\(\)/);
+  assert.match(page, /tooFast/);
+
   for (const dict of [en, ar]) {
     assert.match(dict, /audit: \{/);
     assert.match(dict, /claimCta:/);
+    assert.match(dict, /modeLabel:/);
   }
 
   assert.match(enPrivacy, /audit/i);

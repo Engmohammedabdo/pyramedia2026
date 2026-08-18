@@ -119,6 +119,7 @@ export const ar: Dictionary = {
     back: 'العودة إلى الرئيسية',
   },
   audit: {
+    modeLabel: 'ماذا نفحص؟',
     modeWebsite: 'موقعي الإلكتروني',
     modeInstagram: 'حسابي على إنستجرام',
     targetWebsite: 'عنوان موقعك الإلكتروني',

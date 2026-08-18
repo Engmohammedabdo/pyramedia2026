@@ -43,12 +43,18 @@ const webhookConfigured = Boolean(SITE.auditWebhookUrl);
 const formConfig = {
   webhook: SITE.auditWebhookUrl,
   lang,
+  // Spam trap (matches ContactPage.astro's honeypot + minimum-time trap):
+  // a submission faster than a human could type the target field is
+  // treated as a bot and never sent.
+  minSeconds: 4,
   strings: {
     required: t.form.errRequired,
     running: t.audit.running,
     run: t.audit.run,
     invalid: t.audit.invalid,
     failed: t.audit.failed,
+    teaserLead: t.audit.teaserLead,
+    clean: t.audit.clean,
     claimCta: t.audit.claimCta,
     claimSending: t.audit.claimSending,
   },
@@ -102,7 +108,7 @@ const modeChoices = [
           <>
             <form id="audit-form" class="grid gap-5" novalidate data-config={JSON.stringify(formConfig)}>
               {SITE.auditInstagramEnabled && (
-                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label={t.audit.run}>
+                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label={t.audit.modeLabel}>
                   {modeChoices.map((choice, i) => (
                     <label class="cursor-pointer">
                       <input
@@ -294,6 +300,10 @@ const modeChoices = [
     const value = (f: HTMLFormElement, name: string) =>
       ((f.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
 
+    // Spam trap timer (matches ContactPage.astro's minimum-time-on-page).
+    const loadedAt = Date.now();
+    const SCORE_COLOR_CLASSES = ['text-red', 'text-orange', 'text-green'];
+
     // Instagram mode (when enabled) swaps the target field's label.
     form.querySelectorAll<HTMLInputElement>('[data-mode-input]').forEach((input) => {
       input.addEventListener('change', () => {
@@ -307,6 +317,29 @@ const modeChoices = [
       errorText.textContent = message;
       errorBox.classList.remove('hidden');
       errorBox.focus();
+    }
+
+    // Clears every trace of a previous scan — scanId, the score panel, the
+    // claim form and its confirmation — so a resubmission (whatever target
+    // it names, whatever it returns) can never leave a stale result, or a
+    // still-submittable claim form, bound to the site scanned before this
+    // one. Called unconditionally at the start of every submit, before the
+    // request goes out.
+    function resetResult() {
+      scanId = '';
+      claim?.classList.add('hidden');
+      claimed?.classList.add('hidden');
+      panel.querySelectorAll<HTMLElement>('[data-score]').forEach((slot) => {
+        slot.textContent = '—';
+        slot.classList.remove(...SCORE_COLOR_CLASSES);
+      });
+      const issueCountEl = panel.querySelector<HTMLElement>('[data-issue-count]');
+      if (issueCountEl) issueCountEl.textContent = '—';
+      const resultLead = panel.querySelector<HTMLElement>('[data-result-lead]');
+      const resultTitle = panel.querySelector<HTMLElement>('[data-result-title]');
+      if (resultLead) resultLead.textContent = '';
+      if (resultTitle) resultTitle.textContent = '';
+      panel.classList.add('hidden');
     }
 
     form.addEventListener('submit', async (event) => {
@@ -323,12 +356,31 @@ const modeChoices = [
       targetError.classList.add('hidden');
       targetInput.removeAttribute('aria-invalid');
 
-      form.dataset.busy = 'true';
+      // Reset first, unconditionally — a second scan must never leave the
+      // first one's result or claim form on screen or submittable, whether
+      // this attempt succeeds, fails, or turns out to be a bot.
+      resetResult();
       errorBox.classList.add('hidden');
+
+      // Spam traps (matches ContactPage.astro): a filled honeypot or a
+      // submission faster than a human could type the target field gets no
+      // request at all — nothing is sent, nothing is shown.
+      const honeypot = value(form, 'website');
+      const tooFast = (Date.now() - loadedAt) / 1000 < config.minSeconds;
+      if (honeypot || tooFast) return;
+
+      form.dataset.busy = 'true';
       if (submitBtn) submitBtn.disabled = true;
       status.textContent = config.strings.running;
       submitLabel.textContent = config.strings.running;
       runningNote.classList.remove('hidden');
+
+      // Reveal the panel now, in its placeholder state, so it already
+      // occupies its full final height before any data exists (§12) —
+      // filling it in below changes text only, never geometry. This shift
+      // is the input-response window itself: immediate and user-initiated,
+      // not the delayed jump it replaces.
+      panel.classList.remove('hidden');
 
       // PageSpeed is slow by nature — allow 90s before giving up.
       const result = await postToN8n(
@@ -339,7 +391,7 @@ const modeChoices = [
           target,
           lang: config.lang,
           page_url: window.location.href,
-          website: value(form, 'website'),
+          website: honeypot,
           utm: collectUtm(),
         },
         90_000,
@@ -357,6 +409,8 @@ const modeChoices = [
         // unusable response) is a real, expected outcome, not a broken
         // page — say so plainly and hand over the WhatsApp route so the
         // lead is never lost. The backend has already logged the attempt.
+        // Nothing succeeded, so nothing stays revealed.
+        panel.classList.add('hidden');
         showError(data?.reason === 'invalid_target' ? config.strings.invalid : config.strings.failed);
         return;
       }
@@ -370,29 +424,40 @@ const modeChoices = [
         // else in this payload, comes from an external API and must never
         // be parsed as HTML.
         slot.textContent = String(score);
-        // Colour carries the verdict faster than the number does.
+        // Colour carries the verdict faster than the number does. Clear any
+        // colour a previous scan left behind before applying this one.
+        slot.classList.remove(...SCORE_COLOR_CLASSES);
         const n = Number(score);
         slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
       }
 
-      const count = Number(data.issueCount ?? 0);
-      panel.querySelector('[data-issue-count]')!.textContent = String(count);
+      // Absent is not zero (§2.1) — an unmeasured count must never render
+      // as "0 issues". `NaN` (absent, or unparseable) reads as unknown too.
+      const rawCount = data.issueCount;
+      const count = rawCount === null || rawCount === undefined ? NaN : Number(rawCount);
+      const countKnown = Number.isFinite(count);
+      const issueCountEl = panel.querySelector<HTMLElement>('[data-issue-count]')!;
+      issueCountEl.textContent = countKnown ? String(count) : '—';
 
-      const teaser = panel.querySelector('[data-teaser]')!;
-      const clean = panel.querySelector('[data-clean]')!;
-      if (count > 0 && data.teaser?.title) {
-        panel.querySelector('[data-teaser-title]')!.textContent = data.teaser.title;
-        teaser.classList.remove('hidden');
-        clean.classList.add('hidden');
+      const resultLead = panel.querySelector<HTMLElement>('[data-result-lead]')!;
+      const resultTitle = panel.querySelector<HTMLElement>('[data-result-title]')!;
+      if (countKnown && count > 0 && data.teaser?.title) {
+        resultLead.textContent = config.strings.teaserLead;
+        resultTitle.textContent = data.teaser.title;
         claim?.classList.remove('hidden');
-      } else {
-        teaser.classList.add('hidden');
-        clean.classList.remove('hidden');
+      } else if (countKnown && count === 0) {
+        resultLead.textContent = config.strings.clean;
+        resultTitle.textContent = '';
         // Nothing to sell a fix for — do not ask for a phone number.
+        claim?.classList.add('hidden');
+      } else {
+        // Count unknown, or issues reported without a headline — say
+        // nothing rather than guess at a claim we cannot back up (§2.1).
+        resultLead.textContent = '';
+        resultTitle.textContent = '';
         claim?.classList.add('hidden');
       }
 
-      panel.classList.remove('hidden');
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
