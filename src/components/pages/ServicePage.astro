@@ -14,6 +14,7 @@ import Button from '@/components/Button.astro';
 import Icon from '@/components/Icon.astro';
 import PyramidMark from '@/components/PyramidMark.astro';
 import CtaBand from '@/components/CtaBand.astro';
+import SpeedProof from '@/components/SpeedProof.astro';
 
 interface Props {
   lang: Lang;
@@ -96,7 +97,7 @@ const jsonLd = [
               contact link. The showcase sat last as a plain secondary and was
               invisible next to "Contact us" (A.10). */}
           <div class="mt-8 flex flex-wrap items-start gap-4" data-reveal>
-            <Button href={waLink(lang)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
+            <Button href={waLink(lang, s.name)} variant="primary" event="whatsapp_click" placement={`service-${s.slug}`}>
               <Icon name="whatsapp" size={18} />
               {t.cta.whatsapp}
             </Button>
@@ -128,7 +129,7 @@ const jsonLd = [
   </section>
 
   <!-- What's included -->
-  <section class="border-t border-line bg-surface/30">
+  <section class="border-t border-line bg-surface/30" data-wa-context={s.name}>
     <div class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group>
       <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
         {t.service.included}
@@ -149,7 +150,7 @@ const jsonLd = [
   </section>
 
   <!-- How it runs -->
-  <section class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group>
+  <section class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group data-wa-context={s.name}>
     <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
       {t.service.process}
     </h2>
@@ -172,11 +173,12 @@ const jsonLd = [
         ))
       }
     </ol>
+    {s.slug === 'web-development' && <SpeedProof lang={lang} />}
   </section>
 
   {
     s.tools && s.tools.length > 0 && (
-      <section class="border-y border-line bg-surface/30">
+      <section class="border-y border-line bg-surface/30" data-wa-context={s.name}>
         <div class="mx-auto max-w-6xl px-5 py-16" data-reveal-group>
           <h2 class="eyebrow" data-reveal>
             {t.service.tools}
@@ -198,7 +200,7 @@ const jsonLd = [
   }
 
   <!-- Mini-FAQ -->
-  <section class="mx-auto max-w-3xl px-5 py-20 md:py-24" data-reveal-group>
+  <section class="mx-auto max-w-3xl px-5 py-20 md:py-24" data-reveal-group data-wa-context={s.name}>
     <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
       {t.service.faq}
     </h2>
@@ -221,5 +223,5 @@ const jsonLd = [
     </div>
   </section>
 
-  <CtaBand lang={lang} placement={`service-${s.slug}-cta`} />
+  <CtaBand lang={lang} placement={`service-${s.slug}-cta`} context={s.name} />
 </BaseLayout>

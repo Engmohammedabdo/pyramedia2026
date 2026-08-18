@@ -18,13 +18,22 @@ jobs:
 
       - run: npm ci
 
+      - name: GATE 1 regression suite
+        run: npm run test:gate1
+
+      - name: GATE 2 regression suite
+        run: npm run test:gate2
+
       - name: Build
         run: npm run build
         env:
           PUBLIC_SITE_URL: https://pyramedia.info
           PUBLIC_GA4_ID: ${{ vars.PUBLIC_GA4_ID }}
           PUBLIC_META_PIXEL_ID: ${{ vars.PUBLIC_META_PIXEL_ID }}
+          PUBLIC_TIKTOK_PIXEL_ID: ${{ vars.PUBLIC_TIKTOK_PIXEL_ID }}
           PUBLIC_N8N_WEBHOOK_URL: ${{ vars.PUBLIC_N8N_WEBHOOK_URL }}
+          PUBLIC_N8N_AUDIT_URL: ${{ vars.PUBLIC_N8N_AUDIT_URL }}
+          PUBLIC_AUDIT_INSTAGRAM: ${{ vars.PUBLIC_AUDIT_INSTAGRAM }}
 
       # CI guard (SPEC §13.1) — runs after build, BEFORE deploy. The banned
       # legacy number and filler text must be physically unable to reach

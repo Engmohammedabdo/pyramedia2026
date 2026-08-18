@@ -1,0 +1,148 @@
+---
+/**
+ * Live page-load proof (Feature 9). The number is read from this visitor's
+ * own timing data — it is a measurement, never a stored claim, so §2.1 is
+ * satisfied by construction.
+ *
+ * `<ClientRouter />` is mounted site-wide (see BaseLayout.astro), so most
+ * visits to this page are a soft navigation, not a document load. The two
+ * navigation kinds are measured differently so the number always describes
+ * the page the visitor is actually looking at:
+ *   - Hard load: Navigation Timing's loadEventEnd.
+ *   - Soft navigation: elapsed time between astro:before-preparation (start
+ *     of the transition) and astro:page-load (the new page is ready).
+ * The astro:before-preparation timestamp is captured by a site-wide script
+ * (src/scripts/nav-timing.ts, registered from BaseLayout.astro on every
+ * page, not just this one) rather than by this component. This component's
+ * own script does not exist until the destination page has been swapped in,
+ * which happens after astro:before-preparation has already fired — so a
+ * listener registered here would always miss the very navigation that
+ * first mounts this widget. Reading a value captured site-wide instead
+ * closes that gap while this component keeps full ownership of turning it
+ * into a displayed measurement.
+ * When neither source can be trusted, the widget hides itself rather than
+ * show a broken or misattributed number.
+ *
+ * The slot is sized before the number exists, so filling it cannot shift
+ * layout (§12). No motion is used: a number appearing is enough.
+ */
+import type { Lang } from '@/config/site';
+import { useTranslations } from '@/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<aside class="mt-10 rounded-2xl border border-line bg-surface/40 p-6" data-speed-proof>
+  <p class="eyebrow">{t.speed.eyebrow}</p>
+  <p class="mt-3 text-lg text-text/90">
+    {t.speed.label}
+    <span
+      class="font-display mx-2 font-bold text-orange"
+      style="min-block-size: 1.6em; display: inline-block; min-inline-size: 6ch;"
+      data-speed-value
+      aria-live="polite"
+      dir="ltr">—</span
+    >
+    {t.speed.unit}
+  </p>
+  <p class="mt-2 text-sm text-muted">{t.speed.measuredNow}</p>
+  <p class="mt-1 text-sm font-semibold text-text/80">{t.speed.prompt}</p>
+</aside>
+
+<script>
+  // A soft navigation's start time is captured site-wide by
+  // src/scripts/nav-timing.ts (imported from BaseLayout.astro, so it is
+  // already listening before this navigation — or any navigation this
+  // session — begins). Read that shared value rather than listening for
+  // astro:before-preparation locally: by the time this component's own
+  // script runs, that event for the current navigation has already fired.
+  const timingWindow = window as typeof window & { __pyxNavPrepStart?: number };
+
+  // Set while the initial hard load's window "load" listener is still
+  // pending. Astro also fires astro:page-load once for the initial load
+  // itself, and on a fast page that can happen *after* window "load" has
+  // already completed — without this flag, that second call would see
+  // readyState 'complete' and no captured navPrepStart and wrongly treat
+  // it as the "no honest measurement available" case below, hiding a page
+  // that actually has a real hard-load measurement in flight.
+  let awaitingHardLoad = false;
+
+  function paintSpeed() {
+    const proof = document.querySelector<HTMLElement>('[data-speed-proof]');
+    const slot = proof?.querySelector<HTMLElement>('[data-speed-value]');
+    if (!slot || slot.dataset.filled === 'true') return;
+
+    // Browsers coarsen timer resolution (Spectre mitigations), so a
+    // genuinely fast page can legitimately measure 0. Only a negative value
+    // is invalid.
+    const render = (ms: number) => {
+      if (slot.dataset.filled === 'true') return;
+      slot.textContent = (ms / 1000).toFixed(2);
+      slot.dataset.filled = 'true';
+    };
+    const hide = () => proof?.remove();
+
+    const navPrepStart = timingWindow.__pyxNavPrepStart;
+    if (navPrepStart !== undefined) {
+      // Soft navigation: the time since astro:before-preparation is a true
+      // measurement of how long this page took to appear for this visitor.
+      // Consume the shared value so a later, unrelated astro:page-load (this
+      // same listener also fires for every other page's navigations) can
+      // never reuse a stale timestamp from a different page.
+      timingWindow.__pyxNavPrepStart = undefined;
+      const elapsed = performance.now() - navPrepStart;
+      awaitingHardLoad = false;
+      if (elapsed < 0) hide();
+      else render(elapsed);
+      return;
+    }
+
+    if (awaitingHardLoad) {
+      // The hard-load measurement below is already scheduled; nothing more
+      // to do until its window "load" listener fires.
+      return;
+    }
+
+    if (document.readyState !== 'complete') {
+      // The original hard load: module scripts always run before the
+      // document's own load event, so this is the only point at which the
+      // browser's Navigation Timing entry is guaranteed to describe the
+      // page we are actually on.
+      awaitingHardLoad = true;
+      window.addEventListener(
+        'load',
+        () =>
+          requestAnimationFrame(() => {
+            awaitingHardLoad = false;
+            const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+            if (!nav) {
+              hide();
+              return;
+            }
+            // startTime is spec-guaranteed 0 for this entry, so
+            // loadEventEnd alone is the honest elapsed figure.
+            if (nav.loadEventEnd < 0) hide();
+            else render(nav.loadEventEnd);
+          }),
+        { once: true },
+      );
+      return;
+    }
+
+    // readyState is already 'complete' — this session's original hard load
+    // finished long ago; readyState does not reset on a soft navigation —
+    // but no soft-navigation start was captured for this navigation. The
+    // site-wide capture in src/scripts/nav-timing.ts should always have
+    // set one before this component's script runs; if it somehow did not,
+    // Navigation Timing would describe a different page here, so there is
+    // no honest number to show — hide rather than display one.
+    hide();
+  }
+
+  paintSpeed();
+  document.addEventListener('astro:page-load', paintSpeed);
+</script>

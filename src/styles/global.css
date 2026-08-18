@@ -22,6 +22,10 @@
   --color-orange: #f26e24; /* primary — dominant accent */
   --color-orange-hot: #ff7e33; /* hover state */
   --color-gold: #f4c430; /* rare accent: thin rules, small tags only */
+  /* Audit score verdicts (Feature 2) — red/orange/green read faster than the
+     number itself. Both chosen for ≥6:1 contrast against --color-surface. */
+  --color-red: #ff6b5b;
+  --color-green: #4ade80;
   --color-text: #f7f5f2; /* headings */
   --color-muted: #a6a19b; /* body on dark */
   --color-text-faint: rgb(247 245 242 / 0.08);

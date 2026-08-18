@@ -1223,3 +1223,356 @@ test('the client strip ships owner-supplied marks with a text fallback (Addendum
   assert.match(strip, /transition:\s*opacity/);
   assert.doesNotMatch(strip, /transition:[^;]*\b(width|height|top|left|margin|box-shadow)\b/);
 });
+
+test('speed proof reports a real measurement and cannot shift layout', async () => {
+  const [component, servicePage, layout, navTiming, en, ar] = await Promise.all([
+    source('src/components/SpeedProof.astro'),
+    source('src/components/pages/ServicePage.astro'),
+    source('src/layouts/BaseLayout.astro'),
+    source('src/scripts/nav-timing.ts'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  // The number must come from real timing data — never a constant.
+  assert.match(component, /performance\.getEntriesByType\('navigation'\)/);
+  assert.doesNotMatch(component, /\b(0\.\d|[0-9]{2,4})\s*(ms|s)\b/, 'no hardcoded timing may ship (§2.1)');
+
+  // ClientRouter makes soft navigation the common case, and a page's own
+  // widget script cannot observe astro:before-preparation for the very
+  // navigation that first mounts it (that event fires before the
+  // destination page's script exists to hear it). The capture must
+  // therefore live in a site-wide script registered from BaseLayout.astro
+  // — present from the first page of the session onward — not in the
+  // component itself.
+  assert.match(layout, /import ['"]@\/scripts\/nav-timing['"]/, 'the capture must be registered from the layout so it is listening before any navigation, including the first');
+  assert.doesNotMatch(
+    component,
+    /addEventListener\(\s*['"]astro:before-preparation['"]/,
+    'the component must not itself listen for navigation start — that would reintroduce the first-soft-nav gap',
+  );
+  assert.match(navTiming, /astro:before-preparation/, 'soft navigation start must be observed site-wide');
+  assert.match(navTiming, /__pyxNavPrepStart\s*=\s*performance\.now\(\)/);
+
+  // The capture must be tiny and unconditional: record a timestamp, nothing
+  // else. Measuring, formatting, and display stay owned by the widget.
+  assert.doesNotMatch(
+    navTiming,
+    /performance\.now\(\)\s*-|querySelector|textContent|toFixed|data-speed-proof/,
+    'the site-wide capture must not measure or touch the widget\'s display — only record a timestamp',
+  );
+
+  // The widget keeps full ownership of reading that shared capture and
+  // turning it into a displayed measurement.
+  assert.match(component, /__pyxNavPrepStart/, 'the widget must read the site-wide capture');
+  assert.match(component, /performance\.now\(\)\s*-\s*navPrepStart/, 'soft nav must measure elapsed time since preparation');
+
+  // Space is reserved before the number arrives, wide enough for the real
+  // output range (up to 999.99), so it cannot cause CLS (§12).
+  assert.match(component, /min-block-size:/);
+  const reservedInlineSize = component.match(/min-inline-size:\s*(\d+)ch/);
+  assert.ok(reservedInlineSize, 'the value slot must reserve inline size');
+  assert.ok(Number(reservedInlineSize[1]) >= 6, 'reserved inline size must fit the real output range without growing');
+
+  // Timer resolution is coarsened by browsers (Spectre mitigations), so a
+  // genuinely fast page can legitimately measure 0 — that reading must be
+  // rendered, not discarded. Only a negative value is invalid.
+  assert.doesNotMatch(component, /\bms\s*<=\s*0/, 'a zero measurement must not be discarded');
+  assert.match(component, /elapsed\s*<\s*0/);
+
+  // A screen-reader user who has passed the paragraph must still hear the
+  // number when it arrives.
+  assert.match(component, /aria-live="polite"/);
+
+  // Only the web-development service shows it.
+  assert.match(servicePage, /s\.slug === 'web-development' && <SpeedProof/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /speed: \{/, 'both dictionaries need the speed block');
+    assert.match(dict, /measuredNow:/);
+  }
+});
+
+test('WhatsApp links carry where the visitor was (Feature 6)', async () => {
+  const [site, service, nav, float] = await Promise.all([
+    source('src/config/site.ts'),
+    source('src/components/pages/ServicePage.astro'),
+    source('src/components/Nav.astro'),
+    source('src/components/WhatsAppFloat.astro'),
+  ]);
+
+  assert.match(site, /export function waLink\(lang: Lang = 'en', context\?: string\): string/);
+  // Backwards compatible: a context-free call must still produce the plain message.
+  assert.match(site, /if \(!context\) return/);
+
+  // Service pages name the service they are on.
+  assert.match(service, /waLink\(lang, s\.name\)/);
+  // The nav is site-wide and stays generic — it has no single context.
+  assert.match(nav, /waLink\(lang\)/);
+  // The float reads its context at runtime from the section in view.
+  assert.match(float, /data-wa-float/);
+});
+
+test('the floating WhatsApp button re-targets to the section in view', async () => {
+  const float = await source('src/components/WhatsAppFloat.astro');
+  assert.match(float, /IntersectionObserver/);
+  // Sections opt in by declaring their own label — no scraping of headings.
+  assert.match(float, /data-wa-context/);
+  // The base link must stay valid if no section is in view.
+  assert.match(float, /dataset\.waBase/);
+
+  // Tie-break: when two labelled sections intersect in the same batch, the
+  // winner must not be whichever IntersectionObserver entry the callback
+  // happens to process last — that pattern (set `active` straight from the
+  // per-entry loop on every isIntersecting entry) must be gone.
+  assert.doesNotMatch(
+    float,
+    /if\s*\(entry\.isIntersecting\)\s*\{\s*if\s*\(context === active\) continue;\s*active\s*=\s*context;/,
+    'the callback must not let whichever entry is processed last silently set the active context',
+  );
+  // The winner must be picked from real intersection ratios of every
+  // currently-intersecting section, not just the most recent entry.
+  assert.match(float, /entry\.intersectionRatio/, 'the winner must be chosen from real intersection ratios');
+  assert.match(
+    float,
+    /ratios\.get\(section\)!\s*>\s*ratios\.get\(winner\)!/,
+    'the winner must be the greatest intersection ratio among currently-intersecting sections',
+  );
+  // A ratio tie must fall back to a stable document order, not observer
+  // batch order.
+  assert.match(
+    float,
+    /sections\.map\(\(section,\s*index\)\s*=>\s*\[section,\s*index\]\)/,
+    'document order must be captured once so a ratio tie can be broken deterministically',
+  );
+  assert.match(
+    float,
+    /order\.get\(section\)!\s*<\s*order\.get\(winner\)!/,
+    'a ratio tie must fall back to document order',
+  );
+  // The href is only recomputed when the winning section actually changes.
+  assert.match(float, /if\s*\(next === active\)\s*return;/);
+});
+
+test('the WhatsApp float resolves and checks its already-bound element before ever touching the observer (I1)', async () => {
+  const float = await source('src/components/WhatsAppFloat.astro');
+
+  // `<ClientRouter />` dispatches astro:page-load twice on a hard load (the
+  // module's own synchronous call, then once more from the initial `load`
+  // event) — the second call must recognise the float element it already
+  // bound and return before the observer is ever touched. Getting the order
+  // wrong (disconnect first, guard second) tears down the observer the
+  // first call just created, leaving no live observer after a hard load —
+  // reproduced against the built bundle by the whole-branch review (I1).
+  const resolveAt = float.indexOf("document.querySelector<HTMLAnchorElement>('[data-wa-float]')");
+  const guardAt = float.indexOf("if (!float || float.dataset.bound === 'true') return;");
+  const disconnectAt = float.indexOf('currentObserver?.disconnect();');
+
+  assert.ok(resolveAt > 0, 'the float element must be resolved via querySelector');
+  assert.ok(guardAt > resolveAt, 'the already-bound-element guard must follow element resolution');
+  assert.ok(
+    disconnectAt > guardAt,
+    'currentObserver must not be disconnected before the already-bound-element early return (I1 regression)',
+  );
+
+  // Exactly one guard, one disconnect — a second copy anywhere (e.g. a
+  // leftover unconditional disconnect ahead of the guard) would reintroduce
+  // the bug even with a correctly-ordered pair elsewhere in the file.
+  assert.equal((float.match(/currentObserver\?\.disconnect\(\);/g) ?? []).length, 1);
+  assert.equal((float.match(/if \(!float \|\| float\.dataset\.bound === 'true'\) return;/g) ?? []).length, 1);
+
+  // A genuinely new, unbound float (a real soft navigation) must still tear
+  // down the previous page's observer — the guard alone does not cover that.
+  assert.match(float, /const sections = Array\.from\(document\.querySelectorAll<HTMLElement>\('\[data-wa-context\]'\)\);/);
+});
+
+test('the shared n8n client times out, never throws, and carries campaign data', async () => {
+  const client = await source('src/scripts/n8n-client.ts');
+
+  assert.match(client, /export async function postToN8n/);
+  assert.match(client, /export function collectUtm/);
+  // A hung webhook must not hang the UI.
+  assert.match(client, /AbortController/);
+  assert.match(client, /setTimeout/);
+  // Callers branch on `ok`; the client itself never throws at them.
+  assert.match(client, /catch/);
+  assert.match(client, /return \{ ok: false/);
+  // The five §10 campaign parameters.
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']) {
+    assert.match(client, new RegExp(key));
+  }
+});
+
+test('the audit is a two-step funnel that withholds the fixes (Feature 2)', async () => {
+  const [page, result, site, enPrivacy, arPrivacy, en, ar] = await Promise.all([
+    source('src/components/pages/AuditPage.astro'),
+    source('src/components/AuditResult.astro'),
+    source('src/config/site.ts'),
+    source('src/content/pages/en/privacy.mdx'),
+    source('src/content/pages/ar/privacy.mdx'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  assert.match(site, /auditWebhookUrl:/);
+  assert.match(site, /auditInstagramEnabled:/);
+
+  // Step 1 scans, step 2 claims — two distinct actions on one endpoint.
+  assert.match(page, /action: 'scan'/);
+  assert.match(page, /action: 'claim'/);
+  // The claim step carries the scanId from the scan, or the two cannot be joined.
+  assert.match(page, /scanId/);
+  // Contact capture is WhatsApp-first: the team calls, it does not email a report.
+  assert.match(page, /name="phone"/);
+
+  // Results land in a pre-sized container — no layout shift (§12).
+  assert.match(result, /min-block-size:/);
+  // Scores render from the response, never hardcoded (§2.1).
+  assert.doesNotMatch(result, /performance"?\s*:\s*\d+/);
+  // The result panel must not render per-finding detail — that is the hook.
+  assert.doesNotMatch(result, /data-finding-detail/);
+
+  // The panel's reservation must not depend on being unhidden: a
+  // `min-block-size` sitting on a `display:none` (`.hidden`) element has
+  // zero effect until it is unhidden, which was the Critical 2 bug — the
+  // section's own opening tag must carry no such style, only its dynamic
+  // children (score digits, issue count, result message) may.
+  const resultSectionOpenTag = result.slice(
+    result.indexOf('<section'),
+    result.indexOf('>', result.indexOf('<section')) + 1,
+  );
+  assert.match(resultSectionOpenTag, /\bhidden\b/, 'the panel must start hidden — revealed by script at submit time');
+  assert.doesNotMatch(
+    resultSectionOpenTag,
+    /min-block-size/,
+    'a min-block-size on the hidden section itself has no effect — reserve per dynamic element instead',
+  );
+  // The teaser/"clean" message is one always-present element, not two
+  // separately `hidden`-toggled ones — nothing left to reveal once the
+  // panel itself is already showing, and a long external finding title is
+  // clamped rather than allowed to wrap and grow the panel.
+  assert.doesNotMatch(result, /data-teaser\b/);
+  assert.doesNotMatch(result, /data-clean\b/);
+  assert.match(result, /data-result-lead/);
+  assert.match(result, /data-result-title/);
+  assert.match(result, /line-clamp/);
+
+  // Empty config renders a fallback, not a dead form.
+  assert.match(page, /SITE\.auditWebhookUrl/);
+  assert.match(page, /SITE\.auditInstagramEnabled/);
+  // Shared client, not a second fetch implementation.
+  assert.match(page, /from '@\/scripts\/n8n-client'/);
+
+  // Critical fix: every submit resets scanId, the panel, the claim form and
+  // its confirmation, every score slot and the result message — before the
+  // request goes out — so a second scan can never leave the first one's
+  // data, or its still-submittable claim form, on screen or bound to the
+  // wrong scanId.
+  const submitHandlerStart = page.indexOf("form.addEventListener('submit'");
+  const claimHandlerStart = page.indexOf("claim.addEventListener('submit'", submitHandlerStart);
+  assert.ok(submitHandlerStart > 0 && claimHandlerStart > submitHandlerStart, 'expected a scan submit handler before the claim submit handler');
+  const submitHandler = page.slice(submitHandlerStart, claimHandlerStart);
+
+  const resetFnStart = page.indexOf('function resetResult()');
+  assert.ok(resetFnStart > 0 && resetFnStart < submitHandlerStart, 'expected a dedicated reset function ahead of the submit handler');
+  const resetFn = page.slice(resetFnStart, submitHandlerStart);
+  assert.match(resetFn, /scanId = ''/);
+  assert.match(resetFn, /claim\?\.classList\.add\('hidden'\)/);
+  assert.match(resetFn, /claimed\?\.classList\.add\('hidden'\)/);
+  assert.match(resetFn, /panel\.classList\.add\('hidden'\)/);
+
+  const resetCallAt = submitHandler.indexOf('resetResult()');
+  const scanRequestAt = submitHandler.indexOf("action: 'scan'");
+  assert.ok(resetCallAt > 0 && scanRequestAt > resetCallAt, 'resetResult() must run before the scan request goes out');
+
+  // Layout-shift fix (§12): the panel is revealed in a loading (placeholder)
+  // state at submit time, before the response resolves — not gated behind
+  // success — so arriving data changes text only, never geometry.
+  const revealAt = submitHandler.indexOf("panel.classList.remove('hidden')");
+  assert.ok(revealAt > 0 && revealAt < scanRequestAt, 'the panel must be revealed before the scan request, not only after it succeeds');
+
+  // A failed scan must not leave a revealed panel or claim form on screen.
+  const failureBranchStart = submitHandler.indexOf('!result.ok || !data?.ok');
+  const successAt = submitHandler.indexOf('scanId = data.scanId');
+  assert.ok(failureBranchStart > scanRequestAt && successAt > failureBranchStart);
+  const failureBranch = submitHandler.slice(failureBranchStart, successAt);
+  assert.match(failureBranch, /panel\.classList\.add\('hidden'\)/);
+
+  // Important fix: colour classes must not accumulate across scans — all
+  // three are removed before the verdict colour is added.
+  assert.match(page, /classList\.remove\(\.\.\.SCORE_COLOR_CLASSES\)/);
+
+  // Minor fix: an absent issueCount must read as unknown, never a
+  // fabricated zero (§2.1).
+  assert.doesNotMatch(page, /issueCount \?\? 0/);
+
+  // Minor fix: the mode radiogroup describes the choice, not the submit button.
+  assert.doesNotMatch(page, /role="radiogroup" aria-label=\{t\.audit\.run\}/);
+  assert.match(page, /role="radiogroup" aria-label=\{t\.audit\.modeLabel\}/);
+
+  // Minor fix: honeypot + minimum-time-on-page trap, matching ContactPage.astro.
+  assert.match(page, /minSeconds/);
+  assert.match(page, /loadedAt = Date\.now\(\)/);
+  assert.match(page, /tooFast/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /audit: \{/);
+    assert.match(dict, /claimCta:/);
+    assert.match(dict, /modeLabel:/);
+  }
+
+  assert.match(enPrivacy, /audit/i);
+  assert.match(arPrivacy, /الفحص/);
+});
+
+test('the audit claim form validates name and phone before any request is sent (I3)', async () => {
+  const [page, en, ar] = await Promise.all([
+    source('src/components/pages/AuditPage.astro'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  const claimHandlerStart = page.indexOf("claim.addEventListener('submit'");
+  assert.ok(claimHandlerStart > 0, 'expected a claim submit handler');
+  const claimPostAt = page.indexOf('await postToN8n(config.webhook, {', claimHandlerStart);
+  assert.ok(claimPostAt > claimHandlerStart, 'expected the claim POST call');
+  const claimHandler = page.slice(claimHandlerStart, claimPostAt);
+
+  // Empty name/phone were previously posted and unconditionally confirmed —
+  // `required` is inert under novalidate, so the JS gate is the only check.
+  assert.match(claimHandler, /for \(const name of \['name', 'phone'\]\)/);
+  assert.match(claimHandler, /if \(!claimValue\(name\)\)/);
+  assert.match(claimHandler, /setClaimError\(name, config\.strings\.required\)/);
+  assert.match(claimHandler, /if \(!valid\) return;/, 'an invalid claim must never reach the POST call');
+
+  // Phone format and optional email format are validated too — reusing
+  // ContactPage.astro's existing wording (config.strings.errPhone /
+  // .errEmail = t.form.errPhone / t.form.errEmail) rather than inventing copy.
+  assert.match(claimHandler, /errPhone/);
+  assert.match(claimHandler, /errEmail/);
+  assert.match(page, /errPhone: t\.form\.errPhone/);
+  assert.match(page, /errEmail: t\.form\.errEmail/);
+
+  // Per-field errors are shown AND announced (§12) — visible text alone is
+  // not enough for a screen-reader user not focused on the field.
+  assert.match(claimHandler, /claimAnnouncer\.textContent\s*=\s*valid \? '' : claimErrors\.join\(' '\)/);
+  assert.match(page, /data-claim-announcer/);
+  assert.match(page, /role="status" aria-live="polite" data-claim-announcer/);
+
+  // A filled honeypot must not reach n8n either, client-side, matching the
+  // scan form's own suppression (M5) — not merely forwarded for n8n to judge.
+  assert.match(claimHandler, /const honeypot = claimValue\('website'\);\s*\n\s*if \(honeypot\) return;/);
+
+  // A stale claim response (a newer scan already reset the panel while this
+  // POST was in flight) must be ignored rather than mutate the current
+  // scan's UI (M1) — captured before the request, checked after it resolves.
+  assert.match(claimHandler, /const token = resultToken;/);
+  const claimPostToReturn = page.slice(claimPostAt, page.indexOf('claim.classList.add', claimPostAt));
+  assert.match(claimPostToReturn, /if \(token !== resultToken\) return;/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /errRequired:/);
+    assert.match(dict, /errPhone:/);
+    assert.match(dict, /errEmail:/);
+  }
+});

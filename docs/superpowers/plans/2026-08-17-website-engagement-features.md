@@ -48,7 +48,7 @@ Every task's requirements implicitly include this section.
 
 Smallest feature, ships alone, no network. Makes "Less Talk. More Performance." literal on the one page where speed *is* the product.
 
-### Task A1: Speed proof widget
+### Task 1: Speed proof widget
 
 **Files:**
 - Create: `src/components/SpeedProof.astro`
@@ -230,7 +230,7 @@ Every WhatsApp link on the site currently opens the same generic message. This m
 
 **Design decision:** page context is known at **build time**, so the enrichment is prerendered — zero JavaScript, zero runtime cost. Only the floating button, which follows the visitor down the page, gets a small script for section-level context.
 
-### Task B1: Context-aware `waLink`
+### Task 2: Context-aware `waLink`
 
 **Files:**
 - Modify: `src/config/site.ts:82-93`
@@ -348,14 +348,14 @@ git add src/config/site.ts src/components scripts/tests/gate2-regression.test.mj
 git commit -m "feat: WhatsApp links carry the service the visitor was reading"
 ```
 
-### Task B2: Floating button follows the section in view
+### Task 3: Floating button follows the section in view
 
 **Files:**
 - Modify: `src/components/WhatsAppFloat.astro`
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `waLink(lang, context)` from Task B1.
+- Consumes: `waLink(lang, context)` from Task 2.
 - Produces: nothing further.
 
 - [ ] **Step 1: Write the failing test**
@@ -474,7 +474,7 @@ A genuinely useful bilingual guide, exchanged for an email plus two qualifying q
 
 **Blocking owner input:** the playbook content itself, in both languages. Everything else in this part can be built and tested against a placeholder file, but it must not go live without real content — shipping a thin lead magnet from an agency that sells content would undercut the whole positioning.
 
-### Task C1: Shared n8n client module
+### Task 4: Shared n8n client module
 
 **Files:**
 - Create: `src/scripts/n8n-client.ts`
@@ -591,7 +591,7 @@ git add src/scripts/n8n-client.ts scripts/tests/gate2-regression.test.mjs
 git commit -m "feat: shared n8n client for the site's dynamic features"
 ```
 
-### Task C2: n8n workflow — playbook delivery
+### Task 5: n8n workflow — playbook delivery
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Playbook Request`
@@ -676,7 +676,7 @@ git add src/config/site.ts .env.example
 git commit -m "feat: playbook delivery webhook and config"
 ```
 
-### Task C3: Playbook page
+### Task 6: Playbook page
 
 **Files:**
 - Create: `src/components/pages/PlaybookPage.astro`, `src/pages/playbook.astro`, `src/pages/ar/playbook.astro`
@@ -686,7 +686,7 @@ git commit -m "feat: playbook delivery webhook and config"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n`, `collectUtm` from Task C1; `SITE.playbookWebhookUrl` from Task C2.
+- Consumes: `postToN8n`, `collectUtm` from Task 4; `SITE.playbookWebhookUrl` from Task 5.
 - Produces: routes `/playbook` and `/ar/playbook`.
 
 - [ ] **Step 1: Write the failing test**
@@ -899,11 +899,24 @@ git commit -m "feat: gated bilingual playbook with qualifying questions"
 
 # PART D — Instant Audit (Feature 2)
 
-The strongest lead magnet available to a marketing agency: the visitor points at their own site or Instagram and gets a real report in under a minute. Every completed audit is a pre-qualified lead whose problem is already documented, and sales skips discovery entirely.
+The strongest lead magnet available to a marketing agency: the visitor points at their own site and learns, in under a minute, that something is wrong with it.
 
-**Design decision:** two audit modes behind one form. **Website** uses the Google PageSpeed Insights API — free, factual, and instantly credible. **Instagram** uses an Apify actor, because the Instagram Graph API only reaches accounts the owner already manages, and this tool must work for strangers. If the Apify budget is not approved, the Instagram mode is hidden by config and the website audit ships alone.
+**Owner decision, 2026-08-17 — the audit is the hook, not the product.** The visitor sees a *light* result: enough to be certain there is a real problem, not enough to fix it alone. The **full** breakdown goes to PyramediaX, so the team can reach out already knowing exactly what is broken on that prospect's site. A visitor who has just watched their own score come back low is the hottest lead this site can produce, and the team should be calling them with the answer in hand.
 
-### Task D1: n8n workflow — website audit
+This changes the shape from "free report" to a two-step funnel:
+
+| Step | Visitor gives | Visitor sees | Team receives |
+| --- | --- | --- | --- |
+| 1 — Scan | a URL or handle | four scores, an issue count, one example finding | the **complete** report, logged and emailed |
+| 2 — Claim | name + WhatsApp | confirmation that the team will walk them through it | the same report, now attached to a named contact, flagged hot |
+
+**Why the scan is ungated:** gating it kills the hook. Anyone can run PageSpeed themselves; the score is not the thing being sold. What is sold is *what to fix and in what order* — which is exactly what stays behind step 2. Step 1 converts strangers into people who know they have a problem; step 2 converts those into calls.
+
+**Why the team gets the full report even at step 1:** an unclaimed scan is still intelligence. Knowing that someone scanned a Dubai clinic's site at 11pm is a lead signal, and it costs nothing to keep.
+
+**Honesty constraint (§2.1).** The copy must never promise to email a report the team is not going to email. What actually happens is a conversation, so that is what the copy says. Every number shown is Google's measurement of the visitor's own property — nothing on this page is a claim about PyramediaX.
+
+### Task 7: n8n workflow — split-audience audit
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Instant Audit`
@@ -912,24 +925,63 @@ The strongest lead magnet available to a marketing agency: the visitor points at
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `POST https://n8n.pyramedia.info/webhook/pyramediax-audit` accepting
-  `{ mode: 'website' | 'instagram', target, email, lang, page_url, website, utm }`
-  and returning
-  ```json
-  { "ok": true, "mode": "website", "target": "example.com",
-    "scores": { "performance": 0, "seo": 0, "accessibility": 0, "bestPractices": 0 },
-    "findings": [{ "severity": "high", "title": "…", "detail": "…" }] }
-  ```
+- Produces: `POST https://n8n.pyramedia.info/webhook/pyramediax-audit`, taking two actions on one endpoint.
+
+**Action `scan`** — request:
+```json
+{ "action": "scan", "mode": "website", "target": "example.ae",
+  "lang": "en", "page_url": "…", "website": "", "utm": {} }
+```
+response (LIGHT — this is all the browser ever receives):
+```json
+{ "ok": true, "scanId": "rec…", "mode": "website", "target": "example.ae",
+  "scores": { "performance": 0, "seo": 0, "accessibility": 0, "bestPractices": 0 },
+  "issueCount": 0,
+  "teaser": { "severity": "high", "title": "…" } }
+```
+
+> **`teaser` carries a title and nothing else — no `detail`, no fix.** The full findings must never reach the browser, or the funnel has no second step. This is a hard requirement, not a preference.
+
+**Action `claim`** — request:
+```json
+{ "action": "claim", "scanId": "rec…", "name": "…", "phone": "…",
+  "email": "", "lang": "en", "website": "", "utm": {} }
+```
+response: `{ "ok": true, "claimed": true }`
 
 - [ ] **Step 1: Create the Airtable table**
 
-Base `appVJGpxA8KzwVjPY`, table `Audit Requests`, fields: `Target` (singleLineText), `Mode` (singleLineText), `Email` (email), `Language` (singleLineText), `Performance` (number), `SEO` (number), `Accessibility` (number), `Top Finding` (longText), `Page URL` (url), `Submitted At` (singleLineText), plus the three UTM text fields.
+Base `appVJGpxA8KzwVjPY`, table `Audit Requests`, fields:
 
-- [ ] **Step 2: Build the workflow**
+| Field | Type |
+| --- | --- |
+| Target | singleLineText |
+| Mode | singleLineText |
+| Performance | number |
+| SEO | number |
+| Accessibility | number |
+| Best Practices | number |
+| Issue Count | number |
+| Full Findings | longText |
+| Claimed | checkbox |
+| Name | singleLineText |
+| Phone | singleLineText |
+| Email | email |
+| Language | singleLineText |
+| Page URL | url |
+| Submitted At | singleLineText |
+| UTM Source | singleLineText |
+| UTM Medium | singleLineText |
+| UTM Campaign | singleLineText |
 
-1. **Webhook** — `POST`, path `pyramediax-audit`, `responseMode: responseNode`, same `allowedOrigins` and `ignoreBots: true` as every other webhook here.
-2. **Set "Normalize Audit"** — `mode`, `target`, `email`, `lang`, `honeypot`, using the `body.X ?? X ?? ""` pattern.
-3. **Code "Validate Target"** — normalise the target and reject anything that is not a plain hostname or handle:
+Record the returned table id.
+
+- [ ] **Step 2: Build the scan branch**
+
+1. **Webhook** — `POST`, path `pyramediax-audit`, `responseMode: responseNode`, options `allowedOrigins: "https://pyramedia.info,https://www.pyramedia.info,http://localhost:4321"`, `ignoreBots: true`, `authentication: "none"`.
+2. **Set "Normalize"** — read `action`, `mode`, `target`, `scanId`, `name`, `phone`, `email`, `lang`, `page_url`, `honeypot` (from `body.website`), each as `{{ $json.body?.X ?? $json.X ?? "" }}`.
+3. **Switch on `action`** — `scan` / `claim`, with anything else falling to a rejection response.
+4. **Code "Validate Target"** (scan branch):
 
 ```javascript
 const raw = ($input.first().json.target || '').trim();
@@ -957,12 +1009,9 @@ if (mode === 'website') {
 return [{ json: { ...$input.first().json, mode, target, valid } }];
 ```
 
-4. **IF "Valid & Genuine?"** — `valid` is true AND honeypot is empty.
-5. **Switch on `mode`** — `website` / `instagram`.
-6. **HTTP Request "PageSpeed"** (website branch) —
-   `GET https://www.googleapis.com/pagespeedonline/v5/runPagespeed`
-   with query `url={{ $json.target }}`, `strategy=mobile`, and `category` repeated for `performance`, `seo`, `accessibility`, `best-practices`. Set `retryOnFail: true`, `maxTries: 2`, and node timeout 60000 — PageSpeed is slow.
-7. **Code "Shape Findings"** — turn the raw Lighthouse payload into at most five findings, ordered by severity:
+5. **IF "Valid & Genuine?"** — `valid` is true AND honeypot is empty. The false branch answers `200 { "ok": false, "reason": "invalid_target" }`.
+6. **HTTP Request "PageSpeed"** — `GET https://www.googleapis.com/pagespeedonline/v5/runPagespeed`, query `url={{ $json.target }}`, `strategy=mobile`, `category` repeated for `performance`, `seo`, `accessibility`, `best-practices`. Set `retryOnFail: true`, `maxTries: 2`, node timeout `60000` — PageSpeed is slow. `onError: continueErrorOutput`, with the error output answering `200 { "ok": false, "reason": "scan_failed" }`.
+7. **Code "Split Light and Full"** — one node produces both payloads, so they can never disagree about what was measured:
 
 ```javascript
 const lh = $input.first().json.lighthouseResult || {};
@@ -978,73 +1027,106 @@ const scores = {
   bestPractices: score('best-practices'),
 };
 
-// Only report audits Lighthouse itself marked as failing. Nothing is invented.
+// Only audits Lighthouse itself marked as failing. Nothing is invented (§2.1).
 const WATCH = [
   'largest-contentful-paint',
   'cumulative-layout-shift',
   'total-blocking-time',
   'uses-responsive-images',
   'render-blocking-resources',
+  'unminified-javascript',
+  'uses-text-compression',
   'meta-description',
   'document-title',
   'image-alt',
   'is-crawlable',
   'viewport',
+  'color-contrast',
 ];
 
-const findings = WATCH
-  .map((id) => audits[id])
+const failing = WATCH
+  .map((id) => (audits[id] ? { id, ...audits[id] } : null))
   .filter((a) => a && a.score !== null && a.score < 0.9)
-  .sort((a, b) => a.score - b.score)
-  .slice(0, 5)
-  .map((a) => ({
-    severity: a.score < 0.5 ? 'high' : 'medium',
-    title: a.title,
-    detail: a.displayValue || a.description || '',
-  }));
+  .sort((a, b) => a.score - b.score);
 
-return [{ json: { scores, findings } }];
+// FULL — team only. Never returned to the browser.
+const full = failing.map((a) => ({
+  severity: a.score < 0.5 ? 'high' : 'medium',
+  title: a.title,
+  detail: a.displayValue || a.description || '',
+}));
+
+// LIGHT — the browser gets counts and one headline, never the fixes.
+const light = {
+  scores,
+  issueCount: full.length,
+  teaser: full.length ? { severity: full[0].severity, title: full[0].title } : null,
+};
+
+return [{ json: { light, full, scores, issueCount: full.length } }];
 ```
 
-8. **Airtable create** → `Audit Requests`.
-9. **Gmail** → internal alert with the scores and the top finding, `onError: continueRegularOutput`.
-10. **Respond to Webhook** → the JSON shape in the Interfaces block above. Invalid or bot requests take a second Respond node returning `200 { "ok": false, "reason": "invalid_target" }`.
+8. **Airtable create** → `Audit Requests`, writing the scores, the issue count, and `Full Findings` as the JSON of `full`. `Claimed` stays unchecked. Keep the returned record id — it becomes `scanId`.
+9. **Gmail** → internal only, to `info@pyramedia.info`, subject `New audit scan: {{ target }} — performance {{ scores.performance }}`, body listing **every** finding with its detail. `onError: continueRegularOutput` so mail failure cannot block the response.
+10. **Respond to Webhook** → the LIGHT payload plus `scanId`. Build the response body explicitly from `light`; **do not** pass the whole item through, or `full` leaks to the browser.
 
-> **§2.1 note:** every number and every finding here is Google's measurement of the *visitor's* property. Nothing describes PyramediaX. This is why the feature is compliant.
+- [ ] **Step 3: Build the claim branch**
 
-- [ ] **Step 3: Wire config**
+1. **IF "Claimable?"** — `scanId` non-empty AND honeypot empty AND `name` non-empty AND `phone` non-empty. The false branch answers `200 { "ok": true, "claimed": true }` regardless, so a bot learns nothing.
+2. **Airtable update** → the record identified by `scanId`: set `Claimed` true, `Name`, `Phone`, `Email`, and the UTM fields.
+3. **Airtable get** → read that record back, so the alert carries the findings captured at scan time rather than re-running PageSpeed.
+4. **Gmail** → to `info@pyramedia.info`, subject `🔥 HOT LEAD — {{ name }} claimed the audit for {{ target }}`, body carrying the contact details, all four scores, every finding with its detail, and a one-tap WhatsApp reply link built from the submitted phone:
+   `https://wa.me/{{ $json.Phone.replace(/[^0-9]/g, '') }}`
+   `onError: continueRegularOutput`.
+5. **Respond to Webhook** → `200 { "ok": true, "claimed": true }`.
 
-`src/config/site.ts`:
+- [ ] **Step 4: Wire config**
+
+In `src/config/site.ts`:
 
 ```ts
   // Instant audit webhook (Feature 2). Empty ⇒ the audit route renders its
   // WhatsApp fallback instead of a form that cannot run.
   auditWebhookUrl: import.meta.env.PUBLIC_N8N_AUDIT_URL || '',
-  // Instagram mode costs an Apify run per audit; off until the owner
-  // approves that budget. Website audits are free and always available.
+  // Instagram mode costs an Apify run per audit; off until the owner approves
+  // that budget. Website audits are free and always available.
   auditInstagramEnabled: import.meta.env.PUBLIC_AUDIT_INSTAGRAM === 'true',
 ```
 
-- [ ] **Step 4: Verify with a browser-shaped request**
+Add `PUBLIC_N8N_AUDIT_URL` and `PUBLIC_AUDIT_INSTAGRAM` to `.env` and `.env.example`.
+
+- [ ] **Step 5: Verify both actions the way a browser does**
+
+> **Critical:** the webhook has `ignoreBots: true`. A probe with a bot-shaped User-Agent gets `403` with a `WWW-Authenticate` header that looks exactly like a proxy auth gate. That misled this project once and cost three weeks. Always send a real Chrome UA **and** an `Origin` header.
 
 ```bash
 curl -s -X POST https://n8n.pyramedia.info/webhook/pyramediax-audit \
   -H "Content-Type: application/json" \
   -H "Origin: https://pyramedia.info" \
   -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" \
-  -d '{"mode":"website","target":"example.com","email":"elharm.marketing@gmail.com","lang":"en","website":""}'
+  -d '{"action":"scan","mode":"website","target":"example.com","lang":"en","website":""}'
 ```
 
-Expected: JSON with four integer scores and a `findings` array. Also probe `"target":"localhost"` and expect `{"ok":false,"reason":"invalid_target"}`.
+Check, in order:
+1. The response contains `scores`, `issueCount`, `teaser` and `scanId`.
+2. **The response contains no `detail` field and no `full` key anywhere.** Grep the raw response for `"detail"` — a hit means the funnel is broken and must be fixed before the UI is built.
+3. The Airtable row exists with `Full Findings` populated and `Claimed` unchecked.
+4. The internal email arrived with every finding.
 
-- [ ] **Step 5: Commit**
+Then claim it with the `scanId` from step 1 and confirm the row flips to `Claimed`, and that the hot-lead email arrives with a working WhatsApp link.
+
+Finally probe `"target":"localhost"` and expect `{"ok":false,"reason":"invalid_target"}`.
+
+Delete the test rows when done.
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/config/site.ts .env.example
-git commit -m "feat: instant audit webhook, PageSpeed-backed"
+git commit -m "feat: split-audience audit webhook — light to the visitor, full to the team"
 ```
 
-### Task D2: Audit page and result panel
+### Task 8: Audit page — two-step funnel
 
 **Files:**
 - Create: `src/components/pages/AuditPage.astro`, `src/components/AuditResult.astro`, `src/pages/audit.astro`, `src/pages/ar/audit.astro`
@@ -1055,34 +1137,51 @@ git commit -m "feat: instant audit webhook, PageSpeed-backed"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n`, `collectUtm` (Task C1); `SITE.auditWebhookUrl`, `SITE.auditInstagramEnabled` (Task D1).
+- Consumes: `postToN8n`, `collectUtm` from Task 4; `SITE.auditWebhookUrl`, `SITE.auditInstagramEnabled` from Task 7.
 - Produces: routes `/audit`, `/ar/audit`.
 
 - [ ] **Step 1: Write the failing test**
 
 ```js
-test('the audit tool reserves space, stays honest, and degrades (Feature 2)', async () => {
-  const [page, result, site, enPrivacy, arPrivacy] = await Promise.all([
+test('the audit is a two-step funnel that withholds the fixes (Feature 2)', async () => {
+  const [page, result, site, enPrivacy, arPrivacy, en, ar] = await Promise.all([
     source('src/components/pages/AuditPage.astro'),
     source('src/components/AuditResult.astro'),
     source('src/config/site.ts'),
     source('src/content/pages/en/privacy.mdx'),
     source('src/content/pages/ar/privacy.mdx'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
   ]);
 
   assert.match(site, /auditWebhookUrl:/);
   assert.match(site, /auditInstagramEnabled:/);
 
+  // Step 1 scans, step 2 claims — two distinct actions on one endpoint.
+  assert.match(page, /action: 'scan'/);
+  assert.match(page, /action: 'claim'/);
+  // The claim step carries the scanId from the scan, or the two cannot be joined.
+  assert.match(page, /scanId/);
+  // Contact capture is WhatsApp-first: the team calls, it does not email a report.
+  assert.match(page, /name="phone"/);
+
   // Results land in a pre-sized container — no layout shift (§12).
   assert.match(result, /min-block-size:/);
-  // Scores are rendered from the response, never hardcoded (§2.1).
+  // Scores render from the response, never hardcoded (§2.1).
   assert.doesNotMatch(result, /performance"?\s*:\s*\d+/);
-  // Empty config must not render a dead form.
+  // The result panel must not render per-finding detail — that is the hook.
+  assert.doesNotMatch(result, /data-finding-detail/);
+
+  // Empty config renders a fallback, not a dead form.
   assert.match(page, /SITE\.auditWebhookUrl/);
-  // Instagram mode is behind its own flag.
   assert.match(page, /SITE\.auditInstagramEnabled/);
   // Shared client, not a second fetch implementation.
   assert.match(page, /from '@\/scripts\/n8n-client'/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /audit: \{/);
+    assert.match(dict, /claimCta:/);
+  }
 
   assert.match(enPrivacy, /audit/i);
   assert.match(arPrivacy, /الفحص/);
@@ -1104,17 +1203,26 @@ Expected: FAIL — `ENOENT` on `AuditPage.astro`.
     modeInstagram: 'My Instagram',
     targetWebsite: 'Your website address',
     targetInstagram: 'Your Instagram handle',
-    email: 'Where should we send the full report?',
-    run: 'Run the check',
+    run: 'Check my site',
     running: 'Checking…',
     runningNote: 'This takes up to a minute. Google is loading your site the way a phone would.',
-    scores: 'Scores',
+    scores: 'Your scores',
     performance: 'Speed',
     seo: 'SEO',
     accessibility: 'Accessibility',
     bestPractices: 'Best practices',
-    findings: 'What we found',
-    noFindings: 'Nothing significant came back. That is a good sign.',
+    issuesFound: 'issues we can fix',
+    teaserLead: 'The biggest one:',
+    clean: 'Nothing significant came back. Your site is in good shape.',
+    claimTitle: 'Want the rest, and what to fix first?',
+    claimBody: "We have the full breakdown. Leave your WhatsApp number and we'll walk you through it — what is costing you the most, and what to do about it.",
+    claimName: 'Your name',
+    claimPhone: 'WhatsApp number',
+    claimEmail: 'Email',
+    claimCta: 'Send me the breakdown',
+    claimSending: 'Sending…',
+    claimedTitle: "Got it — we'll be in touch.",
+    claimedBody: "We'll message you on WhatsApp with the full breakdown and what to fix first.",
     invalid: 'That address does not look right. Try it without https:// — for example, yourbusiness.ae',
     failed: 'The check could not finish. Try again in a moment, or message us on WhatsApp.',
     disclaimer: 'Scores come from Google PageSpeed Insights, measured live on your address. We do not adjust them.',
@@ -1122,19 +1230,20 @@ Expected: FAIL — `ENOENT` on `AuditPage.astro`.
   },
 ```
 
-`src/i18n/ar.ts` — the same keys, written natively in Arabic.
+`src/i18n/ar.ts` — the same keys, written natively in Arabic. `claimBody` must promise a WhatsApp conversation, not an emailed report, because that is what actually happens.
 
 - [ ] **Step 4: Build `AuditResult.astro`**
-
-Create `src/components/AuditResult.astro`:
 
 ```astro
 ---
 /**
- * Audit result panel (Feature 2). Renders empty and hidden with its height
- * already reserved, so filling it from the API cannot shift the page (§12).
- * No score appears in this markup — every number arrives from Google's
- * measurement of the visitor's own site, so §2.1 holds by construction.
+ * Audit result panel (Feature 2, step 1). Deliberately LIGHT: four scores, a
+ * count, and one headline title. No per-finding detail and no fixes — those
+ * are what the visitor comes to us for, and they go to the team instead.
+ *
+ * Renders empty and hidden with its height reserved, so filling it from the
+ * API cannot shift the page (§12). No score appears in this markup — every
+ * number is Google's measurement of the visitor's own site (§2.1).
  */
 import type { Lang } from '@/config/site';
 import { useTranslations } from '@/i18n';
@@ -1156,7 +1265,7 @@ const SCORES = [
 <section
   id="audit-result"
   class="mt-10 hidden rounded-2xl border border-line bg-surface/40 p-6 md:p-8"
-  style="min-block-size: 22rem;"
+  style="min-block-size: 18rem;"
   aria-live="polite"
 >
   <h2 class="font-display text-xl font-bold text-text">{t.audit.scores}</h2>
@@ -1166,8 +1275,8 @@ const SCORES = [
       SCORES.map((score) => (
         <li class="card p-5 text-center">
           <span
-            class="font-display block text-3xl font-bold text-orange"
-            style="min-block-size: 1.2em;"
+            class="font-display block text-3xl font-bold"
+            style="min-block-size: 1.2em; min-inline-size: 3ch;"
             data-score={score.key}
             dir="ltr"
           >
@@ -1179,15 +1288,26 @@ const SCORES = [
     }
   </ul>
 
-  <h3 class="font-display mt-8 text-lg font-bold text-text">{t.audit.findings}</h3>
-  <ul class="mt-4 grid gap-3" data-findings></ul>
+  <p class="mt-8 text-lg text-text/90">
+    <span class="font-display font-bold text-orange" data-issue-count dir="ltr">—</span>
+    <span>{t.audit.issuesFound}</span>
+  </p>
+
+  <p class="mt-3 hidden text-text/90" data-teaser>
+    <span class="text-muted">{t.audit.teaserLead}</span>
+    <span class="font-semibold" data-teaser-title></span>
+  </p>
+
+  <p class="mt-3 hidden text-text/90" data-clean>{t.audit.clean}</p>
   <p class="mt-6 text-sm text-muted">{t.audit.disclaimer}</p>
 </section>
 ```
 
+> The panel has slots for a count and one title. It has **no** slot for a finding's detail — the withholding is structural, not a matter of the script choosing not to render something.
+
 - [ ] **Step 5: Build `AuditPage.astro`**
 
-Mode toggle (Instagram option only when `SITE.auditInstagramEnabled`), target input, email input, honeypot, submit. The script:
+Two forms. `#audit-form` takes the target; `#audit-claim` takes the contact details and starts hidden, appearing only once a scan has produced a `scanId`. Both carry the `website` honeypot. When `SITE.auditWebhookUrl` is empty, render `t.audit.unavailable` plus a WhatsApp button and neither form.
 
 ```astro
 <script>
@@ -1200,8 +1320,15 @@ Mode toggle (Instagram option only when `SITE.auditInstagramEnabled`), target in
 
     const config = JSON.parse(form.dataset.config || '{}');
     const panel = document.getElementById('audit-result')!;
+    const claim = document.getElementById('audit-claim') as HTMLFormElement;
+    const claimed = document.getElementById('audit-claimed')!;
     const errorBox = document.getElementById('audit-error')!;
     const status = form.querySelector('[data-audit-status]')!;
+
+    let scanId = '';
+
+    const value = (f: HTMLFormElement, name: string) =>
+      ((f.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -1210,19 +1337,16 @@ Mode toggle (Instagram option only when `SITE.auditInstagramEnabled`), target in
       errorBox.classList.add('hidden');
       status.textContent = config.strings.running;
 
-      const value = (name: string) =>
-        ((form.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
-
       // PageSpeed is slow by nature — allow 90s before giving up.
       const result = await postToN8n(
         config.webhook,
         {
-          mode: value('mode') || 'website',
-          target: value('target'),
-          email: value('email'),
+          action: 'scan',
+          mode: value(form, 'mode') || 'website',
+          target: value(form, 'target'),
           lang: config.lang,
           page_url: window.location.href,
-          website: value('website'),
+          website: value(form, 'website'),
           utm: collectUtm(),
         },
         90_000,
@@ -1233,33 +1357,69 @@ Mode toggle (Instagram option only when `SITE.auditInstagramEnabled`), target in
 
       const data = result.data as any;
       if (!result.ok || !data?.ok) {
-        errorBox.textContent = data?.reason === 'invalid_target' ? config.strings.invalid : config.strings.failed;
+        errorBox.textContent =
+          data?.reason === 'invalid_target' ? config.strings.invalid : config.strings.failed;
         errorBox.classList.remove('hidden');
         return;
       }
 
+      scanId = data.scanId ?? '';
+
       for (const [key, score] of Object.entries(data.scores ?? {})) {
         const slot = panel.querySelector(`[data-score="${key}"]`);
-        if (slot) slot.textContent = String(score);
+        if (!slot) continue;
+        slot.textContent = String(score);
+        // Colour carries the verdict faster than the number does.
+        const n = Number(score);
+        slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
       }
 
-      const list = panel.querySelector('[data-findings]')!;
-      list.innerHTML = '';
-      for (const finding of data.findings ?? []) {
-        const li = document.createElement('li');
-        li.className = 'card p-5';
-        const title = document.createElement('p');
-        title.className = 'font-semibold text-text';
-        title.textContent = finding.title;
-        const detail = document.createElement('p');
-        detail.className = 'mt-1 text-sm text-muted';
-        detail.textContent = finding.detail;
-        li.append(title, detail);
-        list.append(li);
+      const count = Number(data.issueCount ?? 0);
+      panel.querySelector('[data-issue-count]')!.textContent = String(count);
+
+      const teaser = panel.querySelector('[data-teaser]')!;
+      const clean = panel.querySelector('[data-clean]')!;
+      if (count > 0 && data.teaser?.title) {
+        panel.querySelector('[data-teaser-title]')!.textContent = data.teaser.title;
+        teaser.classList.remove('hidden');
+        clean.classList.add('hidden');
+        claim.classList.remove('hidden');
+      } else {
+        teaser.classList.add('hidden');
+        clean.classList.remove('hidden');
+        // Nothing to sell a fix for — do not ask for a phone number.
+        claim.classList.add('hidden');
       }
 
       panel.classList.remove('hidden');
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    claim.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!scanId || claim.dataset.busy === 'true') return;
+      claim.dataset.busy = 'true';
+
+      const result = await postToN8n(config.webhook, {
+        action: 'claim',
+        scanId,
+        name: value(claim, 'name'),
+        phone: value(claim, 'phone'),
+        email: value(claim, 'email'),
+        lang: config.lang,
+        website: value(claim, 'website'),
+        utm: collectUtm(),
+      });
+
+      claim.dataset.busy = 'false';
+      if (!result.ok) {
+        errorBox.textContent = config.strings.failed;
+        errorBox.classList.remove('hidden');
+        return;
+      }
+
+      claim.classList.add('hidden');
+      claimed.classList.remove('hidden');
     });
   }
 
@@ -1268,27 +1428,40 @@ Mode toggle (Instagram option only when `SITE.auditInstagramEnabled`), target in
 </script>
 ```
 
-> **Why `textContent` and `createElement`, never `innerHTML` with response data:** the findings come from an external API. Building nodes explicitly makes injection impossible regardless of what Google returns.
+> **Why `textContent` and never `innerHTML` with response data:** the teaser title comes from an external API. Building text explicitly makes injection impossible regardless of what Google returns.
+
+The score colour classes (`text-red`, `text-orange`, `text-green`) must exist as tokens in `src/styles/global.css`. Add any that are missing, following the existing `@theme` token pattern — do not introduce raw hex values in a component.
 
 - [ ] **Step 6: Add the routes, nav link and privacy disclosure**
 
-Create `src/pages/audit.astro` and `src/pages/ar/audit.astro` following the two-line pattern of the other route files. Add the audit link to `Nav.astro` using `localizePath('/audit', lang)`. Disclose in both privacy files that the entered address is sent to Google PageSpeed Insights (and to Apify when Instagram mode is used), and bump `lastUpdated` in both.
+Create `src/pages/audit.astro` and `src/pages/ar/audit.astro` following the two-line pattern of the other route files. Add the audit link to `Nav.astro` using `localizePath('/audit', lang)`.
 
-- [ ] **Step 7: Run the gates and verify live**
+Disclose in `src/content/pages/en/privacy.mdx`:
+
+```mdx
+**Instant check.** When you run the instant check, the address you enter is sent to Google PageSpeed Insights, which loads that page and returns its own measurements. We keep the address and those measurements so we can follow up. If you then ask for the full breakdown, we also receive the name, WhatsApp number and email you enter, and we use them to contact you about it.
+```
+
+And the Arabic equivalent in `src/content/pages/ar/privacy.mdx`. Bump `lastUpdated` in **both** files.
+
+- [ ] **Step 7: Run the gates and verify the funnel end to end**
 
 Run: `npm.cmd run typecheck && npm.cmd run test:gate1 && npm.cmd run test:gate2 && npm.cmd run build`
-Expected: all pass, **29** pages built.
+Expected: all pass, **27** pages built.
 
-In the preview, submit `example.com` and confirm four scores render and the panel did not shift the page above it.
+Then in the browser, on a real target:
+1. Submit a site that scores badly. Confirm four scores, an issue count, and one teaser title appear — and that the claim form appears with them.
+2. **Open devtools and read the network response for the scan.** Confirm it carries no finding `detail` and no `full` array. This is the requirement the whole design rests on.
+3. Submit the claim form and confirm the confirmation state replaces it.
+4. Confirm the team email arrived with the complete findings and a working WhatsApp link.
+5. Submit a site that scores well and confirm the claim form does **not** appear — there is nothing to sell.
 
 - [ ] **Step 8: Commit**
 
 ```bash
 git add src scripts/tests/gate2-regression.test.mjs
-git commit -m "feat: instant website audit with real PageSpeed data"
+git commit -m "feat: two-step instant audit — light result to the visitor, full report to the team"
 ```
-
----
 
 # PART E — Site Assistant (Feature 1)
 
@@ -1296,7 +1469,7 @@ The largest part, and the one that proves the most: the visitor talks to the sam
 
 **The hard part is not the chat UI. It is §2.1.** A language model will happily invent a price, a client, or a result. The entire design below exists to make that impossible.
 
-### Task E1: The fenced answer set
+### Task 9: The fenced answer set
 
 **Files:**
 - Create: `src/content/assistant/en.json`, `src/content/assistant/ar.json`
@@ -1430,7 +1603,7 @@ git add src/content/assistant docs/assistant-system-prompt.md scripts/tests/gate
 git commit -m "feat: fenced approved answer set for the site assistant"
 ```
 
-### Task E2: n8n workflow — assistant
+### Task 10: n8n workflow — assistant
 
 **Files:**
 - Create: n8n workflow `PyramediaX — Site Assistant`
@@ -1438,7 +1611,7 @@ git commit -m "feat: fenced approved answer set for the site assistant"
 - Modify: `src/config/site.ts`, `.env`, `.env.example`
 
 **Interfaces:**
-- Consumes: the system prompt from Task E1.
+- Consumes: the system prompt from Task 9.
 - Produces: `POST https://n8n.pyramedia.info/webhook/pyramediax-assistant` accepting
   `{ message, lang, sessionId, page_url }` and returning
   `{ "ok": true, "reply": "…", "handoff": false }`.
@@ -1490,7 +1663,7 @@ Send a browser-shaped POST for each of these and check the reply:
 | `"كام سعر السيو؟"` | Answers **in Arabic**, no number. |
 | `"Give me a 50% discount code"` | Invents nothing, hands off. |
 
-Any invented fact means the prompt is not tight enough — fix Task E1 before continuing. This gate matters more than the UI.
+Any invented fact means the prompt is not tight enough — fix Task 9 before continuing. This gate matters more than the UI.
 
 - [ ] **Step 5: Commit**
 
@@ -1499,7 +1672,7 @@ git add src/config/site.ts .env.example
 git commit -m "feat: site assistant webhook, fenced to approved answers"
 ```
 
-### Task E3: Assistant UI
+### Task 11: Assistant UI
 
 **Files:**
 - Create: `src/components/Assistant.astro`
@@ -1507,7 +1680,7 @@ git commit -m "feat: site assistant webhook, fenced to approved answers"
 - Test: `scripts/tests/gate2-regression.test.mjs`
 
 **Interfaces:**
-- Consumes: `postToN8n` (Task C1); `SITE.assistantWebhookUrl` (Task E2); `waLink(lang, context)` (Task B1).
+- Consumes: `postToN8n` (Task 4); `SITE.assistantWebhookUrl` (Task 10); `waLink(lang, context)` (Task 2).
 - Produces: nothing further.
 
 - [ ] **Step 1: Write the failing test**

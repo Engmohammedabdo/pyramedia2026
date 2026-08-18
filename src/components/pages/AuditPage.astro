@@ -1,0 +1,629 @@
+---
+/**
+ * Audit page (Feature 2): a two-step funnel, not a report.
+ *
+ * Step 1 — POST { action: 'scan' } to SITE.auditWebhookUrl. The response is
+ * deliberately light: four scores, an issue count, one headline title. That
+ * is the hook — enough to be certain something is wrong, not enough to fix
+ * it alone. A scan can legitimately fail (Google's PageSpeed quota, a
+ * malformed target, a slow origin) — that is treated as a first-class,
+ * expected outcome, not a broken page: the visitor gets an honest message
+ * and a WhatsApp route, never a zero score.
+ *
+ * Step 2 — once a scan has produced a scanId, the claim form appears (only
+ * when there is something to sell a fix for) and POSTs { action: 'claim' }
+ * with the visitor's contact details. The full breakdown never reaches the
+ * browser at any point — it goes to the team, who follow up on WhatsApp.
+ *
+ * Fail-safe: when SITE.auditWebhookUrl is empty, this renders the
+ * unavailable copy and a WhatsApp button instead of a form that cannot
+ * submit.
+ */
+import { getEntry } from 'astro:content';
+import type { Lang } from '@/config/site';
+import { SITE, waLink } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+import AuditResult from '@/components/AuditResult.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const page = await getEntry('pages', `${lang}/audit`);
+if (!page) throw new Error(`Missing audit content for ${lang}`);
+const c = page.data as any;
+
+const webhookConfigured = Boolean(SITE.auditWebhookUrl);
+
+// Strings the client-side script needs, embedded once as JSON.
+const formConfig = {
+  webhook: SITE.auditWebhookUrl,
+  lang,
+  // Spam trap (matches ContactPage.astro's honeypot + minimum-time trap):
+  // a submission faster than a human could type the target field is
+  // treated as a bot and never sent.
+  minSeconds: 4,
+  strings: {
+    required: t.form.errRequired,
+    errPhone: t.form.errPhone,
+    errEmail: t.form.errEmail,
+    running: t.audit.running,
+    run: t.audit.run,
+    invalid: t.audit.invalid,
+    failed: t.audit.failed,
+    teaserLead: t.audit.teaserLead,
+    clean: t.audit.clean,
+    claimCta: t.audit.claimCta,
+    claimSending: t.audit.claimSending,
+  },
+};
+
+const inputClass =
+  'w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-text placeholder:text-muted focus:border-orange/60 focus:outline-none';
+
+const modeChoices = [
+  { value: 'website', label: t.audit.modeWebsite, targetLabel: t.audit.targetWebsite },
+  { value: 'instagram', label: t.audit.modeInstagram, targetLabel: t.audit.targetInstagram },
+] as const;
+---
+
+<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-4xl px-5 pb-14 pt-20 md:pt-28" data-reveal-group>
+      <p class="eyebrow" data-reveal>{c.hero.eyebrow}</p>
+      <h1 class="font-display mt-3 font-bold text-text" style="font-size: var(--text-h1);">
+        {c.hero.title}
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted" data-reveal>{c.hero.intro}</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 pb-24 md:pb-32">
+    <div class="card p-8 md:p-10" data-reveal>
+      {
+        !webhookConfigured ? (
+          <div
+            class="flex flex-col items-start gap-4 rounded-xl border border-orange/30 bg-surface-2 p-6"
+            role="status"
+          >
+            {/* TODO_N8N_AUDIT_URL: PUBLIC_N8N_AUDIT_URL not set — the audit
+                ships in fallback state with a WhatsApp route (SPEC §14). */}
+            <p class="text-muted">{t.audit.unavailable}</p>
+            <a
+              href={waLink(lang)}
+              target="_blank"
+              rel="noopener"
+              class="btn-primary !px-5 !py-2.5 text-sm"
+              data-event="whatsapp_click"
+              data-placement="audit-disabled"
+            >
+              <Icon name="whatsapp" size={17} />
+              {t.cta.whatsapp}
+            </a>
+          </div>
+        ) : (
+          <>
+            <form id="audit-form" class="grid gap-5" novalidate data-config={JSON.stringify(formConfig)}>
+              {SITE.auditInstagramEnabled && (
+                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label={t.audit.modeLabel}>
+                  {modeChoices.map((choice, i) => (
+                    <label class="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={choice.value}
+                        checked={i === 0}
+                        class="peer sr-only"
+                        data-mode-input
+                        data-target-label={choice.targetLabel}
+                      />
+                      <span class="inline-flex items-center rounded-full border border-line px-4 py-2 text-sm font-medium text-muted peer-checked:border-orange peer-checked:bg-orange/10 peer-checked:text-orange">
+                        {choice.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {!SITE.auditInstagramEnabled && <input type="hidden" name="mode" value="website" />}
+
+              <div>
+                <label for="audit-target" class="mb-2 block text-sm font-medium text-text" data-target-label>
+                  {t.audit.targetWebsite}
+                </label>
+                <input
+                  id="audit-target"
+                  name="target"
+                  type="text"
+                  required
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="off"
+                />
+                <p class="mt-1.5 hidden text-sm text-orange-hot" data-target-error></p>
+              </div>
+
+              <!-- Honeypot: must stay empty; hidden from humans -->
+              <div class="hp-field" aria-hidden="true">
+                <label for="audit-website">{t.form.hpLabel}</label>
+                <input id="audit-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4">
+                <button type="submit" class="btn-primary">
+                  <Icon name="search" size={17} />
+                  <span data-submit-label>{t.audit.run}</span>
+                </button>
+                <span class="text-sm text-muted" data-audit-status aria-live="polite"></span>
+              </div>
+              <p class="hidden text-sm text-muted" data-running-note>{t.audit.runningNote}</p>
+
+              <!-- Announced to screen readers (SPEC §12: errors via aria-live) -->
+              <p class="sr-only" role="status" aria-live="polite" data-audit-announcer></p>
+            </form>
+
+            <!-- Scan/claim failure: honest message, never a blank or broken
+                 result — always paired with a WhatsApp route so a failed
+                 scan (a real, expected outcome while PageSpeed's quota is
+                 tight) does not lose the lead. -->
+            <div
+              id="audit-error"
+              class="mt-6 hidden rounded-xl border border-orange-hot/40 bg-surface-2 p-6"
+              role="alert"
+              tabindex="-1"
+            >
+              <p class="text-text/90" data-audit-error-text></p>
+              <a
+                href={waLink(lang)}
+                target="_blank"
+                rel="noopener"
+                class="btn-primary mt-4 !px-5 !py-2.5 text-sm"
+                data-event="whatsapp_click"
+                data-placement="audit-error"
+              >
+                <Icon name="whatsapp" size={17} />
+                {t.cta.whatsapp}
+              </a>
+            </div>
+          </>
+        )
+      }
+    </div>
+
+    {
+      webhookConfigured && (
+        <>
+          <AuditResult lang={lang} />
+
+          <!-- Step 2: hidden until a scan produces a scanId AND finds
+               something worth fixing — nothing to sell, no phone number asked. -->
+          <form id="audit-claim" class="card mt-6 hidden p-8 md:p-10" novalidate>
+            <h2 class="font-display text-xl font-bold text-text">{t.audit.claimTitle}</h2>
+            <p class="mt-2 text-muted">{t.audit.claimBody}</p>
+
+            <div class="mt-6 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label for="audit-claim-name" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimName}
+                </label>
+                <input id="audit-claim-name" name="name" type="text" required class={inputClass} autocomplete="name" />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="name"></p>
+              </div>
+              <div>
+                <label for="audit-claim-phone" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimPhone}
+                </label>
+                <input
+                  id="audit-claim-phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="tel"
+                />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="phone"></p>
+              </div>
+              <div class="sm:col-span-2">
+                <label for="audit-claim-email" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimEmail} <span class="font-normal text-muted">({t.form.optional})</span>
+                </label>
+                <input
+                  id="audit-claim-email"
+                  name="email"
+                  type="email"
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="email"
+                />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="email"></p>
+              </div>
+            </div>
+
+            <!-- Honeypot -->
+            <div class="hp-field" aria-hidden="true">
+              <label for="audit-claim-website">{t.form.hpLabel}</label>
+              <input id="audit-claim-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <!-- Announced to screen readers (SPEC §12: errors via aria-live) -->
+            <p class="sr-only" role="status" aria-live="polite" data-claim-announcer></p>
+
+            <button type="submit" class="btn-primary mt-6">
+              <Icon name="send" size={17} />
+              <span data-claim-submit-label>{t.audit.claimCta}</span>
+            </button>
+          </form>
+
+          <div id="audit-claimed" class="card mt-6 hidden p-8 text-center" role="status" tabindex="-1">
+            <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
+              <Icon name="check-circle" size={28} />
+            </span>
+            <h3 class="font-display mt-5 text-xl font-bold text-text">{t.audit.claimedTitle}</h3>
+            <p class="mt-2 text-muted">{t.audit.claimedBody}</p>
+          </div>
+        </>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  /* Honeypot: visually removed, still in the DOM for bots */
+  .hp-field {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { postToN8n, collectUtm } from '@/scripts/n8n-client';
+
+  function initAudit() {
+    const form = document.getElementById('audit-form') as HTMLFormElement | null;
+    if (!form || form.dataset.bound === 'true') return;
+    form.dataset.bound = 'true';
+
+    const config = JSON.parse(form.dataset.config || '{}');
+    const panel = document.getElementById('audit-result')!;
+    const claim = document.getElementById('audit-claim') as HTMLFormElement | null;
+    const claimed = document.getElementById('audit-claimed');
+    const errorBox = document.getElementById('audit-error')!;
+    const errorText = errorBox.querySelector<HTMLElement>('[data-audit-error-text]')!;
+    const status = form.querySelector<HTMLElement>('[data-audit-status]')!;
+    const runningNote = form.querySelector<HTMLElement>('[data-running-note]')!;
+    const targetInput = form.elements.namedItem('target') as HTMLInputElement;
+    const targetError = form.querySelector<HTMLElement>('[data-target-error]')!;
+    const targetLabel = form.querySelector<HTMLElement>('[data-target-label]')!;
+    const auditAnnouncer = form.querySelector<HTMLElement>('[data-audit-announcer]')!;
+    const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+    const claimAnnouncer = claim?.querySelector<HTMLElement>('[data-claim-announcer]') ?? null;
+
+    let scanId = '';
+    // Bumped by resetResult() so a claim response that lands after a newer
+    // scan has already reset the panel can recognise itself as stale and be
+    // ignored (M1) — see the token check in the claim submit handler below.
+    let resultToken = 0;
+
+    const value = (f: HTMLFormElement, name: string) =>
+      ((f.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+
+    // Spam trap timer (matches ContactPage.astro's minimum-time-on-page).
+    const loadedAt = Date.now();
+    const SCORE_COLOR_CLASSES = ['text-red', 'text-orange', 'text-green'];
+
+    // Instagram mode (when enabled) swaps the target field's label.
+    form.querySelectorAll<HTMLInputElement>('[data-mode-input]').forEach((input) => {
+      input.addEventListener('change', () => {
+        if (input.checked && input.dataset.targetLabel) {
+          targetLabel.textContent = input.dataset.targetLabel;
+        }
+      });
+    });
+
+    function showError(message: string) {
+      errorText.textContent = message;
+      errorBox.classList.remove('hidden');
+      errorBox.focus();
+    }
+
+    // Clears every trace of a previous scan — scanId, the score panel, the
+    // claim form and its confirmation — so a resubmission (whatever target
+    // it names, whatever it returns) can never leave a stale result, or a
+    // still-submittable claim form, bound to the site scanned before this
+    // one. Called unconditionally at the start of every submit, before the
+    // request goes out.
+    function resetResult() {
+      scanId = '';
+      // Any claim POST still in flight for the previous scan is now stale —
+      // bumping the token lets the claim handler recognise its own response
+      // as abandoned when it eventually resolves (M1).
+      resultToken += 1;
+      claim?.classList.add('hidden');
+      claimed?.classList.add('hidden');
+      if (claim) {
+        // Abandon the previous scan's in-flight claim UI state too: a fresh
+        // scan must present the claim form ready to submit, not stuck busy
+        // with the last scan's disabled button and "Sending…" label (M1).
+        claim.dataset.busy = '';
+        const claimBtn = claim.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (claimBtn) claimBtn.disabled = false;
+        const claimLabel = claim.querySelector<HTMLElement>('[data-claim-submit-label]');
+        if (claimLabel) claimLabel.textContent = config.strings.claimCta;
+        claim.querySelectorAll<HTMLElement>('[data-error-for]').forEach((el) => {
+          el.textContent = '';
+          el.classList.add('hidden');
+        });
+        claim.querySelectorAll<HTMLInputElement>('input').forEach((input) => input.removeAttribute('aria-invalid'));
+      }
+      if (claimAnnouncer) claimAnnouncer.textContent = '';
+      panel.querySelectorAll<HTMLElement>('[data-score]').forEach((slot) => {
+        slot.textContent = '—';
+        slot.classList.remove(...SCORE_COLOR_CLASSES);
+      });
+      const issueCountEl = panel.querySelector<HTMLElement>('[data-issue-count]');
+      if (issueCountEl) issueCountEl.textContent = '—';
+      const resultLead = panel.querySelector<HTMLElement>('[data-result-lead]');
+      const resultTitle = panel.querySelector<HTMLElement>('[data-result-title]');
+      if (resultLead) resultLead.textContent = '';
+      if (resultTitle) resultTitle.textContent = '';
+      panel.classList.add('hidden');
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (form.dataset.busy === 'true') return;
+
+      const target = value(form, 'target');
+      if (!target) {
+        targetError.textContent = config.strings.required;
+        targetError.classList.remove('hidden');
+        targetInput.setAttribute('aria-invalid', 'true');
+        // Visible text alone is not enough for a screen-reader user who is
+        // not focused on the paragraph (§12) — announce it too.
+        auditAnnouncer.textContent = config.strings.required;
+        return;
+      }
+      targetError.classList.add('hidden');
+      targetInput.removeAttribute('aria-invalid');
+      auditAnnouncer.textContent = '';
+
+      // Reset first, unconditionally — a second scan must never leave the
+      // first one's result or claim form on screen or submittable, whether
+      // this attempt succeeds, fails, or turns out to be a bot.
+      resetResult();
+      errorBox.classList.add('hidden');
+
+      // Spam traps (matches ContactPage.astro): a filled honeypot or a
+      // submission faster than a human could type the target field gets no
+      // request at all — nothing is sent, nothing is shown.
+      const honeypot = value(form, 'website');
+      const tooFast = (Date.now() - loadedAt) / 1000 < config.minSeconds;
+      if (honeypot || tooFast) return;
+
+      form.dataset.busy = 'true';
+      if (submitBtn) submitBtn.disabled = true;
+      status.textContent = config.strings.running;
+      submitLabel.textContent = config.strings.running;
+      runningNote.classList.remove('hidden');
+
+      // Reveal the panel now, in its placeholder state, so it already
+      // occupies its full final height before any data exists (§12) —
+      // filling it in below changes text only, never geometry. This shift
+      // is the input-response window itself: immediate and user-initiated,
+      // not the delayed jump it replaces.
+      panel.classList.remove('hidden');
+
+      // PageSpeed is slow by nature — allow 90s before giving up.
+      const result = await postToN8n(
+        config.webhook,
+        {
+          action: 'scan',
+          mode: value(form, 'mode') || 'website',
+          target,
+          lang: config.lang,
+          page_url: window.location.href,
+          website: honeypot,
+          utm: collectUtm(),
+        },
+        90_000,
+      );
+
+      form.dataset.busy = 'false';
+      if (submitBtn) submitBtn.disabled = false;
+      status.textContent = '';
+      submitLabel.textContent = config.strings.run;
+      runningNote.classList.add('hidden');
+
+      const data = result.data as any;
+      // Scan path checks BOTH the transport (`result.ok`) and the payload
+      // (`data?.ok`) — a scan can transport fine and still fail (PageSpeed's
+      // quota, an unreachable target). The claim path below checks only
+      // `result.ok`: n8n deliberately always answers `{ok:true,claimed:true}`
+      // for a claim, by design, so a scanId cannot be enumerated by watching
+      // which ones "succeed" (M2). Do not "harmonise" the two checks.
+      if (!result.ok || !data?.ok) {
+        // A failed scan (Google's PageSpeed quota, a slow origin, an
+        // unusable response) is a real, expected outcome, not a broken
+        // page — say so plainly and hand over the WhatsApp route so the
+        // lead is never lost. The backend has already logged the attempt.
+        // Nothing succeeded, so nothing stays revealed.
+        panel.classList.add('hidden');
+        showError(data?.reason === 'invalid_target' ? config.strings.invalid : config.strings.failed);
+        return;
+      }
+
+      scanId = data.scanId ?? '';
+
+      for (const [key, score] of Object.entries(data.scores ?? {})) {
+        const slot = panel.querySelector(`[data-score="${key}"]`);
+        if (!slot) continue;
+        // textContent only — a finding title, and by extension anything
+        // else in this payload, comes from an external API and must never
+        // be parsed as HTML.
+        slot.textContent = String(score);
+        // Colour carries the verdict faster than the number does. Clear any
+        // colour a previous scan left behind before applying this one.
+        slot.classList.remove(...SCORE_COLOR_CLASSES);
+        // A non-numeric score must not silently read as "good" (M3) — guard
+        // the same way the issue count below treats an unparseable value as
+        // unknown rather than a fabricated measurement (§2.1).
+        const n = Number(score);
+        if (Number.isFinite(n)) {
+          slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
+        }
+      }
+
+      // Absent is not zero (§2.1) — an unmeasured count must never render
+      // as "0 issues". `NaN` (absent, or unparseable) reads as unknown too.
+      const rawCount = data.issueCount;
+      const count = rawCount === null || rawCount === undefined ? NaN : Number(rawCount);
+      const countKnown = Number.isFinite(count);
+      const issueCountEl = panel.querySelector<HTMLElement>('[data-issue-count]')!;
+      issueCountEl.textContent = countKnown ? String(count) : '—';
+
+      const resultLead = panel.querySelector<HTMLElement>('[data-result-lead]')!;
+      const resultTitle = panel.querySelector<HTMLElement>('[data-result-title]')!;
+      if (countKnown && count > 0 && data.teaser?.title) {
+        resultLead.textContent = config.strings.teaserLead;
+        resultTitle.textContent = data.teaser.title;
+        claim?.classList.remove('hidden');
+      } else if (countKnown && count === 0) {
+        resultLead.textContent = config.strings.clean;
+        resultTitle.textContent = '';
+        // Nothing to sell a fix for — do not ask for a phone number.
+        claim?.classList.add('hidden');
+      } else {
+        // Count unknown, or issues reported without a headline — say
+        // nothing rather than guess at a claim we cannot back up (§2.1).
+        resultLead.textContent = '';
+        resultTitle.textContent = '';
+        claim?.classList.add('hidden');
+      }
+
+      // No explicit `behavior` — an explicit option overrides the CSS
+      // `scroll-behavior` global.css already governs (smooth normally, reset
+      // to auto under prefers-reduced-motion: reduce), which would defeat
+      // the reduced-motion guard (§8, I5).
+      panel.scrollIntoView({ block: 'start' });
+    });
+
+    if (!claim || !claimed) return;
+
+    claim.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!scanId || claim.dataset.busy === 'true') return;
+
+      const claimValue = (name: string) =>
+        ((claim.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+
+      function setClaimError(name: string, message: string | null) {
+        const el = claim!.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+        const input = claim!.elements.namedItem(name) as HTMLInputElement | null;
+        if (!el || !input) return;
+        if (message) {
+          el.textContent = message;
+          el.classList.remove('hidden');
+          input.setAttribute('aria-invalid', 'true');
+        } else {
+          el.textContent = '';
+          el.classList.add('hidden');
+          input.removeAttribute('aria-invalid');
+        }
+      }
+
+      // Empty name/phone must never reach n8n as a "claimed" hot lead sales
+      // cannot act on — the `required` attributes are inert under
+      // `novalidate`, so this is the only gate (I3). Mirrors
+      // ContactPage.astro's per-field validation.
+      let valid = true;
+      const claimErrors: string[] = [];
+      for (const name of ['name', 'phone']) {
+        if (!claimValue(name)) {
+          setClaimError(name, config.strings.required);
+          claimErrors.push(config.strings.required);
+          valid = false;
+        } else {
+          setClaimError(name, null);
+        }
+      }
+      const claimPhone = claimValue('phone');
+      if (claimPhone && !/^\+?[0-9][0-9\s\-()]{6,18}$/.test(claimPhone)) {
+        setClaimError('phone', config.strings.errPhone);
+        claimErrors.push(config.strings.errPhone);
+        valid = false;
+      }
+      const claimEmail = claimValue('email');
+      if (claimEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(claimEmail)) {
+        setClaimError('email', config.strings.errEmail);
+        claimErrors.push(config.strings.errEmail);
+        valid = false;
+      }
+      // Visible per-field text alone is not enough for a screen-reader user
+      // not focused on the field (§12) — announce the full set too.
+      if (claimAnnouncer) claimAnnouncer.textContent = valid ? '' : claimErrors.join(' ');
+      if (!valid) return;
+
+      // Honeypot suppressed client-side here too, consistent with the scan
+      // form above (M5) — a filled trap gets no request at all, rather than
+      // only being forwarded for n8n to judge.
+      const honeypot = claimValue('website');
+      if (honeypot) return;
+
+      // Captured before the request goes out: if a newer scan resets the
+      // panel (bumping resultToken) while this POST is in flight, the
+      // response below recognises itself as stale and is ignored (M1) —
+      // it must never hide a newer scan's claim form or reveal a
+      // confirmation that belongs to the scan before it.
+      const token = resultToken;
+
+      claim.dataset.busy = 'true';
+      const claimBtn = claim.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const claimLabel = claim.querySelector<HTMLElement>('[data-claim-submit-label]')!;
+      if (claimBtn) claimBtn.disabled = true;
+      claimLabel.textContent = config.strings.claimSending;
+
+      const result = await postToN8n(config.webhook, {
+        action: 'claim',
+        scanId,
+        name: claimValue('name'),
+        phone: claimPhone,
+        email: claimEmail,
+        lang: config.lang,
+        website: honeypot,
+        utm: collectUtm(),
+      });
+
+      if (token !== resultToken) return;
+
+      claim.dataset.busy = 'false';
+      if (claimBtn) claimBtn.disabled = false;
+      claimLabel.textContent = config.strings.claimCta;
+
+      // Claim path checks only `result.ok` — unlike the scan path above,
+      // n8n deliberately always answers {ok:true,claimed:true} for a
+      // well-formed claim, by design, so a scanId cannot be enumerated by
+      // watching which ones "succeed" (M2). Do not "harmonise" the two.
+      if (!result.ok) {
+        showError(config.strings.failed);
+        return;
+      }
+
+      claim.classList.add('hidden');
+      claimed.classList.remove('hidden');
+      claimed.focus();
+    });
+  }
+
+  initAudit();
+  document.addEventListener('astro:page-load', initAudit);
+</script>

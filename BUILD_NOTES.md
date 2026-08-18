@@ -905,3 +905,86 @@ and that a mod_rewrite dotfile deny is not substituted for it.
 Still outstanding: **purge the host cache** (cPanel → Cache Manager). nginx
 cached 200s for paths probed during the exposure window and can still serve
 them; origin is clean.
+
+## Node engine floor for GATE 2 (2026-08-17)
+
+`test:gate2` runs Node with `--experimental-strip-types` so
+`scripts/tests/n8n-client.behavior.test.mjs` can import a `.ts` module
+directly without a build step. That flag does not exist before Node
+**22.6.0** — on 22.0.0–22.5.x the script hard-fails with `node: bad option`,
+not a warning. `engines.node` only said `">=22"`, which does not floor the
+patch version, so a contributor on an early 22.x could pass every other check
+and still be unable to run GATE 2. Raised to `">=22.6.0"` in `package.json`.
+`.nvmrc` stays `22` on purpose — nvm always resolves a bare `22` to the
+latest installed 22.x, which already satisfies the new floor.
+
+## Audit page review fixes: reset-on-submit, real layout-shift reservation (2026-08-18)
+
+Fixed two Critical and one Important defect found in review, in the audit
+success path that had never executed live (Google's PageSpeed quota has been
+exhausted, so this was verified with a temporary in-page stub — added, used
+to measure, then fully removed before commit; `git diff` was re-checked clean
+of it before this commit).
+
+**Reset-on-submit (Critical).** `AuditPage.astro`'s submit handler now calls
+a `resetResult()` function unconditionally at the very start of every submit,
+before the request goes out: clears `scanId`, hides the panel/claim
+form/claimed confirmation, and resets every score slot and the result
+message to their placeholders. This guarantees a second scan (whatever it
+targets, whatever it returns) can never leave the first scan's data — or a
+still-submittable claim form bound to the first scan's `scanId` — on screen.
+Verified live (stubbed): scan A → scan B → claim carries `scanId: "B"`,
+never `"A"`; a failed second scan after a successful first leaves the panel
+and claim form fully hidden, not a stale remnant.
+
+**Panel reservation (Critical).** `AuditResult.astro` no longer carries a
+single `min-block-size` on a `.hidden` (`display:none`) section — that had
+zero effect until unhidden, which was the actual bug (a measured 0→588px
+jump in one frame). Reservation now lives per dynamic element instead: each
+score digit already had its own `min-block-size`/`min-inline-size`; the
+issue count got a small `min-inline-size`; the teaser/"clean" message —
+previously two separately `hidden`-toggled paragraphs — became one
+always-present paragraph, clamped to 2 lines (`line-clamp-2`) with a
+`min-block-size` of exactly 2 line-heights, so an unbounded external finding
+title cannot wrap and grow the panel. `AuditPage.astro` reveals the section
+at submit time (before the request resolves) in this placeholder state, then
+only replaces text — never geometry — once data arrives. Measured 0px shift
+at submit→data-arrival on desktop (1280px) and mobile (375px), both
+languages.
+
+The 2-line reservation is `min-block-size: 2lh` (the `lh` unit measures the
+element's own inherited line-height, so it self-adjusts for Arabic's taller
+body line-height — 1.9 vs 1.7, SPEC §6.2 — without hand-tuning a number per
+language) with a `rem` fallback computed from those same two line-heights for
+browsers that predate `lh`.
+
+On a failed scan, the panel is hidden again rather than left showing its
+loading placeholder — a deliberate reading of the brief's "reveal the panel
+again only when a new response has actually succeeded": a placeholder that
+never resolves into a real result is not "revealed" in the sense that
+sentence means. This does mean a failure can shrink the panel back to zero
+up to 90s after it was shown; that mirrors the pre-existing, out-of-scope
+shift when `#audit-error` appears, and was verified explicitly per the
+task's checklist (stale panel/claim form confirmed gone after a failed
+second scan), rather than left as an unstated side effect.
+
+**Colour accumulation (Important).** `slot.classList.remove('text-red',
+'text-orange', 'text-green')` runs before the verdict colour is added, both
+at reset and at fill — a slot could previously carry two colour classes at
+once after a second scan.
+
+**Three Minors, same files:** the mode radiogroup's `aria-label` now points
+at a new dedicated string (`t.audit.modeLabel`, both languages — SPEC §2.4)
+instead of reusing the submit button's label; an absent `issueCount` renders
+as `—` (unknown) rather than a fabricated `0` (SPEC §2.1); the scan form
+gained the same minimum-time-on-page trap as `ContactPage.astro`
+(`minSeconds: 4`).
+
+One adaptation on that last point: `ContactPage.astro`'s trap shows a
+**silent success** to a trapped submission, which only works because a
+"success" there is copy the form itself controls. The audit's success state
+is Google's real PageSpeed data — showing a fake one to a bot would be
+exactly the kind of fabricated measurement SPEC §2.1 rules out. A trapped
+audit submission instead sends nothing and shows nothing (no panel, no
+error) — the request is still suppressed either way, which is the trap's
+actual purpose.

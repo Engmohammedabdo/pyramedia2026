@@ -18,6 +18,9 @@ const t = useTranslations(lang);
 
 <a
   href={waLink(lang)}
+  data-wa-float
+  data-wa-base={waLink(lang)}
+  data-wa-lang={lang}
   target="_blank"
   rel="noopener"
   class="wa-float fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-orange text-btn-ink shadow-lg transition-transform hover:bg-orange-hot"
@@ -73,3 +76,106 @@ const t = useTranslations(lang);
     }
   }
 </style>
+
+<script>
+  import { waLink } from '@/config/site';
+
+  /**
+   * Re-targets the floating WhatsApp button to whichever labelled section is
+   * currently in view, so a chat opened from halfway down the page arrives
+   * with that subject already stated. Sections opt in with data-wa-context;
+   * nothing is scraped from headings, so a copy change can never leak an
+   * unapproved string into the message (§2.1). If no labelled section is in
+   * view (above the first one, or the page has none), the link stays on the
+   * plain data-wa-base value.
+   *
+   * The message text is built by the same waLink() every other WhatsApp
+   * link on the site uses (src/config/site.ts), not re-implemented here, so
+   * the phrasing can never drift between the two. site.ts is already part
+   * of the client bundle (src/scripts/analytics.ts imports SITE from it on
+   * every page), so this import adds no additional module to ship.
+   *
+   * `<ClientRouter />` soft-swaps most navigations (BaseLayout.astro), so
+   * this component's script runs once but astro:page-load fires on every
+   * navigation thereafter — including once more for the very first, hard
+   * load (ClientRouter dispatches it from the initial `load` event too).
+   * That means this function runs twice before anything has navigated: once
+   * synchronously below, once from that first astro:page-load. Resolve the
+   * element and return early when it is the *same already-bound* element —
+   * matching the ordering ConsentBanner.astro uses for the same double-call
+   * shape — before ever touching `currentObserver`, so the second call on a
+   * hard load is a no-op instead of disconnecting the observer the first
+   * call just created. Only once the resolved element is a genuinely new,
+   * unbound one (a real soft navigation swapped in a fresh anchor) does the
+   * previous observer get torn down, so it never lingers on now-detached
+   * elements from the page that just left.
+   *
+   * When more than one labelled section is in view at once, the winner is
+   * whichever has the greatest intersection ratio, ties breaking by
+   * document order — never whichever IntersectionObserver entry happens to
+   * be delivered last in a batch, which is not a meaningful ordering.
+   */
+  let currentObserver: IntersectionObserver | null = null;
+
+  function bindWhatsAppContext() {
+    const float = document.querySelector<HTMLAnchorElement>('[data-wa-float]');
+    if (!float || float.dataset.bound === 'true') return;
+
+    currentObserver?.disconnect();
+    currentObserver = null;
+
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-wa-context]'));
+    if (!sections.length) return;
+    float.dataset.bound = 'true';
+
+    const base = float.dataset.waBase!;
+    const lang = float.dataset.waLang === 'ar' ? 'ar' : 'en';
+    // Document order of each section, used only to break a ratio tie below.
+    const order = new Map(sections.map((section, index) => [section, index]));
+    // Ratios of the labelled sections currently intersecting, rebuilt from
+    // the batch instead of trusting whichever entry is processed last.
+    const ratios = new Map<HTMLElement, number>();
+    let active = '';
+
+    currentObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const target = entry.target as HTMLElement;
+          const context = target.dataset.waContext ?? '';
+          if (!context) continue;
+          if (entry.isIntersecting) {
+            ratios.set(target, entry.intersectionRatio);
+          } else {
+            ratios.delete(target);
+          }
+        }
+
+        // Deterministic winner: greatest intersection ratio; a tie falls
+        // back to document order (earlier section wins).
+        let winner: HTMLElement | null = null;
+        for (const section of ratios.keys()) {
+          if (
+            !winner ||
+            ratios.get(section)! > ratios.get(winner)! ||
+            (ratios.get(section) === ratios.get(winner) && order.get(section)! < order.get(winner)!)
+          ) {
+            winner = section;
+          }
+        }
+
+        const next = winner ? winner.dataset.waContext! : '';
+        if (next === active) return;
+        active = next;
+        // No labelled section in view — the base link stays the honest
+        // default (§2.1).
+        float.href = next ? waLink(lang, next) : base;
+      },
+      { rootMargin: '-45% 0px -45% 0px' },
+    );
+
+    sections.forEach((section) => currentObserver!.observe(section));
+  }
+
+  bindWhatsAppContext();
+  document.addEventListener('astro:page-load', bindWhatsAppContext);
+</script>
