@@ -1354,6 +1354,38 @@ test('the floating WhatsApp button re-targets to the section in view', async () 
   assert.match(float, /if\s*\(next === active\)\s*return;/);
 });
 
+test('the WhatsApp float resolves and checks its already-bound element before ever touching the observer (I1)', async () => {
+  const float = await source('src/components/WhatsAppFloat.astro');
+
+  // `<ClientRouter />` dispatches astro:page-load twice on a hard load (the
+  // module's own synchronous call, then once more from the initial `load`
+  // event) — the second call must recognise the float element it already
+  // bound and return before the observer is ever touched. Getting the order
+  // wrong (disconnect first, guard second) tears down the observer the
+  // first call just created, leaving no live observer after a hard load —
+  // reproduced against the built bundle by the whole-branch review (I1).
+  const resolveAt = float.indexOf("document.querySelector<HTMLAnchorElement>('[data-wa-float]')");
+  const guardAt = float.indexOf("if (!float || float.dataset.bound === 'true') return;");
+  const disconnectAt = float.indexOf('currentObserver?.disconnect();');
+
+  assert.ok(resolveAt > 0, 'the float element must be resolved via querySelector');
+  assert.ok(guardAt > resolveAt, 'the already-bound-element guard must follow element resolution');
+  assert.ok(
+    disconnectAt > guardAt,
+    'currentObserver must not be disconnected before the already-bound-element early return (I1 regression)',
+  );
+
+  // Exactly one guard, one disconnect — a second copy anywhere (e.g. a
+  // leftover unconditional disconnect ahead of the guard) would reintroduce
+  // the bug even with a correctly-ordered pair elsewhere in the file.
+  assert.equal((float.match(/currentObserver\?\.disconnect\(\);/g) ?? []).length, 1);
+  assert.equal((float.match(/if \(!float \|\| float\.dataset\.bound === 'true'\) return;/g) ?? []).length, 1);
+
+  // A genuinely new, unbound float (a real soft navigation) must still tear
+  // down the previous page's observer — the guard alone does not cover that.
+  assert.match(float, /const sections = Array\.from\(document\.querySelectorAll<HTMLElement>\('\[data-wa-context\]'\)\);/);
+});
+
 test('the shared n8n client times out, never throws, and carries campaign data', async () => {
   const client = await source('src/scripts/n8n-client.ts');
 
@@ -1491,4 +1523,56 @@ test('the audit is a two-step funnel that withholds the fixes (Feature 2)', asyn
 
   assert.match(enPrivacy, /audit/i);
   assert.match(arPrivacy, /الفحص/);
+});
+
+test('the audit claim form validates name and phone before any request is sent (I3)', async () => {
+  const [page, en, ar] = await Promise.all([
+    source('src/components/pages/AuditPage.astro'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  const claimHandlerStart = page.indexOf("claim.addEventListener('submit'");
+  assert.ok(claimHandlerStart > 0, 'expected a claim submit handler');
+  const claimPostAt = page.indexOf('await postToN8n(config.webhook, {', claimHandlerStart);
+  assert.ok(claimPostAt > claimHandlerStart, 'expected the claim POST call');
+  const claimHandler = page.slice(claimHandlerStart, claimPostAt);
+
+  // Empty name/phone were previously posted and unconditionally confirmed —
+  // `required` is inert under novalidate, so the JS gate is the only check.
+  assert.match(claimHandler, /for \(const name of \['name', 'phone'\]\)/);
+  assert.match(claimHandler, /if \(!claimValue\(name\)\)/);
+  assert.match(claimHandler, /setClaimError\(name, config\.strings\.required\)/);
+  assert.match(claimHandler, /if \(!valid\) return;/, 'an invalid claim must never reach the POST call');
+
+  // Phone format and optional email format are validated too — reusing
+  // ContactPage.astro's existing wording (config.strings.errPhone /
+  // .errEmail = t.form.errPhone / t.form.errEmail) rather than inventing copy.
+  assert.match(claimHandler, /errPhone/);
+  assert.match(claimHandler, /errEmail/);
+  assert.match(page, /errPhone: t\.form\.errPhone/);
+  assert.match(page, /errEmail: t\.form\.errEmail/);
+
+  // Per-field errors are shown AND announced (§12) — visible text alone is
+  // not enough for a screen-reader user not focused on the field.
+  assert.match(claimHandler, /claimAnnouncer\.textContent\s*=\s*valid \? '' : claimErrors\.join\(' '\)/);
+  assert.match(page, /data-claim-announcer/);
+  assert.match(page, /role="status" aria-live="polite" data-claim-announcer/);
+
+  // A filled honeypot must not reach n8n either, client-side, matching the
+  // scan form's own suppression (M5) — not merely forwarded for n8n to judge.
+  assert.match(claimHandler, /const honeypot = claimValue\('website'\);\s*\n\s*if \(honeypot\) return;/);
+
+  // A stale claim response (a newer scan already reset the panel while this
+  // POST was in flight) must be ignored rather than mutate the current
+  // scan's UI (M1) — captured before the request, checked after it resolves.
+  assert.match(claimHandler, /const token = resultToken;/);
+  const claimPostToReturn = page.slice(claimPostAt, page.indexOf('claim.classList.add', claimPostAt));
+  assert.match(claimPostToReturn, /if \(token !== resultToken\) return;/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /errRequired:/);
+    assert.match(dict, /errPhone:/);
+    assert.match(dict, /errEmail:/);
+  }
 });

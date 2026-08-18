@@ -129,7 +129,7 @@ const jsonLd = [
   </section>
 
   <!-- What's included -->
-  <section class="border-t border-line bg-surface/30">
+  <section class="border-t border-line bg-surface/30" data-wa-context={s.name}>
     <div class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group>
       <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
         {t.service.included}
@@ -150,7 +150,7 @@ const jsonLd = [
   </section>
 
   <!-- How it runs -->
-  <section class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group>
+  <section class="mx-auto max-w-6xl px-5 py-20 md:py-24" data-reveal-group data-wa-context={s.name}>
     <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
       {t.service.process}
     </h2>
@@ -178,7 +178,7 @@ const jsonLd = [
 
   {
     s.tools && s.tools.length > 0 && (
-      <section class="border-y border-line bg-surface/30">
+      <section class="border-y border-line bg-surface/30" data-wa-context={s.name}>
         <div class="mx-auto max-w-6xl px-5 py-16" data-reveal-group>
           <h2 class="eyebrow" data-reveal>
             {t.service.tools}
@@ -200,7 +200,7 @@ const jsonLd = [
   }
 
   <!-- Mini-FAQ -->
-  <section class="mx-auto max-w-3xl px-5 py-20 md:py-24" data-reveal-group>
+  <section class="mx-auto max-w-3xl px-5 py-20 md:py-24" data-reveal-group data-wa-context={s.name}>
     <h2 class="font-display font-bold text-text" style="font-size: var(--text-h2);" data-reveal>
       {t.service.faq}
     </h2>

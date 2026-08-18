@@ -97,13 +97,18 @@ const t = useTranslations(lang);
    *
    * `<ClientRouter />` soft-swaps most navigations (BaseLayout.astro), so
    * this component's script runs once but astro:page-load fires on every
-   * navigation thereafter (plus once more for the initial load — hence the
-   * dataset.bound guard, matching the pattern used by InstagramReels.astro,
-   * ContactPage.astro and Nav.astro). Each swap renders a brand new anchor,
-   * so the guard alone would not stop the *previous* page's observer from
-   * lingering on now-detached elements — the observer is disconnected
-   * unconditionally, before any early return, so a future page that omits
-   * this component entirely still tears down the previous page's observer.
+   * navigation thereafter — including once more for the very first, hard
+   * load (ClientRouter dispatches it from the initial `load` event too).
+   * That means this function runs twice before anything has navigated: once
+   * synchronously below, once from that first astro:page-load. Resolve the
+   * element and return early when it is the *same already-bound* element —
+   * matching the ordering ConsentBanner.astro uses for the same double-call
+   * shape — before ever touching `currentObserver`, so the second call on a
+   * hard load is a no-op instead of disconnecting the observer the first
+   * call just created. Only once the resolved element is a genuinely new,
+   * unbound one (a real soft navigation swapped in a fresh anchor) does the
+   * previous observer get torn down, so it never lingers on now-detached
+   * elements from the page that just left.
    *
    * When more than one labelled section is in view at once, the winner is
    * whichever has the greatest intersection ratio, ties breaking by
@@ -113,11 +118,11 @@ const t = useTranslations(lang);
   let currentObserver: IntersectionObserver | null = null;
 
   function bindWhatsAppContext() {
-    currentObserver?.disconnect();
-    currentObserver = null;
-
     const float = document.querySelector<HTMLAnchorElement>('[data-wa-float]');
     if (!float || float.dataset.bound === 'true') return;
+
+    currentObserver?.disconnect();
+    currentObserver = null;
 
     const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-wa-context]'));
     if (!sections.length) return;

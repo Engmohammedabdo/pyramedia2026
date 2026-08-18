@@ -53,7 +53,6 @@ const messageReservedHeight = lang === 'ar' ? '3.9rem' : '3.5rem';
 <section
   id="audit-result"
   class="mt-10 hidden rounded-2xl border border-line bg-surface/40 p-6 md:p-8"
-  aria-live="polite"
 >
   <h2 class="font-display text-xl font-bold text-text">{t.audit.scores}</h2>
 
@@ -81,6 +80,7 @@ const messageReservedHeight = lang === 'ar' ? '3.9rem' : '3.5rem';
       style="min-inline-size: 2ch;"
       data-issue-count
       dir="ltr"
+      aria-live="polite"
     >
       —
     </span>
@@ -97,6 +97,7 @@ const messageReservedHeight = lang === 'ar' ? '3.9rem' : '3.5rem';
     class="mt-3 line-clamp-2 text-text/90"
     style={`min-block-size: ${messageReservedHeight}; min-block-size: 2lh;`}
     data-result-message
+    aria-live="polite"
   >
     <span class="text-muted" data-result-lead></span>{' '}
     <span class="font-semibold" data-result-title></span>

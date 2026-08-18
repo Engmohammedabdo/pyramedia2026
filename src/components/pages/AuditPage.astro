@@ -49,6 +49,8 @@ const formConfig = {
   minSeconds: 4,
   strings: {
     required: t.form.errRequired,
+    errPhone: t.form.errPhone,
+    errEmail: t.form.errEmail,
     running: t.audit.running,
     run: t.audit.run,
     invalid: t.audit.invalid,
@@ -159,6 +161,9 @@ const modeChoices = [
                 <span class="text-sm text-muted" data-audit-status aria-live="polite"></span>
               </div>
               <p class="hidden text-sm text-muted" data-running-note>{t.audit.runningNote}</p>
+
+              <!-- Announced to screen readers (SPEC §12: errors via aria-live) -->
+              <p class="sr-only" role="status" aria-live="polite" data-audit-announcer></p>
             </form>
 
             <!-- Scan/claim failure: honest message, never a blank or broken
@@ -206,6 +211,7 @@ const modeChoices = [
                   {t.audit.claimName}
                 </label>
                 <input id="audit-claim-name" name="name" type="text" required class={inputClass} autocomplete="name" />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="name"></p>
               </div>
               <div>
                 <label for="audit-claim-phone" class="mb-2 block text-sm font-medium text-text">
@@ -220,6 +226,7 @@ const modeChoices = [
                   class={`${inputClass} text-start`}
                   autocomplete="tel"
                 />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="phone"></p>
               </div>
               <div class="sm:col-span-2">
                 <label for="audit-claim-email" class="mb-2 block text-sm font-medium text-text">
@@ -233,6 +240,7 @@ const modeChoices = [
                   class={`${inputClass} text-start`}
                   autocomplete="email"
                 />
+                <p class="field-error mt-1.5 hidden text-sm text-orange-hot" data-error-for="email"></p>
               </div>
             </div>
 
@@ -241,6 +249,9 @@ const modeChoices = [
               <label for="audit-claim-website">{t.form.hpLabel}</label>
               <input id="audit-claim-website" name="website" type="text" tabindex="-1" autocomplete="off" />
             </div>
+
+            <!-- Announced to screen readers (SPEC §12: errors via aria-live) -->
+            <p class="sr-only" role="status" aria-live="polite" data-claim-announcer></p>
 
             <button type="submit" class="btn-primary mt-6">
               <Icon name="send" size={17} />
@@ -292,10 +303,16 @@ const modeChoices = [
     const targetInput = form.elements.namedItem('target') as HTMLInputElement;
     const targetError = form.querySelector<HTMLElement>('[data-target-error]')!;
     const targetLabel = form.querySelector<HTMLElement>('[data-target-label]')!;
+    const auditAnnouncer = form.querySelector<HTMLElement>('[data-audit-announcer]')!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
     const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+    const claimAnnouncer = claim?.querySelector<HTMLElement>('[data-claim-announcer]') ?? null;
 
     let scanId = '';
+    // Bumped by resetResult() so a claim response that lands after a newer
+    // scan has already reset the panel can recognise itself as stale and be
+    // ignored (M1) — see the token check in the claim submit handler below.
+    let resultToken = 0;
 
     const value = (f: HTMLFormElement, name: string) =>
       ((f.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
@@ -327,8 +344,28 @@ const modeChoices = [
     // request goes out.
     function resetResult() {
       scanId = '';
+      // Any claim POST still in flight for the previous scan is now stale —
+      // bumping the token lets the claim handler recognise its own response
+      // as abandoned when it eventually resolves (M1).
+      resultToken += 1;
       claim?.classList.add('hidden');
       claimed?.classList.add('hidden');
+      if (claim) {
+        // Abandon the previous scan's in-flight claim UI state too: a fresh
+        // scan must present the claim form ready to submit, not stuck busy
+        // with the last scan's disabled button and "Sending…" label (M1).
+        claim.dataset.busy = '';
+        const claimBtn = claim.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (claimBtn) claimBtn.disabled = false;
+        const claimLabel = claim.querySelector<HTMLElement>('[data-claim-submit-label]');
+        if (claimLabel) claimLabel.textContent = config.strings.claimCta;
+        claim.querySelectorAll<HTMLElement>('[data-error-for]').forEach((el) => {
+          el.textContent = '';
+          el.classList.add('hidden');
+        });
+        claim.querySelectorAll<HTMLInputElement>('input').forEach((input) => input.removeAttribute('aria-invalid'));
+      }
+      if (claimAnnouncer) claimAnnouncer.textContent = '';
       panel.querySelectorAll<HTMLElement>('[data-score]').forEach((slot) => {
         slot.textContent = '—';
         slot.classList.remove(...SCORE_COLOR_CLASSES);
@@ -351,10 +388,14 @@ const modeChoices = [
         targetError.textContent = config.strings.required;
         targetError.classList.remove('hidden');
         targetInput.setAttribute('aria-invalid', 'true');
+        // Visible text alone is not enough for a screen-reader user who is
+        // not focused on the paragraph (§12) — announce it too.
+        auditAnnouncer.textContent = config.strings.required;
         return;
       }
       targetError.classList.add('hidden');
       targetInput.removeAttribute('aria-invalid');
+      auditAnnouncer.textContent = '';
 
       // Reset first, unconditionally — a second scan must never leave the
       // first one's result or claim form on screen or submittable, whether
@@ -404,6 +445,12 @@ const modeChoices = [
       runningNote.classList.add('hidden');
 
       const data = result.data as any;
+      // Scan path checks BOTH the transport (`result.ok`) and the payload
+      // (`data?.ok`) — a scan can transport fine and still fail (PageSpeed's
+      // quota, an unreachable target). The claim path below checks only
+      // `result.ok`: n8n deliberately always answers `{ok:true,claimed:true}`
+      // for a claim, by design, so a scanId cannot be enumerated by watching
+      // which ones "succeed" (M2). Do not "harmonise" the two checks.
       if (!result.ok || !data?.ok) {
         // A failed scan (Google's PageSpeed quota, a slow origin, an
         // unusable response) is a real, expected outcome, not a broken
@@ -427,8 +474,13 @@ const modeChoices = [
         // Colour carries the verdict faster than the number does. Clear any
         // colour a previous scan left behind before applying this one.
         slot.classList.remove(...SCORE_COLOR_CLASSES);
+        // A non-numeric score must not silently read as "good" (M3) — guard
+        // the same way the issue count below treats an unparseable value as
+        // unknown rather than a fabricated measurement (§2.1).
         const n = Number(score);
-        slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
+        if (Number.isFinite(n)) {
+          slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
+        }
       }
 
       // Absent is not zero (§2.1) — an unmeasured count must never render
@@ -458,7 +510,11 @@ const modeChoices = [
         claim?.classList.add('hidden');
       }
 
-      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // No explicit `behavior` — an explicit option overrides the CSS
+      // `scroll-behavior` global.css already governs (smooth normally, reset
+      // to auto under prefers-reduced-motion: reduce), which would defeat
+      // the reduced-motion guard (§8, I5).
+      panel.scrollIntoView({ block: 'start' });
     });
 
     if (!claim || !claimed) return;
@@ -466,30 +522,97 @@ const modeChoices = [
     claim.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!scanId || claim.dataset.busy === 'true') return;
+
+      const claimValue = (name: string) =>
+        ((claim.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+
+      function setClaimError(name: string, message: string | null) {
+        const el = claim!.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+        const input = claim!.elements.namedItem(name) as HTMLInputElement | null;
+        if (!el || !input) return;
+        if (message) {
+          el.textContent = message;
+          el.classList.remove('hidden');
+          input.setAttribute('aria-invalid', 'true');
+        } else {
+          el.textContent = '';
+          el.classList.add('hidden');
+          input.removeAttribute('aria-invalid');
+        }
+      }
+
+      // Empty name/phone must never reach n8n as a "claimed" hot lead sales
+      // cannot act on — the `required` attributes are inert under
+      // `novalidate`, so this is the only gate (I3). Mirrors
+      // ContactPage.astro's per-field validation.
+      let valid = true;
+      const claimErrors: string[] = [];
+      for (const name of ['name', 'phone']) {
+        if (!claimValue(name)) {
+          setClaimError(name, config.strings.required);
+          claimErrors.push(config.strings.required);
+          valid = false;
+        } else {
+          setClaimError(name, null);
+        }
+      }
+      const claimPhone = claimValue('phone');
+      if (claimPhone && !/^\+?[0-9][0-9\s\-()]{6,18}$/.test(claimPhone)) {
+        setClaimError('phone', config.strings.errPhone);
+        claimErrors.push(config.strings.errPhone);
+        valid = false;
+      }
+      const claimEmail = claimValue('email');
+      if (claimEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(claimEmail)) {
+        setClaimError('email', config.strings.errEmail);
+        claimErrors.push(config.strings.errEmail);
+        valid = false;
+      }
+      // Visible per-field text alone is not enough for a screen-reader user
+      // not focused on the field (§12) — announce the full set too.
+      if (claimAnnouncer) claimAnnouncer.textContent = valid ? '' : claimErrors.join(' ');
+      if (!valid) return;
+
+      // Honeypot suppressed client-side here too, consistent with the scan
+      // form above (M5) — a filled trap gets no request at all, rather than
+      // only being forwarded for n8n to judge.
+      const honeypot = claimValue('website');
+      if (honeypot) return;
+
+      // Captured before the request goes out: if a newer scan resets the
+      // panel (bumping resultToken) while this POST is in flight, the
+      // response below recognises itself as stale and is ignored (M1) —
+      // it must never hide a newer scan's claim form or reveal a
+      // confirmation that belongs to the scan before it.
+      const token = resultToken;
+
       claim.dataset.busy = 'true';
       const claimBtn = claim.querySelector<HTMLButtonElement>('button[type="submit"]');
       const claimLabel = claim.querySelector<HTMLElement>('[data-claim-submit-label]')!;
       if (claimBtn) claimBtn.disabled = true;
       claimLabel.textContent = config.strings.claimSending;
 
-      const claimValue = (name: string) =>
-        ((claim.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
-
       const result = await postToN8n(config.webhook, {
         action: 'claim',
         scanId,
         name: claimValue('name'),
-        phone: claimValue('phone'),
-        email: claimValue('email'),
+        phone: claimPhone,
+        email: claimEmail,
         lang: config.lang,
-        website: claimValue('website'),
+        website: honeypot,
         utm: collectUtm(),
       });
+
+      if (token !== resultToken) return;
 
       claim.dataset.busy = 'false';
       if (claimBtn) claimBtn.disabled = false;
       claimLabel.textContent = config.strings.claimCta;
 
+      // Claim path checks only `result.ok` — unlike the scan path above,
+      // n8n deliberately always answers {ok:true,claimed:true} for a
+      // well-formed claim, by design, so a scanId cannot be enumerated by
+      // watching which ones "succeed" (M2). Do not "harmonise" the two.
       if (!result.ok) {
         showError(config.strings.failed);
         return;
