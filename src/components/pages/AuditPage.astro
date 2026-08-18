@@ -1,0 +1,441 @@
+---
+/**
+ * Audit page (Feature 2): a two-step funnel, not a report.
+ *
+ * Step 1 — POST { action: 'scan' } to SITE.auditWebhookUrl. The response is
+ * deliberately light: four scores, an issue count, one headline title. That
+ * is the hook — enough to be certain something is wrong, not enough to fix
+ * it alone. A scan can legitimately fail (Google's PageSpeed quota, a
+ * malformed target, a slow origin) — that is treated as a first-class,
+ * expected outcome, not a broken page: the visitor gets an honest message
+ * and a WhatsApp route, never a zero score.
+ *
+ * Step 2 — once a scan has produced a scanId, the claim form appears (only
+ * when there is something to sell a fix for) and POSTs { action: 'claim' }
+ * with the visitor's contact details. The full breakdown never reaches the
+ * browser at any point — it goes to the team, who follow up on WhatsApp.
+ *
+ * Fail-safe: when SITE.auditWebhookUrl is empty, this renders the
+ * unavailable copy and a WhatsApp button instead of a form that cannot
+ * submit.
+ */
+import { getEntry } from 'astro:content';
+import type { Lang } from '@/config/site';
+import { SITE, waLink } from '@/config/site';
+import { useTranslations } from '@/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+import AuditResult from '@/components/AuditResult.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const page = await getEntry('pages', `${lang}/audit`);
+if (!page) throw new Error(`Missing audit content for ${lang}`);
+const c = page.data as any;
+
+const webhookConfigured = Boolean(SITE.auditWebhookUrl);
+
+// Strings the client-side script needs, embedded once as JSON.
+const formConfig = {
+  webhook: SITE.auditWebhookUrl,
+  lang,
+  strings: {
+    required: t.form.errRequired,
+    running: t.audit.running,
+    run: t.audit.run,
+    invalid: t.audit.invalid,
+    failed: t.audit.failed,
+    claimCta: t.audit.claimCta,
+    claimSending: t.audit.claimSending,
+  },
+};
+
+const inputClass =
+  'w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-text placeholder:text-muted focus:border-orange/60 focus:outline-none';
+
+const modeChoices = [
+  { value: 'website', label: t.audit.modeWebsite, targetLabel: t.audit.targetWebsite },
+  { value: 'instagram', label: t.audit.modeInstagram, targetLabel: t.audit.targetInstagram },
+] as const;
+---
+
+<BaseLayout lang={lang} title={c.meta.title} description={c.meta.description}>
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 glow-orange" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-4xl px-5 pb-14 pt-20 md:pt-28" data-reveal-group>
+      <p class="eyebrow" data-reveal>{c.hero.eyebrow}</p>
+      <h1 class="font-display mt-3 font-bold text-text" style="font-size: var(--text-h1);">
+        {c.hero.title}
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted" data-reveal>{c.hero.intro}</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 pb-24 md:pb-32">
+    <div class="card p-8 md:p-10" data-reveal>
+      {
+        !webhookConfigured ? (
+          <div
+            class="flex flex-col items-start gap-4 rounded-xl border border-orange/30 bg-surface-2 p-6"
+            role="status"
+          >
+            {/* TODO_N8N_AUDIT_URL: PUBLIC_N8N_AUDIT_URL not set — the audit
+                ships in fallback state with a WhatsApp route (SPEC §14). */}
+            <p class="text-muted">{t.audit.unavailable}</p>
+            <a
+              href={waLink(lang)}
+              target="_blank"
+              rel="noopener"
+              class="btn-primary !px-5 !py-2.5 text-sm"
+              data-event="whatsapp_click"
+              data-placement="audit-disabled"
+            >
+              <Icon name="whatsapp" size={17} />
+              {t.cta.whatsapp}
+            </a>
+          </div>
+        ) : (
+          <>
+            <form id="audit-form" class="grid gap-5" novalidate data-config={JSON.stringify(formConfig)}>
+              {SITE.auditInstagramEnabled && (
+                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label={t.audit.run}>
+                  {modeChoices.map((choice, i) => (
+                    <label class="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={choice.value}
+                        checked={i === 0}
+                        class="peer sr-only"
+                        data-mode-input
+                        data-target-label={choice.targetLabel}
+                      />
+                      <span class="inline-flex items-center rounded-full border border-line px-4 py-2 text-sm font-medium text-muted peer-checked:border-orange peer-checked:bg-orange/10 peer-checked:text-orange">
+                        {choice.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {!SITE.auditInstagramEnabled && <input type="hidden" name="mode" value="website" />}
+
+              <div>
+                <label for="audit-target" class="mb-2 block text-sm font-medium text-text" data-target-label>
+                  {t.audit.targetWebsite}
+                </label>
+                <input
+                  id="audit-target"
+                  name="target"
+                  type="text"
+                  required
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="off"
+                />
+                <p class="mt-1.5 hidden text-sm text-orange-hot" data-target-error></p>
+              </div>
+
+              <!-- Honeypot: must stay empty; hidden from humans -->
+              <div class="hp-field" aria-hidden="true">
+                <label for="audit-website">{t.form.hpLabel}</label>
+                <input id="audit-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4">
+                <button type="submit" class="btn-primary">
+                  <Icon name="search" size={17} />
+                  <span data-submit-label>{t.audit.run}</span>
+                </button>
+                <span class="text-sm text-muted" data-audit-status aria-live="polite"></span>
+              </div>
+              <p class="hidden text-sm text-muted" data-running-note>{t.audit.runningNote}</p>
+            </form>
+
+            <!-- Scan/claim failure: honest message, never a blank or broken
+                 result — always paired with a WhatsApp route so a failed
+                 scan (a real, expected outcome while PageSpeed's quota is
+                 tight) does not lose the lead. -->
+            <div
+              id="audit-error"
+              class="mt-6 hidden rounded-xl border border-orange-hot/40 bg-surface-2 p-6"
+              role="alert"
+              tabindex="-1"
+            >
+              <p class="text-text/90" data-audit-error-text></p>
+              <a
+                href={waLink(lang)}
+                target="_blank"
+                rel="noopener"
+                class="btn-primary mt-4 !px-5 !py-2.5 text-sm"
+                data-event="whatsapp_click"
+                data-placement="audit-error"
+              >
+                <Icon name="whatsapp" size={17} />
+                {t.cta.whatsapp}
+              </a>
+            </div>
+          </>
+        )
+      }
+    </div>
+
+    {
+      webhookConfigured && (
+        <>
+          <AuditResult lang={lang} />
+
+          <!-- Step 2: hidden until a scan produces a scanId AND finds
+               something worth fixing — nothing to sell, no phone number asked. -->
+          <form id="audit-claim" class="card mt-6 hidden p-8 md:p-10" novalidate>
+            <h2 class="font-display text-xl font-bold text-text">{t.audit.claimTitle}</h2>
+            <p class="mt-2 text-muted">{t.audit.claimBody}</p>
+
+            <div class="mt-6 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label for="audit-claim-name" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimName}
+                </label>
+                <input id="audit-claim-name" name="name" type="text" required class={inputClass} autocomplete="name" />
+              </div>
+              <div>
+                <label for="audit-claim-phone" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimPhone}
+                </label>
+                <input
+                  id="audit-claim-phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="tel"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label for="audit-claim-email" class="mb-2 block text-sm font-medium text-text">
+                  {t.audit.claimEmail} <span class="font-normal text-muted">({t.form.optional})</span>
+                </label>
+                <input
+                  id="audit-claim-email"
+                  name="email"
+                  type="email"
+                  dir="ltr"
+                  class={`${inputClass} text-start`}
+                  autocomplete="email"
+                />
+              </div>
+            </div>
+
+            <!-- Honeypot -->
+            <div class="hp-field" aria-hidden="true">
+              <label for="audit-claim-website">{t.form.hpLabel}</label>
+              <input id="audit-claim-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <button type="submit" class="btn-primary mt-6">
+              <Icon name="send" size={17} />
+              <span data-claim-submit-label>{t.audit.claimCta}</span>
+            </button>
+          </form>
+
+          <div id="audit-claimed" class="card mt-6 hidden p-8 text-center" role="status" tabindex="-1">
+            <span class="mx-auto grid h-14 w-14 place-items-center rounded-full border border-orange/40 text-orange">
+              <Icon name="check-circle" size={28} />
+            </span>
+            <h3 class="font-display mt-5 text-xl font-bold text-text">{t.audit.claimedTitle}</h3>
+            <p class="mt-2 text-muted">{t.audit.claimedBody}</p>
+          </div>
+        </>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  /* Honeypot: visually removed, still in the DOM for bots */
+  .hp-field {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { postToN8n, collectUtm } from '@/scripts/n8n-client';
+
+  function initAudit() {
+    const form = document.getElementById('audit-form') as HTMLFormElement | null;
+    if (!form || form.dataset.bound === 'true') return;
+    form.dataset.bound = 'true';
+
+    const config = JSON.parse(form.dataset.config || '{}');
+    const panel = document.getElementById('audit-result')!;
+    const claim = document.getElementById('audit-claim') as HTMLFormElement | null;
+    const claimed = document.getElementById('audit-claimed');
+    const errorBox = document.getElementById('audit-error')!;
+    const errorText = errorBox.querySelector<HTMLElement>('[data-audit-error-text]')!;
+    const status = form.querySelector<HTMLElement>('[data-audit-status]')!;
+    const runningNote = form.querySelector<HTMLElement>('[data-running-note]')!;
+    const targetInput = form.elements.namedItem('target') as HTMLInputElement;
+    const targetError = form.querySelector<HTMLElement>('[data-target-error]')!;
+    const targetLabel = form.querySelector<HTMLElement>('[data-target-label]')!;
+    const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+
+    let scanId = '';
+
+    const value = (f: HTMLFormElement, name: string) =>
+      ((f.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+
+    // Instagram mode (when enabled) swaps the target field's label.
+    form.querySelectorAll<HTMLInputElement>('[data-mode-input]').forEach((input) => {
+      input.addEventListener('change', () => {
+        if (input.checked && input.dataset.targetLabel) {
+          targetLabel.textContent = input.dataset.targetLabel;
+        }
+      });
+    });
+
+    function showError(message: string) {
+      errorText.textContent = message;
+      errorBox.classList.remove('hidden');
+      errorBox.focus();
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (form.dataset.busy === 'true') return;
+
+      const target = value(form, 'target');
+      if (!target) {
+        targetError.textContent = config.strings.required;
+        targetError.classList.remove('hidden');
+        targetInput.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      targetError.classList.add('hidden');
+      targetInput.removeAttribute('aria-invalid');
+
+      form.dataset.busy = 'true';
+      errorBox.classList.add('hidden');
+      if (submitBtn) submitBtn.disabled = true;
+      status.textContent = config.strings.running;
+      submitLabel.textContent = config.strings.running;
+      runningNote.classList.remove('hidden');
+
+      // PageSpeed is slow by nature — allow 90s before giving up.
+      const result = await postToN8n(
+        config.webhook,
+        {
+          action: 'scan',
+          mode: value(form, 'mode') || 'website',
+          target,
+          lang: config.lang,
+          page_url: window.location.href,
+          website: value(form, 'website'),
+          utm: collectUtm(),
+        },
+        90_000,
+      );
+
+      form.dataset.busy = 'false';
+      if (submitBtn) submitBtn.disabled = false;
+      status.textContent = '';
+      submitLabel.textContent = config.strings.run;
+      runningNote.classList.add('hidden');
+
+      const data = result.data as any;
+      if (!result.ok || !data?.ok) {
+        // A failed scan (Google's PageSpeed quota, a slow origin, an
+        // unusable response) is a real, expected outcome, not a broken
+        // page — say so plainly and hand over the WhatsApp route so the
+        // lead is never lost. The backend has already logged the attempt.
+        showError(data?.reason === 'invalid_target' ? config.strings.invalid : config.strings.failed);
+        return;
+      }
+
+      scanId = data.scanId ?? '';
+
+      for (const [key, score] of Object.entries(data.scores ?? {})) {
+        const slot = panel.querySelector(`[data-score="${key}"]`);
+        if (!slot) continue;
+        // textContent only — a finding title, and by extension anything
+        // else in this payload, comes from an external API and must never
+        // be parsed as HTML.
+        slot.textContent = String(score);
+        // Colour carries the verdict faster than the number does.
+        const n = Number(score);
+        slot.classList.add(n < 50 ? 'text-red' : n < 90 ? 'text-orange' : 'text-green');
+      }
+
+      const count = Number(data.issueCount ?? 0);
+      panel.querySelector('[data-issue-count]')!.textContent = String(count);
+
+      const teaser = panel.querySelector('[data-teaser]')!;
+      const clean = panel.querySelector('[data-clean]')!;
+      if (count > 0 && data.teaser?.title) {
+        panel.querySelector('[data-teaser-title]')!.textContent = data.teaser.title;
+        teaser.classList.remove('hidden');
+        clean.classList.add('hidden');
+        claim?.classList.remove('hidden');
+      } else {
+        teaser.classList.add('hidden');
+        clean.classList.remove('hidden');
+        // Nothing to sell a fix for — do not ask for a phone number.
+        claim?.classList.add('hidden');
+      }
+
+      panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    if (!claim || !claimed) return;
+
+    claim.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!scanId || claim.dataset.busy === 'true') return;
+      claim.dataset.busy = 'true';
+      const claimBtn = claim.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const claimLabel = claim.querySelector<HTMLElement>('[data-claim-submit-label]')!;
+      if (claimBtn) claimBtn.disabled = true;
+      claimLabel.textContent = config.strings.claimSending;
+
+      const claimValue = (name: string) =>
+        ((claim.elements.namedItem(name) as HTMLInputElement | null)?.value ?? '').trim();
+
+      const result = await postToN8n(config.webhook, {
+        action: 'claim',
+        scanId,
+        name: claimValue('name'),
+        phone: claimValue('phone'),
+        email: claimValue('email'),
+        lang: config.lang,
+        website: claimValue('website'),
+        utm: collectUtm(),
+      });
+
+      claim.dataset.busy = 'false';
+      if (claimBtn) claimBtn.disabled = false;
+      claimLabel.textContent = config.strings.claimCta;
+
+      if (!result.ok) {
+        showError(config.strings.failed);
+        return;
+      }
+
+      claim.classList.add('hidden');
+      claimed.classList.remove('hidden');
+      claimed.focus();
+    });
+  }
+
+  initAudit();
+  document.addEventListener('astro:page-load', initAudit);
+</script>

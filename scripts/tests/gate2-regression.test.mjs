@@ -1370,3 +1370,47 @@ test('the shared n8n client times out, never throws, and carries campaign data',
     assert.match(client, new RegExp(key));
   }
 });
+
+test('the audit is a two-step funnel that withholds the fixes (Feature 2)', async () => {
+  const [page, result, site, enPrivacy, arPrivacy, en, ar] = await Promise.all([
+    source('src/components/pages/AuditPage.astro'),
+    source('src/components/AuditResult.astro'),
+    source('src/config/site.ts'),
+    source('src/content/pages/en/privacy.mdx'),
+    source('src/content/pages/ar/privacy.mdx'),
+    source('src/i18n/en.ts'),
+    source('src/i18n/ar.ts'),
+  ]);
+
+  assert.match(site, /auditWebhookUrl:/);
+  assert.match(site, /auditInstagramEnabled:/);
+
+  // Step 1 scans, step 2 claims — two distinct actions on one endpoint.
+  assert.match(page, /action: 'scan'/);
+  assert.match(page, /action: 'claim'/);
+  // The claim step carries the scanId from the scan, or the two cannot be joined.
+  assert.match(page, /scanId/);
+  // Contact capture is WhatsApp-first: the team calls, it does not email a report.
+  assert.match(page, /name="phone"/);
+
+  // Results land in a pre-sized container — no layout shift (§12).
+  assert.match(result, /min-block-size:/);
+  // Scores render from the response, never hardcoded (§2.1).
+  assert.doesNotMatch(result, /performance"?\s*:\s*\d+/);
+  // The result panel must not render per-finding detail — that is the hook.
+  assert.doesNotMatch(result, /data-finding-detail/);
+
+  // Empty config renders a fallback, not a dead form.
+  assert.match(page, /SITE\.auditWebhookUrl/);
+  assert.match(page, /SITE\.auditInstagramEnabled/);
+  // Shared client, not a second fetch implementation.
+  assert.match(page, /from '@\/scripts\/n8n-client'/);
+
+  for (const dict of [en, ar]) {
+    assert.match(dict, /audit: \{/);
+    assert.match(dict, /claimCta:/);
+  }
+
+  assert.match(enPrivacy, /audit/i);
+  assert.match(arPrivacy, /الفحص/);
+});
