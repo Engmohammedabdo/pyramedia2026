@@ -1030,3 +1030,35 @@ two could silently lag. Now:
 
 The TikTok glyph is tabler's `brand-tiktok` (MIT), on the same 24px outline
 grid as the existing WhatsApp icon, so the footer row stays visually uniform.
+
+### A.10 OpenAI Ads Pixel as a fourth analytics provider (approved by Abdou, 22 September 2026)
+
+§10 named GA4 and the Meta Pixel; A.4 added the TikTok Pixel as a third. The
+owner is running ChatGPT Ads and supplied an OpenAI Ads (ChatGPT) Measurement
+Pixel ID, so it joins the others as a fourth **independent** provider under
+the same rules:
+
+- It loads through Partytown and **only after the visitor accepts** the
+  consent banner. Decline ⇒ it is never injected.
+- Each provider is independent: any combination of the four IDs may be
+  configured, and only the configured ones load. With none configured, no
+  analytics code and no consent banner render at all.
+- The conversion events of §10 keep their exact names across GA4, Meta and
+  TikTok. OpenAI is the one deliberate exception: `whatsapp_click`,
+  `form_success`, `call_click` and `email_click` — the confirmed-contact
+  conversion events — map to OpenAI's own standard `lead_created` event,
+  because this is a lead-generation business and OpenAI's ad platform
+  optimises campaigns against its standard event taxonomy, not arbitrary
+  custom names. `form_submit` is excluded from that mapping on purpose:
+  `ContactPage.astro` fires `form_submit` on click and `form_success` moments
+  later on the same successful send, so mapping both to `lead_created` would
+  report two leads for one real submission. `form_submit` and the three
+  engagement events (`client_apply_click`, `careers_click`, `work_click`,
+  none of them used for campaign optimisation on any provider) go through as
+  an OpenAI custom event instead, via `oaiq('measure', 'custom', ...)`.
+- The consent banner and the privacy policies name the providers that are
+  actually configured in the build — §2.1 applies to disclosures too.
+
+**Placeholder.** `TODO_OPENAI_PIXEL_ID` in `.env` / `PUBLIC_OPENAI_PIXEL_ID`.
+While empty, the Pixel is not injected and the build behaves exactly as
+before this addendum.

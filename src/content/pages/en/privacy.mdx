@@ -21,7 +21,7 @@ This policy describes what data this website collects, why, and what happens to 
 {/* Provider-aware disclosure (G2-RR2-002): the rendered text always matches
     the actual analytics state of the build. */}
 
-export const analyticsList = [SITE.ga4Id && 'Google Analytics 4', SITE.metaPixelId && 'the Meta Pixel', SITE.tiktokPixelId && 'the TikTok Pixel'].filter(Boolean);
+export const analyticsList = [SITE.ga4Id && 'Google Analytics 4', SITE.metaPixelId && 'the Meta Pixel', SITE.tiktokPixelId && 'the TikTok Pixel', SITE.openaiPixelId && 'the OpenAI Ads Pixel'].filter(Boolean);
 export const analyticsTools = analyticsList.length > 1 ? `${analyticsList.slice(0, -1).join(', ')} and ${analyticsList[analyticsList.length - 1]}` : analyticsList.join('');
 
 {analyticsTools ? (

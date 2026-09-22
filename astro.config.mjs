@@ -12,6 +12,7 @@ const partytownForwards = [
   ...(env.PUBLIC_GA4_ID ? ['dataLayer.push'] : []),
   ...(env.PUBLIC_META_PIXEL_ID ? ['fbq'] : []),
   ...(env.PUBLIC_TIKTOK_PIXEL_ID ? ['ttq.track', 'ttq.page'] : []),
+  ...(env.PUBLIC_OPENAI_PIXEL_ID ? ['oaiq'] : []),
 ];
 
 // https://astro.build/config

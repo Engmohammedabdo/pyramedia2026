@@ -62,7 +62,8 @@ GitHub configuration:
 
 - Secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`
 - Variables (optional): `BLUEHOST_SITE_ROOT` (default `public_html/`),
-  `PUBLIC_GA4_ID`, `PUBLIC_META_PIXEL_ID`, `PUBLIC_N8N_WEBHOOK_URL`
+  `PUBLIC_GA4_ID`, `PUBLIC_META_PIXEL_ID`, `PUBLIC_TIKTOK_PIXEL_ID`,
+  `PUBLIC_OPENAI_PIXEL_ID`, `PUBLIC_N8N_WEBHOOK_URL`
 
 While the FTP secrets are missing the deploy step is skipped with a clear
 log message — the build and guard still run.
@@ -80,9 +81,10 @@ manager or FTPS client. Never upload the repository itself.
   prebuilt `.html` files via `public/.htaccess`, which also carries the
   legacy 301 map from the old site (SPEC §5.1), HTTPS/non-www canonical,
   caching and security headers.
-- Analytics (GA4 + Meta Pixel) load via Partytown **only after** the
-  visitor accepts the consent banner. Conversion events: `whatsapp_click`
-  `{placement}`, `form_submit`, `form_success`, `call_click`, `email_click`.
+- Analytics (GA4 + Meta Pixel + TikTok Pixel + OpenAI Ads Pixel) load via
+  Partytown **only after** the visitor accepts the consent banner.
+  Conversion events: `whatsapp_click` `{placement}`, `form_submit`,
+  `form_success`, `call_click`, `email_click`.
 - The contact form POSTs JSON to `PUBLIC_N8N_WEBHOOK_URL` per the SPEC §7.4
   contract (honeypot `website` field + 4s minimum-time-on-page spam traps).
 - Blog-ready, not blog-built: add a `blog` collection in

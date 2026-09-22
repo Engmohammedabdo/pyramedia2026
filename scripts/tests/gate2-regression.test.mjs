@@ -475,7 +475,7 @@ test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)',
 
   // Injected only when its own ID is set, and only inside the consent gate
   assert.match(component, /if \(TIKTOK\) \{/);
-  assert.match(component, /const enabled = Boolean\(ga4 \|\| pixel \|\| tiktok\)/);
+  assert.match(component, /const enabled = Boolean\(ga4 \|\| pixel \|\| tiktok(?: \|\| openai)?\)/);
   assert.ok(
     component.indexOf("localStorage.getItem('pyx-consent') === 'accepted'") <
       component.indexOf("window.addEventListener('pyx:consent'") + component.length,
@@ -490,8 +490,10 @@ test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)',
     'TikTok dispatch must be gated by a configured ID',
   );
 
-  // Consent UI and CSP both account for the third provider
-  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId \|\| SITE\.tiktokPixelId\) && <ConsentBanner/);
+  // Consent UI and CSP both account for the third provider (a fourth,
+  // OpenAI, joined in Addendum A.10 — assert the property, not a fixed
+  // provider count, per G2-RR2-002)
+  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId \|\| SITE\.tiktokPixelId(?: \|\| SITE\.openaiPixelId)?\) && <ConsentBanner/);
   assert.match(htaccess, /script-src[^"]*https:\/\/analytics\.tiktok\.com/);
 });
 
@@ -509,6 +511,59 @@ test('privacy disclosures name every configured analytics provider (SPEC Addendu
   }
   assert.match(privacyEn, /the TikTok Pixel/);
   assert.match(privacyAr, /بكسل تيك توك/u);
+});
+
+test('OpenAI Ads Pixel is a fourth independent consent-gated provider (SPEC Addendum A.10)', async () => {
+  const [config, site, analytics, component, layout, htaccess, envExample] = await Promise.all([
+    source('astro.config.mjs'),
+    source('src/config/site.ts'),
+    source('src/scripts/analytics.ts'),
+    source('src/components/Analytics.astro'),
+    source('src/layouts/BaseLayout.astro'),
+    source('public/.htaccess'),
+    source('.env.example'),
+  ]);
+
+  // Configured through the same env-driven path as the other three providers
+  assert.match(site, /openaiPixelId:\s*import\.meta\.env\.PUBLIC_OPENAI_PIXEL_ID\s*\|\|\s*''/);
+  assert.match(envExample, /PUBLIC_OPENAI_PIXEL_ID=/);
+
+  // Injected only when its own ID is set, and only inside the consent gate
+  assert.match(component, /if \(OPENAI\) \{/);
+  assert.match(component, /const enabled = Boolean\(ga4 \|\| pixel \|\| tiktok \|\| openai\)/);
+  assert.match(component, /oa\.type = 'text\/partytown'/);
+  assert.match(component, /bzrcdn\.openai\.com\/sdk\/oaiq\.min\.js/);
+
+  // Event dispatch gated by a configured ID, like the other three providers
+  assert.match(analytics, /if\s*\(SITE\.openaiPixelId\s*&&\s*typeof window\.oaiq\s*===\s*['"]function['"]\)\s*\{/);
+  assert.ok(
+    analytics.indexOf('if (SITE.openaiPixelId') < analytics.indexOf("window.oaiq('measure'"),
+    'OpenAI dispatch must be gated by a configured ID',
+  );
+
+  // Consent UI accounts for the fourth provider
+  assert.match(layout, /SITE\.openaiPixelId\) && <ConsentBanner/);
+
+  // Without these, window.oaiq would not exist on the main thread (Partytown
+  // only proxies whitelisted forwards) and the CDN script would be blocked
+  // by CSP — both are easy to forget when adding a fourth provider
+  assert.match(config, /env\.PUBLIC_OPENAI_PIXEL_ID\s*\?\s*\[\s*['"]oaiq['"]\s*\]\s*:\s*\[\s*\]/);
+  assert.match(htaccess, /script-src[^"]*https:\/\/bzrcdn\.openai\.com/);
+});
+
+test('OpenAI lead mapping covers confirmed-contact events only, excluding form_submit (SPEC Addendum A.10)', async () => {
+  const analytics = await source('src/scripts/analytics.ts');
+
+  assert.match(
+    analytics,
+    /OPENAI_LEAD_EVENTS = new Set\(\[\s*'whatsapp_click',\s*'form_success',\s*'call_click',\s*'email_click',?\s*\]\)/,
+  );
+  // form_submit must never reach OPENAI_LEAD_EVENTS — it fires on click,
+  // form_success fires moments later on the same successful send, so mapping
+  // both to the standard lead_created event would double-count one real lead
+  assert.doesNotMatch(analytics, /OPENAI_LEAD_EVENTS = new Set\(\[[^\]]*'form_submit'/);
+  assert.match(analytics, /OPENAI_LEAD_EVENTS\.has\(event\)/);
+  assert.match(analytics, /oaiq\('measure', 'lead_created', \{ type: 'customer_action' \}\)/);
 });
 
 test('contact placeholders use the compliant muted token without color-transition noise', async () => {
@@ -872,10 +927,13 @@ test('consent UI and analytics disclosure are provider-aware (G2-RR2-002)', asyn
     source('src/content/pages/ar/privacy.mdx'),
   ]);
   // Banner renders only when at least one provider is configured. The exact
-  // provider set grew to three in Addendum A.4, so assert the property
-  // (every configured provider is part of the condition) rather than a
-  // fixed two-provider string.
-  assert.match(layout, /\(SITE\.ga4Id \|\| SITE\.metaPixelId(?: \|\| SITE\.tiktokPixelId)?\) && <ConsentBanner/);
+  // provider set grew to three in Addendum A.4 and four in A.10, so assert
+  // the property (every configured provider is part of the condition)
+  // rather than a fixed provider-count string.
+  assert.match(
+    layout,
+    /\(SITE\.ga4Id \|\| SITE\.metaPixelId(?: \|\| SITE\.tiktokPixelId)?(?: \|\| SITE\.openaiPixelId)?\) && <ConsentBanner/,
+  );
   for (const policy of [privacyEn, privacyAr]) {
     assert.match(policy, /SITE\.ga4Id/);
     assert.match(policy, /SITE\.metaPixelId/);

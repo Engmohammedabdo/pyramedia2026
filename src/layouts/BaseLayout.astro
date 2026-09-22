@@ -75,7 +75,7 @@ const preloads =
       /* Consent UI exists only when an analytics provider is configured —
          asking for cookie consent in a build that sets no analytics cookies
          would itself be an untrue disclosure (G2-RR2-002). */
-      (SITE.ga4Id || SITE.metaPixelId || SITE.tiktokPixelId) && <ConsentBanner lang={lang} />
+      (SITE.ga4Id || SITE.metaPixelId || SITE.tiktokPixelId || SITE.openaiPixelId) && <ConsentBanner lang={lang} />
     }
     <Analytics />
     <slot name="scripts" />

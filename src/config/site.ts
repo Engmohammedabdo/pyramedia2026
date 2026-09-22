@@ -75,6 +75,9 @@ export const SITE = {
   ga4Id: import.meta.env.PUBLIC_GA4_ID || '',
   metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID || '',
   tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID || '',
+  // OpenAI Ads (ChatGPT) Measurement Pixel — fourth analytics provider,
+  // SPEC Addendum A.10.
+  openaiPixelId: import.meta.env.PUBLIC_OPENAI_PIXEL_ID || '',
   n8nWebhookUrl: import.meta.env.PUBLIC_N8N_WEBHOOK_URL || '',
   // Instant audit webhook (Feature 2). Empty ⇒ the audit route renders its
   // WhatsApp fallback instead of a form that cannot run.

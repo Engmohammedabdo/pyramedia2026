@@ -14,6 +14,7 @@ It does not replace the independent review reports.
 | ~~`TODO_N8N_WEBHOOK`~~ | `.env` → `PUBLIC_N8N_WEBHOOK_URL` | **Closed 2026-08-17.** Form is live; verified end-to-end from a real browser through to Airtable and email | Emptying the value returns the form to its disabled + WhatsApp state |
 | `TODO_GA4_ID` | `.env` → `PUBLIC_GA4_ID` | GA4 is not injected | Set the production ID and rebuild |
 | `TODO_META_PIXEL_ID` | `.env` → `PUBLIC_META_PIXEL_ID` | Meta Pixel is not injected | Set the production ID and rebuild |
+| ~~`TODO_OPENAI_PIXEL_ID`~~ | `.env` → `PUBLIC_OPENAI_PIXEL_ID` | **Resolved 2026-09-22.** OpenAI Ads (ChatGPT) Measurement Pixel ID set locally (Addendum A.10); needs adding to the deploy pipeline's variables/secrets before it goes live | Add `PUBLIC_OPENAI_PIXEL_ID` alongside the other analytics variables in the GitHub Actions config, then rebuild/redeploy |
 | `TODO_FOUNDER_PHOTO` | `src/components/FounderPanel.astro` | **Section hidden entirely since 2026-08-17** via `SITE.showFounder = false` (Addendum A.7); never a stock or generated face | Add the approved photo under `src/assets/founder/`, use `astro:assets`, then flip `showFounder` to `true` |
 | ~~`TODO_CLIENT_LOGO_1..5`~~ | — | **Resolved 2026-08-17.** Six owner-supplied logos now ship (Addendum A.6). The text fallback stays in `HomePage.astro` for any client id without a file | Drop a file in `src/assets/clients/`, import it into `CLIENT_LOGOS`, add the id to both `home.json` files |
 | FTP secrets | GitHub secrets `FTP_SERVER` / `FTP_USERNAME` / `FTP_PASSWORD` and optional `BLUEHOST_SITE_ROOT` | CI keeps the build artifact and skips FTPS when secrets are absent | Configure the real repository only after authorization |
@@ -988,3 +989,43 @@ exactly the kind of fabricated measurement SPEC §2.1 rules out. A trapped
 audit submission instead sends nothing and shows nothing (no panel, no
 error) — the request is still suppressed either way, which is the trap's
 actual purpose.
+
+- **2026-09-22 — OpenAI Ads Pixel added as a fourth analytics provider
+  (SPEC Addendum A.10; owner instruction).** Muhammad supplied a live OpenAI
+  Ads (ChatGPT) Measurement Pixel ID directly in chat. Verified first that
+  the `bzrcdn.openai.com/sdk/oaiq.min.js` snippet is OpenAI's real, documented
+  ChatGPT Ads pixel (developers.openai.com/ads/measurement-pixel), not a
+  third-party script, before adding anything to the site. Wired it exactly
+  like the existing GA4/Meta/TikTok providers rather than dropping the raw
+  snippet into `<head>`: consent-gated, loaded through Partytown, independent
+  of the other three, and silent when its ID is empty (`src/config/site.ts`
+  → `openaiPixelId`, `src/components/Analytics.astro`, `src/layouts/
+  BaseLayout.astro`'s consent-banner condition).
+  - **Event mapping decision (resolved 2026-09-22, Muhammad delegated the
+    call).** Unlike GA4/Meta/TikTok, OpenAI gets a deliberate exception to
+    the "one event vocabulary" rule: `whatsapp_click`, `form_success`,
+    `call_click` and `email_click` map to OpenAI's standard `lead_created`
+    event (`{type: 'customer_action'}`) instead of a custom name, because
+    (a) this is a lead-generation business, so every one of those is a real
+    lead touchpoint, not an e-commerce action, and (b) ad platforms generally
+    require a standard event, not an arbitrary custom one, to be selectable
+    as a campaign optimisation goal — so keeping OpenAI on custom names only
+    would have left its ads with no usable optimisation signal.
+    `form_submit` is deliberately EXCLUDED from that mapping: reading
+    `ContactPage.astro`, `form_submit` fires on click and `form_success`
+    fires moments later on the same successful send, so one real completed
+    lead would have reported as two `lead_created` events if both mapped.
+    `form_submit` and the three engagement events keep going through as an
+    OpenAI custom event, same as before. Verified live in a local preview:
+    accepting consent and submitting the contact form injects the pixel and
+    fires the mapped calls; `src/scripts/analytics.ts` and `SPEC.md`
+    Addendum A.10 both describe the final mapping.
+  - `debug: true` from the pasted setup snippet was deliberately dropped —
+    that flag is for testing, not production traffic.
+  - Privacy disclosures (both languages) and the consent-banner gate were
+    extended to include this fourth provider, per A.4's disclosure rule.
+  - **Placeholder.** The real pixel ID (`KvduapqrtBXiaEvxfcuXdq`) is set in
+    the local, git-ignored `.env` only — never committed, matching how the
+    GA4/Meta/TikTok IDs are handled. It still needs adding to the GitHub
+    Actions deploy variables before it takes effect on the live site; see
+    `TODO_OPENAI_PIXEL_ID` above.

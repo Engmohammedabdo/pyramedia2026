@@ -1,24 +1,26 @@
 ---
 /**
- * Consent-gated analytics (SPEC §10 + Addendum A.4). GA4, Meta Pixel and
- * TikTok Pixel load through Partytown (web worker) and ONLY after the
- * visitor accepts the consent banner. Decline ⇒ nothing is injected, ever.
- * Each provider is independent: whichever IDs are configured are the only
- * ones that load, and with none configured this component renders nothing
- * at all (SPEC §14).
+ * Consent-gated analytics (SPEC §10 + Addendum A.4, A.10). GA4, Meta Pixel,
+ * TikTok Pixel and the OpenAI Ads Pixel load through Partytown (web worker)
+ * and ONLY after the visitor accepts the consent banner. Decline ⇒ nothing
+ * is injected, ever. Each provider is independent: whichever IDs are
+ * configured are the only ones that load, and with none configured this
+ * component renders nothing at all (SPEC §14).
  */
 import { SITE } from '@/config/site';
 
 const ga4 = SITE.ga4Id; // TODO_GA4_ID — not injected while empty (SPEC §14)
 const pixel = SITE.metaPixelId; // TODO_META_PIXEL_ID — not injected while empty (SPEC §14)
 const tiktok = SITE.tiktokPixelId; // TODO_TIKTOK_PIXEL_ID — not injected while empty
-const enabled = Boolean(ga4 || pixel || tiktok);
+const openai = SITE.openaiPixelId; // TODO_OPENAI_PIXEL_ID — not injected while empty (SPEC Addendum A.10)
+const enabled = Boolean(ga4 || pixel || tiktok || openai);
 
 const loader = `
 (function () {
   var GA4 = ${JSON.stringify(ga4)};
   var PIXEL = ${JSON.stringify(pixel)};
   var TIKTOK = ${JSON.stringify(tiktok)};
+  var OPENAI = ${JSON.stringify(openai)};
   var injected = false;
   function inject() {
     if (injected) return;
@@ -44,6 +46,12 @@ const loader = `
       tt.type = 'text/partytown';
       tt.text = "!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];ttq.setAndDefer=function(e,n){e[n]=function(){e.push([n].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(e){for(var n=ttq._i[e]||[],i=0;i<ttq.methods.length;i++)ttq.setAndDefer(n,ttq.methods[i]);return n};ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement('script');o.type='text/javascript';o.async=!0;o.src=i+'?sdkid='+e+'&lib='+t;var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};ttq.load('" + TIKTOK + "');ttq.page();}(window,document,'ttq');";
       document.head.appendChild(tt);
+    }
+    if (OPENAI) {
+      var oa = document.createElement('script');
+      oa.type = 'text/partytown';
+      oa.text = "!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,'script','https://bzrcdn.openai.com/sdk/oaiq.min.js');oaiq('init',{pixelId:'" + OPENAI + "'});";
+      document.head.appendChild(oa);
     }
     window.dispatchEvent(new CustomEvent('ptupdate'));
   }
