@@ -1029,3 +1029,38 @@ actual purpose.
     GA4/Meta/TikTok IDs are handled. It still needs adding to the GitHub
     Actions deploy variables before it takes effect on the live site; see
     `TODO_OPENAI_PIXEL_ID` above.
+  - **Deployment wired (2026-09-22).** `origin` →
+    `github.com/Engmohammedabdo/pyramedia2026` (it previously held only the
+    day-1 SPEC draft; local history force-pushed with owner approval). All
+    six `PUBLIC_*` values are GitHub Actions variables and the three FTP
+    values are secrets (set by Muhammad from `.env.deploy`). A push to `main`
+    now deploys: first run uploaded 2.9 MB, deleted nothing.
+
+- **2026-09-24 — Meta Pixel and OpenAI Ads Pixel moved out of Partytown
+  (SPEC Addendum A.11; owner approval).** Muhammad reported that the OpenAI
+  Ads Manager Event Stream was empty two days after launch. Root cause:
+  Partytown loads each vendor script with `fetch()` from its worker, which
+  needs CORS. Tested with a CORS `fetch()` from the live
+  `https://pyramedia.info` origin: GA4 and TikTok load, but Meta
+  (`connect.facebook.net`) and OpenAI (`bzrcdn.openai.com`) are **blocked**
+  because they send no `Access-Control-Allow-Origin`. Both SDKs had therefore
+  never run. For Meta this dates back to launch. The 2026-07-30 QA above
+  only showed the snippet being *consumed* by Partytown, and Meta Events
+  Manager delivery was explicitly left unverified, so nothing contradicts
+  this.
+  - **Fix.** Both now load as ordinary async main-thread scripts, still
+    consent-gated. `fbq` and `oaiq` were removed from the Partytown
+    forwards, because a forward stub would trip each snippet's
+    `if (w.fbq) return` guard. GA4 and TikTok remain in Partytown. A gate2
+    test now blocks any CORS-less vendor from moving back into the worker.
+  - **Checked while here.** The inline loader does not re-run on
+    view-transition navigations. On the live site, after navigating to
+    `/about`, zero injected snippets remained in `<head>`. So consent
+    listeners do not stack up and one accept injects each vendor exactly
+    once. Meta records `PageView` for the landing page only; client-side
+    navigations are not separate Meta page views. That is pre-existing
+    behaviour and was left unchanged.
+  - **Still owner-side (GATE 3).** Confirming that events arrive in Meta
+    Events Manager and in the OpenAI Event Stream. GA4/TikTok delivery to
+    their dashboards is also still unverified; the GA4 reporting connector
+    has no credentials in this environment.

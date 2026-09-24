@@ -444,7 +444,8 @@ test('Astro object configuration and analytics dispatch honor every configured-p
   assert.match(config, /const\s+mode\s*=\s*process\.env\.NODE_ENV\s*===\s*['"]production['"]\s*\?\s*['"]production['"]\s*:\s*['"]development['"]/);
   assert.match(config, /loadEnv\(\s*mode,\s*process\.cwd\(\),\s*['"]PUBLIC_['"]\s*\)/);
   assert.match(config, /env\.PUBLIC_GA4_ID\s*\?\s*\[\s*['"]dataLayer\.push['"]\s*\]\s*:\s*\[\s*\]/);
-  assert.match(config, /env\.PUBLIC_META_PIXEL_ID\s*\?\s*\[\s*['"]fbq['"]\s*\]\s*:\s*\[\s*\]/);
+  // Meta runs on the main thread since A.11 — see the CORS test below
+  assert.doesNotMatch(section(config, 'const partytownForwards', '];'), /['"]fbq['"]/);
   const integrations = section(config, 'integrations:', 'vite:');
   assert.equal((integrations.match(/\bpartytown\s*\(/g) ?? []).length, 1);
   assert.match(integrations, /\.\.\.\(\s*partytownForwards\.length\s*\?[\s\S]*:\s*\[\s*\]\s*\)/);
@@ -514,8 +515,7 @@ test('privacy disclosures name every configured analytics provider (SPEC Addendu
 });
 
 test('OpenAI Ads Pixel is a fourth independent consent-gated provider (SPEC Addendum A.10)', async () => {
-  const [config, site, analytics, component, layout, htaccess, envExample] = await Promise.all([
-    source('astro.config.mjs'),
+  const [site, analytics, component, layout, htaccess, envExample] = await Promise.all([
     source('src/config/site.ts'),
     source('src/scripts/analytics.ts'),
     source('src/components/Analytics.astro'),
@@ -531,7 +531,6 @@ test('OpenAI Ads Pixel is a fourth independent consent-gated provider (SPEC Adde
   // Injected only when its own ID is set, and only inside the consent gate
   assert.match(component, /if \(OPENAI\) \{/);
   assert.match(component, /const enabled = Boolean\(ga4 \|\| pixel \|\| tiktok \|\| openai\)/);
-  assert.match(component, /oa\.type = 'text\/partytown'/);
   assert.match(component, /bzrcdn\.openai\.com\/sdk\/oaiq\.min\.js/);
 
   // Event dispatch gated by a configured ID, like the other three providers
@@ -544,11 +543,36 @@ test('OpenAI Ads Pixel is a fourth independent consent-gated provider (SPEC Adde
   // Consent UI accounts for the fourth provider
   assert.match(layout, /SITE\.openaiPixelId\) && <ConsentBanner/);
 
-  // Without these, window.oaiq would not exist on the main thread (Partytown
-  // only proxies whitelisted forwards) and the CDN script would be blocked
-  // by CSP — both are easy to forget when adding a fourth provider
-  assert.match(config, /env\.PUBLIC_OPENAI_PIXEL_ID\s*\?\s*\[\s*['"]oaiq['"]\s*\]\s*:\s*\[\s*\]/);
+  // Without this the CDN script is blocked by CSP under real Apache
   assert.match(htaccess, /script-src[^"]*https:\/\/bzrcdn\.openai\.com/);
+});
+
+test('vendors whose CDN sends no CORS headers load on the main thread, never in Partytown (SPEC Addendum A.11)', async () => {
+  const [config, component] = await Promise.all([
+    source('astro.config.mjs'),
+    source('src/components/Analytics.astro'),
+  ]);
+
+  // Partytown loads scripts with fetch() from its worker. connect.facebook.net
+  // and bzrcdn.openai.com send no Access-Control-Allow-Origin, so inside
+  // Partytown those SDKs never load and every event is silently dropped —
+  // shipped that way once, caught only by an empty OpenAI Event Stream.
+  const meta = section(component, 'if (PIXEL) {', 'if (TIKTOK) {');
+  const openai = section(component, 'if (OPENAI) {', "window.dispatchEvent(new CustomEvent('ptupdate'))");
+  assert.match(meta, /connect\.facebook\.net\/en_US\/fbevents\.js/);
+  assert.match(openai, /bzrcdn\.openai\.com\/sdk\/oaiq\.min\.js/);
+  assert.doesNotMatch(meta, /text\/partytown/);
+  assert.doesNotMatch(openai, /text\/partytown/);
+
+  // A forward stub would define the global first and trip the vendor
+  // snippet's own `if (w.fbq) return` / `if (w.oaiq) return` guard
+  const forwards = section(config, 'const partytownForwards', '];');
+  assert.doesNotMatch(forwards, /['"]fbq['"]/);
+  assert.doesNotMatch(forwards, /['"]oaiq['"]/);
+
+  // CORS-enabled vendors stay in the worker
+  assert.match(section(component, 'if (GA4) {', 'if (PIXEL) {'), /type = 'text\/partytown'/);
+  assert.match(section(component, 'if (TIKTOK) {', 'if (OPENAI) {'), /tt\.type = 'text\/partytown'/);
 });
 
 test('OpenAI lead mapping covers confirmed-contact events only, excluding form_submit (SPEC Addendum A.10)', async () => {

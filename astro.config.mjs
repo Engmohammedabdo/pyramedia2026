@@ -8,11 +8,12 @@ import { loadEnv } from 'vite';
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 const env = loadEnv(mode, process.cwd(), 'PUBLIC_');
+// Meta (`fbq`) and OpenAI (`oaiq`) are deliberately absent: they load on the
+// main thread (SPEC Addendum A.11), and a Partytown forward stub would define
+// the global first, so their own `if (w.fbq) return` guard would skip loading.
 const partytownForwards = [
   ...(env.PUBLIC_GA4_ID ? ['dataLayer.push'] : []),
-  ...(env.PUBLIC_META_PIXEL_ID ? ['fbq'] : []),
   ...(env.PUBLIC_TIKTOK_PIXEL_ID ? ['ttq.track', 'ttq.page'] : []),
-  ...(env.PUBLIC_OPENAI_PIXEL_ID ? ['oaiq'] : []),
 ];
 
 // https://astro.build/config

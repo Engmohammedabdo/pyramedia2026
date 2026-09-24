@@ -1062,3 +1062,35 @@ the same rules:
 **Placeholder.** `TODO_OPENAI_PIXEL_ID` in `.env` / `PUBLIC_OPENAI_PIXEL_ID`.
 While empty, the Pixel is not injected and the build behaves exactly as
 before this addendum.
+
+### A.11 Meta Pixel and OpenAI Ads Pixel load on the main thread (approved by Abdou, 24 September 2026)
+
+Amends §10, the §3 analytics row and the first bullet of A.10.
+
+**Evidence.** Partytown loads each third-party script with `fetch()` from its
+web worker, which only succeeds when the vendor's server sends CORS headers.
+Tested on the live `https://pyramedia.info` origin on 24 September 2026:
+`googletagmanager.com` (GA4) and `analytics.tiktok.com` (TikTok) answer with
+CORS and load; `connect.facebook.net/en_US/fbevents.js` (Meta) and
+`bzrcdn.openai.com/sdk/oaiq.min.js` (OpenAI) send no
+`Access-Control-Allow-Origin` and are blocked. Inside Partytown those two
+SDKs therefore never ran: no error surfaced and no event was ever sent. The
+OpenAI Ads Manager Event Stream stayed empty after launch, and Meta event
+delivery had never been verified (it was listed as GATE 3 work).
+
+**Rule.**
+
+- Meta and OpenAI load as ordinary async scripts on the main thread, still
+  **only after the visitor accepts** the consent banner. Decline ⇒ never
+  injected. The consent, independence and disclosure rules of §10, A.4 and
+  A.10 are unchanged.
+- GA4 and TikTok stay in Partytown.
+- `fbq` and `oaiq` are not Partytown forwards. A forward stub would define
+  the global first, and each vendor snippet's own `if (w.fbq) return` guard
+  would then skip loading the SDK.
+- A vendor may only run in Partytown if its script host answers a CORS
+  request. Check that before moving any provider into the worker.
+
+**Performance.** The main-thread cost falls only on visitors who have
+accepted analytics. Lab measurements are taken without consent, so the §8
+performance targets are unaffected.

@@ -1,11 +1,15 @@
 ---
 /**
- * Consent-gated analytics (SPEC §10 + Addendum A.4, A.10). GA4, Meta Pixel,
- * TikTok Pixel and the OpenAI Ads Pixel load through Partytown (web worker)
- * and ONLY after the visitor accepts the consent banner. Decline ⇒ nothing
- * is injected, ever. Each provider is independent: whichever IDs are
+ * Consent-gated analytics (SPEC §10 + Addendum A.4, A.10, A.11). Every
+ * provider loads ONLY after the visitor accepts the consent banner. Decline ⇒
+ * nothing is injected, ever. Each provider is independent: whichever IDs are
  * configured are the only ones that load, and with none configured this
  * component renders nothing at all (SPEC §14).
+ *
+ * GA4 and TikTok run in Partytown (web worker). Meta and OpenAI run on the
+ * main thread (A.11): Partytown fetches scripts from its worker, which needs
+ * CORS headers, and connect.facebook.net / bzrcdn.openai.com send none — so
+ * inside Partytown those two SDKs never load and silently send nothing.
  */
 import { SITE } from '@/config/site';
 
@@ -37,7 +41,6 @@ const loader = `
     }
     if (PIXEL) {
       var fb = document.createElement('script');
-      fb.type = 'text/partytown';
       fb.text = "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','" + PIXEL + "');fbq('track','PageView');";
       document.head.appendChild(fb);
     }
@@ -49,7 +52,6 @@ const loader = `
     }
     if (OPENAI) {
       var oa = document.createElement('script');
-      oa.type = 'text/partytown';
       oa.text = "!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,'script','https://bzrcdn.openai.com/sdk/oaiq.min.js');oaiq('init',{pixelId:'" + OPENAI + "'});";
       document.head.appendChild(oa);
     }
