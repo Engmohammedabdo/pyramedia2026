@@ -134,10 +134,10 @@ SetEnvIf Host "^(www\.)?pyramedia\.info$" MAINSITE
   Header set X-Frame-Options "SAMEORIGIN" env=MAINSITE
   Header set Referrer-Policy "strict-origin-when-cross-origin" env=MAINSITE
   Header set Permissions-Policy "camera=(), microphone=(), geolocation=()" env=MAINSITE
-  # Conservative CSP compatible with GA4 + TikTok Pixel via Partytown
-  # (same-origin worker), Meta Pixel + OpenAI Ads Pixel on the main thread
-  # (Addendum A.11), the n8n webhook (connect-src https:), the click-to-load
-  # Google Maps facade (frame-src) and the click-to-load official Instagram
-  # reel embeds (script-src + frame-src, Addendum A.1).
+  # Conservative CSP compatible with GA4 + Meta Pixel + TikTok Pixel + OpenAI
+  # Ads Pixel on the main thread (Addendum A.12), the n8n webhook
+  # (connect-src https:), the click-to-load Google Maps facade (frame-src)
+  # and the click-to-load official Instagram reel embeds (script-src +
+  # frame-src, Addendum A.1).
   Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://bzrcdn.openai.com https://www.instagram.com; worker-src 'self' blob:; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.instagram.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" env=MAINSITE
 </IfModule>

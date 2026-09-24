@@ -443,12 +443,8 @@ test('Astro object configuration and analytics dispatch honor every configured-p
   assert.doesNotMatch(config, /defineConfig\s*\(\s*\(/);
   assert.match(config, /const\s+mode\s*=\s*process\.env\.NODE_ENV\s*===\s*['"]production['"]\s*\?\s*['"]production['"]\s*:\s*['"]development['"]/);
   assert.match(config, /loadEnv\(\s*mode,\s*process\.cwd\(\),\s*['"]PUBLIC_['"]\s*\)/);
-  assert.match(config, /env\.PUBLIC_GA4_ID\s*\?\s*\[\s*['"]dataLayer\.push['"]\s*\]\s*:\s*\[\s*\]/);
-  // Meta runs on the main thread since A.11 — see the CORS test below
-  assert.doesNotMatch(section(config, 'const partytownForwards', '];'), /['"]fbq['"]/);
-  const integrations = section(config, 'integrations:', 'vite:');
-  assert.equal((integrations.match(/\bpartytown\s*\(/g) ?? []).length, 1);
-  assert.match(integrations, /\.\.\.\(\s*partytownForwards\.length\s*\?[\s\S]*:\s*\[\s*\]\s*\)/);
+  // No Partytown integration since A.12 — see the main-thread test below
+  assert.doesNotMatch(section(config, 'integrations:', 'vite:'), /partytown/i);
   assert.match(analytics, /import\s*\{\s*SITE\s*\}\s*from\s*['"]@\/config\/site['"]/);
   assert.match(analytics, /if\s*\(SITE\.ga4Id\)\s*\{/);
   assert.match(analytics, /if\s*\(SITE\.metaPixelId\s*&&\s*typeof window\.fbq\s*===\s*['"]function['"]\)\s*\{/);
@@ -459,8 +455,7 @@ test('Astro object configuration and analytics dispatch honor every configured-p
 });
 
 test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)', async () => {
-  const [config, site, analytics, component, layout, htaccess, envExample] = await Promise.all([
-    source('astro.config.mjs'),
+  const [site, analytics, component, layout, htaccess, envExample] = await Promise.all([
     source('src/config/site.ts'),
     source('src/scripts/analytics.ts'),
     source('src/components/Analytics.astro'),
@@ -472,7 +467,6 @@ test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)',
   // Configured through the same env-driven path as the other two providers
   assert.match(site, /tiktokPixelId:\s*import\.meta\.env\.PUBLIC_TIKTOK_PIXEL_ID\s*\|\|\s*''/);
   assert.match(envExample, /PUBLIC_TIKTOK_PIXEL_ID=/);
-  assert.match(config, /env\.PUBLIC_TIKTOK_PIXEL_ID\s*\?\s*\[\s*['"]ttq\.track['"],\s*['"]ttq\.page['"]\s*\]\s*:\s*\[\s*\]/);
 
   // Injected only when its own ID is set, and only inside the consent gate
   assert.match(component, /if \(TIKTOK\) \{/);
@@ -482,7 +476,6 @@ test('TikTok is a third independent consent-gated provider (SPEC Addendum A.4)',
       component.indexOf("window.addEventListener('pyx:consent'") + component.length,
     'TikTok injection must sit behind the same consent gate',
   );
-  assert.match(component, /tt\.type = 'text\/partytown'/);
 
   // Event dispatch gated by a configured ID, like GA4 and Meta
   assert.match(analytics, /if\s*\(SITE\.tiktokPixelId\s*&&\s*typeof window\.ttq\?\.track\s*===\s*['"]function['"]\)\s*\{/);
@@ -547,32 +540,61 @@ test('OpenAI Ads Pixel is a fourth independent consent-gated provider (SPEC Adde
   assert.match(htaccess, /script-src[^"]*https:\/\/bzrcdn\.openai\.com/);
 });
 
-test('vendors whose CDN sends no CORS headers load on the main thread, never in Partytown (SPEC Addendum A.11)', async () => {
-  const [config, component] = await Promise.all([
+test('every analytics vendor loads on the main thread; Partytown is gone (SPEC Addendum A.11, A.12)', async () => {
+  const [config, pkg, component] = await Promise.all([
     source('astro.config.mjs'),
+    source('package.json'),
     source('src/components/Analytics.astro'),
   ]);
 
-  // Partytown loads scripts with fetch() from its worker. connect.facebook.net
-  // and bzrcdn.openai.com send no Access-Control-Allow-Origin, so inside
-  // Partytown those SDKs never load and every event is silently dropped —
-  // shipped that way once, caught only by an empty OpenAI Event Stream.
-  const meta = section(component, 'if (PIXEL) {', 'if (TIKTOK) {');
-  const openai = section(component, 'if (OPENAI) {', "window.dispatchEvent(new CustomEvent('ptupdate'))");
-  assert.match(meta, /connect\.facebook\.net\/en_US\/fbevents\.js/);
-  assert.match(openai, /bzrcdn\.openai\.com\/sdk\/oaiq\.min\.js/);
-  assert.doesNotMatch(meta, /text\/partytown/);
-  assert.doesNotMatch(openai, /text\/partytown/);
+  // Partytown silently lost data twice: Meta/OpenAI never loaded in its worker
+  // (their CDNs send no CORS headers), and where its service worker is missing
+  // (iPhone in-app browsers) its fallback copied only innerHTML, so GA4's
+  // src-only gtag.js tag never loaded. Neither failure raised an error.
+  assert.doesNotMatch(config, /partytown/i);
+  assert.doesNotMatch(pkg, /@astrojs\/partytown/);
+  assert.doesNotMatch(component, /text\/partytown|ptupdate/);
 
-  // A forward stub would define the global first and trip the vendor
-  // snippet's own `if (w.fbq) return` / `if (w.oaiq) return` guard
-  const forwards = section(config, 'const partytownForwards', '];');
-  assert.doesNotMatch(forwards, /['"]fbq['"]/);
-  assert.doesNotMatch(forwards, /['"]oaiq['"]/);
+  const blocks = {
+    ga4: [section(component, 'if (GA4) {', 'if (PIXEL) {'), /googletagmanager\.com\/gtag\/js/],
+    meta: [section(component, 'if (PIXEL) {', 'if (TIKTOK) {'), /connect\.facebook\.net\/en_US\/fbevents\.js/],
+    tiktok: [section(component, 'if (TIKTOK) {', 'if (OPENAI) {'), /analytics\.tiktok\.com\/i18n\/pixel\/events\.js/],
+    openai: [section(component, 'if (OPENAI) {', "localStorage.getItem('pyx-consent')"), /bzrcdn\.openai\.com\/sdk\/oaiq\.min\.js/],
+  };
+  for (const [name, [block, vendorUrl]] of Object.entries(blocks)) {
+    assert.match(block, vendorUrl, `${name} block must load its vendor SDK`);
+    // TikTok's own snippet sets 'text/javascript'; any other type stops execution
+    assert.doesNotMatch(block, /\.type\s*=\s*['"](?!text\/javascript['"])/, `${name} must not set a non-executing script type`);
+  }
 
-  // CORS-enabled vendors stay in the worker
-  assert.match(section(component, 'if (GA4) {', 'if (PIXEL) {'), /type = 'text\/partytown'/);
-  assert.match(section(component, 'if (TIKTOK) {', 'if (OPENAI) {'), /tt\.type = 'text\/partytown'/);
+  // Still consent-gated: the definition plus exactly two call sites, both
+  // conditioned on "accepted" (stored choice, or the banner's live event)
+  assert.equal((component.match(/\binject\(\)/g) ?? []).length, 3);
+  assert.match(component, /localStorage\.getItem\('pyx-consent'\) === 'accepted'\) inject\(\)/);
+  assert.match(component, /e\.detail === 'accepted'\) inject\(\)/);
+});
+
+test('analytics survives deploys and misbehaving vendors: once per window, vendors isolated, CSP allows every SDK host', async () => {
+  const [component, analytics, htaccess] = await Promise.all([
+    source('src/components/Analytics.astro'),
+    source('src/scripts/analytics.ts'),
+    source('public/.htaccess'),
+  ]);
+
+  // Astro re-runs a changed inline loader / new bundle in tabs opened before a
+  // deploy; a second run would double-inject and double every event
+  assert.match(component, /if \(window\.partytown \|\| window\.__pyxAnalyticsLoaded\) return;\s*window\.__pyxAnalyticsLoaded = true;/);
+  assert.match(analytics, /if \(window\.__pyxAnalyticsBound \|\| window\.partytown\) return;\s*window\.__pyxAnalyticsBound = true;/);
+
+  // One throwing vendor must not drop the event for the vendors after it
+  const send = section(analytics, 'function send(', 'function bind(');
+  assert.equal((send.match(/\btry\s*\{/g) ?? []).length, 4);
+
+  // All four SDKs now load on the main thread, so script-src gates each one
+  const scriptSrc = htaccess.match(/Content-Security-Policy "[^"]*?script-src([^;"]*)/)?.[1] ?? '';
+  for (const host of ['www.googletagmanager.com', 'connect.facebook.net', 'analytics.tiktok.com', 'bzrcdn.openai.com']) {
+    assert.ok(scriptSrc.includes(`https://${host}`), `CSP script-src must allow ${host}`);
+  }
 });
 
 test('OpenAI lead mapping covers confirmed-contact events only, excluding form_submit (SPEC Addendum A.10)', async () => {

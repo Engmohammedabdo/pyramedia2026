@@ -2,19 +2,11 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import partytown from '@astrojs/partytown';
 import tailwindcss from '@tailwindcss/vite';
 import { loadEnv } from 'vite';
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 const env = loadEnv(mode, process.cwd(), 'PUBLIC_');
-// Meta (`fbq`) and OpenAI (`oaiq`) are deliberately absent: they load on the
-// main thread (SPEC Addendum A.11), and a Partytown forward stub would define
-// the global first, so their own `if (w.fbq) return` guard would skip loading.
-const partytownForwards = [
-  ...(env.PUBLIC_GA4_ID ? ['dataLayer.push'] : []),
-  ...(env.PUBLIC_TIKTOK_PIXEL_ID ? ['ttq.track', 'ttq.page'] : []),
-];
 
 // https://astro.build/config
 export default defineConfig({
@@ -47,7 +39,6 @@ export default defineConfig({
         locales: { en: 'en', ar: 'ar' },
       },
     }),
-    ...(partytownForwards.length ? [partytown({ config: { forward: partytownForwards } })] : []),
   ],
   vite: {
     plugins: [tailwindcss()],

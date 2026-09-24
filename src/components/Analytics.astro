@@ -6,10 +6,10 @@
  * configured are the only ones that load, and with none configured this
  * component renders nothing at all (SPEC §14).
  *
- * GA4 and TikTok run in Partytown (web worker). Meta and OpenAI run on the
- * main thread (A.11): Partytown fetches scripts from its worker, which needs
- * CORS headers, and connect.facebook.net / bzrcdn.openai.com send none — so
- * inside Partytown those two SDKs never load and silently send nothing.
+ * All four run as ordinary async main-thread scripts (Addendum A.12).
+ * Partytown was removed: Meta/OpenAI could never load in its worker (no
+ * CORS), and wherever its service worker is unavailable (e.g. the Instagram
+ * and Facebook in-app browsers on iPhone) its fallback dropped GA4 entirely.
  */
 import { SITE } from '@/config/site';
 
@@ -21,6 +21,12 @@ const enabled = Boolean(ga4 || pixel || tiktok || openai);
 
 const loader = `
 (function () {
+  // Once per window. Astro re-runs this script on the first in-site
+  // navigation after a deploy changes its text; the first copy's listener and
+  // vendor globals are already live (pre-A.12 tabs also carry Partytown stubs
+  // that collide with these snippets), so that tab keeps them until a reload.
+  if (window.partytown || window.__pyxAnalyticsLoaded) return;
+  window.__pyxAnalyticsLoaded = true;
   var GA4 = ${JSON.stringify(ga4)};
   var PIXEL = ${JSON.stringify(pixel)};
   var TIKTOK = ${JSON.stringify(tiktok)};
@@ -31,11 +37,10 @@ const loader = `
     injected = true;
     if (GA4) {
       var lib = document.createElement('script');
-      lib.type = 'text/partytown';
+      lib.async = true;
       lib.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4;
       document.head.appendChild(lib);
       var init = document.createElement('script');
-      init.type = 'text/partytown';
       init.text = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + GA4 + "');";
       document.head.appendChild(init);
     }
@@ -46,7 +51,6 @@ const loader = `
     }
     if (TIKTOK) {
       var tt = document.createElement('script');
-      tt.type = 'text/partytown';
       tt.text = "!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];ttq.setAndDefer=function(e,n){e[n]=function(){e.push([n].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(e){for(var n=ttq._i[e]||[],i=0;i<ttq.methods.length;i++)ttq.setAndDefer(n,ttq.methods[i]);return n};ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement('script');o.type='text/javascript';o.async=!0;o.src=i+'?sdkid='+e+'&lib='+t;var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};ttq.load('" + TIKTOK + "');ttq.page();}(window,document,'ttq');";
       document.head.appendChild(tt);
     }
@@ -55,7 +59,6 @@ const loader = `
       oa.text = "!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,'script','https://bzrcdn.openai.com/sdk/oaiq.min.js');oaiq('init',{pixelId:'" + OPENAI + "'});";
       document.head.appendChild(oa);
     }
-    window.dispatchEvent(new CustomEvent('ptupdate'));
   }
   try {
     if (localStorage.getItem('pyx-consent') === 'accepted') inject();

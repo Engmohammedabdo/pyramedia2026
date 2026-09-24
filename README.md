@@ -82,9 +82,8 @@ manager or FTPS client. Never upload the repository itself.
   legacy 301 map from the old site (SPEC §5.1), HTTPS/non-www canonical,
   caching and security headers.
 - Analytics (GA4 + Meta Pixel + TikTok Pixel + OpenAI Ads Pixel) load
-  **only after** the visitor accepts the consent banner. GA4 and TikTok run
-  in Partytown. Meta and OpenAI run on the main thread because their CDNs
-  send no CORS headers, which Partytown's worker needs (SPEC Addendum A.11).
+  **only after** the visitor accepts the consent banner, as ordinary async
+  main-thread scripts. Partytown was removed (SPEC Addendum A.12).
   Conversion events: `whatsapp_click` `{placement}`, `form_submit`,
   `form_success`, `call_click`, `email_click`.
 - The contact form POSTs JSON to `PUBLIC_N8N_WEBHOOK_URL` per the SPEC §7.4

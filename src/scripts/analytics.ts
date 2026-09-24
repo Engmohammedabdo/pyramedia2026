@@ -30,6 +30,8 @@ declare global {
     fbq?: (...args: unknown[]) => void;
     ttq?: { track?: (...args: unknown[]) => void };
     oaiq?: (...args: unknown[]) => void;
+    partytown?: unknown;
+    __pyxAnalyticsBound?: boolean;
   }
 }
 
@@ -41,36 +43,47 @@ function consented(): boolean {
   }
 }
 
+// Each vendor is isolated: a throwing stub (content blocker, half-loaded SDK)
+// must not drop the event for the vendors after it — OpenAI runs last.
 function send(event: string, params: Record<string, string> = {}) {
   if (!consented()) return;
 
   if (SITE.ga4Id) {
-    // gtag semantics: dataLayer receives an arguments object (Partytown
-    // forwards dataLayer.push into the worker).
-    (function gtag(..._args: unknown[]) {
-      (window.dataLayer = window.dataLayer || []).push(arguments);
-    })('event', event, params);
+    try {
+      // gtag semantics: dataLayer receives an arguments object, not an array.
+      (function gtag(..._args: unknown[]) {
+        (window.dataLayer = window.dataLayer || []).push(arguments);
+      })('event', event, params);
+    } catch {}
   }
   if (SITE.metaPixelId && typeof window.fbq === 'function') {
-    window.fbq('trackCustom', event, params);
+    try {
+      window.fbq('trackCustom', event, params);
+    } catch {}
   }
   if (SITE.tiktokPixelId && typeof window.ttq?.track === 'function') {
-    window.ttq.track(event, params);
+    try {
+      window.ttq.track(event, params);
+    } catch {}
   }
   if (SITE.openaiPixelId && typeof window.oaiq === 'function') {
-    if (OPENAI_LEAD_EVENTS.has(event)) {
-      window.oaiq('measure', 'lead_created', { type: 'customer_action' });
-    } else {
-      window.oaiq('measure', 'custom', { type: 'custom', ...params }, { custom_event_name: event });
-    }
+    try {
+      if (OPENAI_LEAD_EVENTS.has(event)) {
+        window.oaiq('measure', 'lead_created', { type: 'customer_action' });
+      } else {
+        window.oaiq('measure', 'custom', { type: 'custom', ...params }, { custom_event_name: event });
+      }
+    } catch {}
   }
 }
 
-let bound = false;
-
 function bind() {
-  if (bound) return;
-  bound = true;
+  // Once per window, across deploys: a tab opened before a deploy loads the
+  // new bundle on its next in-site navigation, and a second listener would
+  // double every event. Pre-A.12 tabs never set the flag; Partytown's config
+  // object marks them instead.
+  if (window.__pyxAnalyticsBound || window.partytown) return;
+  window.__pyxAnalyticsBound = true;
 
   document.addEventListener('click', (e) => {
     const el = (e.target as Element | null)?.closest?.('[data-event]') as HTMLElement | null;
@@ -91,5 +104,5 @@ function bind() {
 document.addEventListener('astro:page-load', bind);
 
 // Dynamically imported after the load event — bind immediately as well
-// (the initial astro:page-load has already fired; `bound` guards doubles).
+// (the initial astro:page-load has already fired; the window flag guards doubles).
 bind();

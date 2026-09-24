@@ -1064,3 +1064,54 @@ actual purpose.
     Events Manager and in the OpenAI Event Stream. GA4/TikTok delivery to
     their dashboards is also still unverified; the GA4 reporting connector
     has no credentials in this environment.
+  - **Live result.** OpenAI Ads Manager's Event Stream showed the test
+    `lead_created` (`pixel_sdk`, `{"type":"customer_action"}`) at 19:20:01
+    UTC, the exact second it was sent. OpenAI delivery is verified end to
+    end.
+
+- **2026-09-24 — Partytown removed; all four providers on the main thread
+  (SPEC Addendum A.12; owner approval).** While answering "is anything
+  missing?", a live check in a browser where Partytown had fallen back found
+  TikTok, Meta and OpenAI cookies present and **no `_ga` cookie**. Partytown's
+  fallback (read from the built snippet) re-creates each deferred script from
+  `innerHTML` only, so GA4's `src`-only `gtag.js` tag is dropped. Scripts
+  injected after the fallback (a first-page consent accept) are never run at
+  all. iPhone in-app browsers (Instagram/Facebook WKWebView) offer no service
+  worker, so they always take that path.
+  - **Fix.** GA4 and TikTok now load like Meta/OpenAI: async main-thread
+    scripts, still consent-gated. The integration, forwards and `ptupdate`
+    dispatch are removed, and `@astrojs/partytown` is uninstalled. The CSP is
+    functionally unchanged. TikTok had already run under the live CSP on the
+    main thread in the fallback case above. `worker-src 'self' blob:` was left
+    in place.
+  - **Tests.** The A.11 test was rewritten. It now asserts no Partytown in
+    config, `package.json` or loader; that each vendor block loads its SDK
+    with no non-executing script type; and exactly two `inject()` call
+    sites, both conditioned on `accepted`. gate1 7/7, gate2 83/83.
+  - **Leftover in visitors' browsers.** Browsers that registered the old
+    `/~partytown/` service worker keep it until their next update check
+    finds the script gone (the FTP sync deletes `~partytown/`). Its scope
+    covers only `/~partytown/`, which the site no longer requests, so it has
+    no effect on pages.
+  - **Independent review before deploy (3 lenses + adversarial verify).**
+    - Consent/privacy lens: no findings.
+    - A CSP test gap was refuted as a defect (the header already allows all
+      four hosts). It is now covered anyway: gate2 asserts every SDK host is
+      in the header's `script-src`. A mutation check confirmed the test fails
+      if a host is removed.
+    - One **confirmed minor finding.** Astro's router re-runs an inline
+      script whose text changed, and loads a new bundle, on the first in-site
+      navigation after a deploy. In a tab opened before this deploy, that
+      collides with Partytown's leftover `window.ttq` / `dataLayer` stubs.
+      The TikTok snippet throws, and `send()` stops before the OpenAI call,
+      so that click's `lead_created` is lost. GA4 is misconfigured and Meta
+      gets a duplicate init. The same mechanism would also add a second
+      click listener, doubling every event, after *any* future deploy that
+      changes `analytics.ts`.
+  - **Fixes.** The loader and `bind()` now run once per window, keyed on
+    `window.__pyxAnalyticsLoaded` / `window.__pyxAnalyticsBound`. Pre-A.12
+    tabs, which never set those flags, are recognised by Partytown's
+    `window.partytown` config and keep their old tracking until a full
+    reload. Each vendor call in `send()` is wrapped in its own `try`, so one
+    throwing stub cannot drop the later vendors' event. gate1 7/7,
+    gate2 84/84, typecheck clean.

@@ -20,6 +20,14 @@
 - **Release state:** no remote, push, deployment, production provider, or live
   Apache verification was performed in this remediation.
 
+> **Update 2026-09-24 — supersedes the release state above.** `origin` is
+> `github.com/Engmohammedabdo/pyramedia2026` and a push to `main` deploys to
+> Bluehost via `.github/workflows/deploy.yml` (vars/secrets configured). The
+> site is live. Analytics: four consent-gated providers (GA4, Meta, TikTok,
+> OpenAI Ads), all on the main thread; Partytown was removed (SPEC Addendum
+> A.10–A.12). Details and live evidence: `BUILD_NOTES.md`, entries dated
+> 2026-09-22 and 2026-09-24.
+
 This is the operational handoff for the current local tree. Read `SPEC.md` and
 `REVIEWER.md` before changing a locked behavior or conducting a new gate review.
 Always inspect fresh Git state and rerun the verification commands; this

@@ -1094,3 +1094,33 @@ delivery had never been verified (it was listed as GATE 3 work).
 **Performance.** The main-thread cost falls only on visitors who have
 accepted analytics. Lab measurements are taken without consent, so the §8
 performance targets are unaffected.
+
+### A.12 Partytown removed; all analytics on the main thread (approved by Abdou, 24 September 2026)
+
+Amends §3's analytics row, §10 and A.11. Supersedes A.11's "GA4 and TikTok
+stay in Partytown".
+
+**Evidence.** Partytown needs a service worker. Where none is available, its
+built-in fallback re-runs each deferred script from its `innerHTML` only.
+GA4's loader is a `src`-only `gtag.js` tag with no `innerHTML`, so in that
+fallback GA4 never loads. On the live site on 24 September 2026, in a
+browser where Partytown fell back, TikTok, Meta and OpenAI all set their
+cookies and GA4 set none. The iPhone in-app browsers of Instagram and
+Facebook (WKWebView) do not provide service workers to arbitrary sites.
+Those in-app browsers are the likely landing environment for this site's
+paid social traffic. A visitor who accepted consent after the fallback had
+already happened got neither GA4 nor TikTok on that page. None of this
+raised a visible error.
+
+**Rule.**
+
+- GA4, Meta, TikTok and OpenAI all load as ordinary async main-thread
+  scripts, **only after the visitor accepts** the consent banner. Decline ⇒
+  never injected. The consent, independence and disclosure rules of §10,
+  A.4, A.10 and A.11 are otherwise unchanged.
+- The `@astrojs/partytown` integration and dependency are removed.
+- Reintroducing any off-main-thread loader requires proving delivery for
+  every provider, including in iPhone in-app browsers, before it ships.
+
+**Performance.** The same as A.11: the cost falls only on visitors who
+accepted analytics, and §8 lab targets are measured without consent.
